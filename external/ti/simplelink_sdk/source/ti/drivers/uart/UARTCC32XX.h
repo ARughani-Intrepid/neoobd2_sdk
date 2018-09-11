@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,31 +41,6 @@
  *  @endcode
  *
  *  Refer to @ref UART.h for a complete description of APIs & example of use.
- *
- *  # Stack requirements #
- *  The UARTCC32XX driver is (ring) buffered driver, and stores data it may
- *  have already received in a user-supplied background buffer.
- *  @sa ::UARTCC32XX_HWAttrsV1
- *
- *  While permitted, it is STRONGLY suggested to avoid implementations where
- *  you call UART_read() within its own callback function (when in
- *  UART_MODE_CALLBACK).  Doing so, will require additional (task and system)
- *  stack for each nested UART_read() call.
- *
- *  Tool chain | Number of bytes per nested UART_read() call
- *  ---------- | ------------------------------------------------
- *  GNU        |  96 bytes + callback function stack requirements
- *  IAR        |  40 bytes + callback function stack requirements
- *  TI         |  80 bytes + callback function stack requirements
- *
- *  It is important to note a potential worst case scenario:
- *      A full ring buffer with data; say 32 bytes
- *      The callback function calls UART_read() with a size of 1 (byte)
- *      No other variables are allocated in the callback function
- *      No other function calls are made in the callback function
- *
- *  As a result, you need an additional task and system stack of:
- *  32 bytes  * (80 bytes for TI + 0 bytes by the callback function) = 2.5kB
  *
  *  # Device Specific Pin Mode Macros #
  *  This header file contains pin mode definitions used to specify the
@@ -374,6 +349,10 @@ typedef struct UARTCC32XX_Object {
         bool             rxEnabled:1;
         /* Flag to keep the state of the write Power constraints */
         bool             txEnabled:1;
+
+        /* Flags to prevent recursion in read callback mode */
+        bool             inReadCallback:1;
+        volatile bool    readCallbackPending:1;
     } state;
 
     HwiP_Handle          hwiHandle;        /* Hwi handle for interrupts */

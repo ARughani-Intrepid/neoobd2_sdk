@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2016-2018 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,12 +29,13 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /*
  *  ======== mqueue.c ========
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -43,6 +44,7 @@
 #include <FreeRTOS.h>
 #include <portmacro.h>
 #include <queue.h>
+#include <semphr.h>
 #include <task.h>
 
 #include <ti/drivers/dpl/HwiP.h>
@@ -51,14 +53,18 @@
 #include <time.h>
 #include <errno.h>
 
-#define SCHED_SUSPEND(schedStarted) \
-    if (schedStarted) {             \
-        vTaskSuspendAll();          \
+/*  Gate protection is not needed in boot thread (i.e. from main()).
+ *  Check the scheduler state and only use the gate when scheduler
+ *  is running. These macros improves the code presentation.
+ */
+#define GATE_ENTER(gate)                                        \
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {    \
+        xSemaphoreTake(gate, portMAX_DELAY);                    \
     }
 
-#define SCHED_RESUME(schedStarted)  \
-    if (schedStarted) {             \
-        xTaskResumeAll();           \
+#define GATE_LEAVE(gate)                                        \
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {    \
+        xSemaphoreGive(gate);                                   \
     }
 
 /*
@@ -96,6 +102,25 @@ static MQueueObj *findInList(const char *name);
 
 static MQueueObj *mqList = NULL;
 
+static SemaphoreHandle_t mqGate = NULL;
+
+/*
+ *  Default message queue attrs to be used if NULL attributes are
+ *  passed to mq_open() on O_CREAT.  In general, applications should not
+ *  rely on the default attributes, as they are implementation defined,
+ *  and using them may result in non-portable code.
+ *  The default value of 8 bytes for mq_msgsize in defaultAttrs was chosen
+ *  to allow for a size and a pointer.  The mq_maxmsg default of 4 is a
+ *  multiple of 4, and memory allocated for the default message size and
+ *  number of messages would be 32 bytes.
+ */
+static mq_attr defaultAttrs = {
+    0,      /* mq_flags */
+    4,      /* mq_maxmsg - number of messages */
+    8,      /* mq_msgsize - size of message */
+    0       /* mq_curmsgs */
+};
+
 /*
  *  ======== mq_close ========
  */
@@ -103,19 +128,12 @@ int mq_close(mqd_t mqdes)
 {
     MQueueDesc *mqd = (MQueueDesc *)mqdes;
     MQueueObj  *msgQueue = mqd->msgQueue;
-    bool        schedulerStarted;
 
     vPortFree(mqd);
 
-    schedulerStarted = (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED);
-
-    /* Disable the scheduler */
-    SCHED_SUSPEND(schedulerStarted);
-
+    GATE_ENTER(mqGate)
     msgQueue->refCount--;
-
-    /* Re-enable the scheduler */
-    SCHED_RESUME(schedulerStarted);
+    GATE_LEAVE(mqGate)
 
     return (0);
 }
@@ -154,12 +172,36 @@ mqd_t mq_open(const char *name, int oflags, ...)
     MQueueObj          *msgQueue;
     MQueueDesc         *msgQueueDesc = NULL;
     bool                schedulerStarted;
+    bool                rc = false;
+
+    /* create gate, this is never deleted */
+    if (mqGate == NULL) {
+        schedulerStarted = (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING);
+
+        if (schedulerStarted) {
+            vTaskSuspendAll();
+        }
+        if (mqGate == NULL) {
+            rc = ((mqGate = xSemaphoreCreateMutex()) == NULL);
+        }
+        if (schedulerStarted) {
+            xTaskResumeAll();
+        }
+        if (rc) {
+            errno = ENOMEM;
+            return ((mqd_t)(-1));
+        }
+    }
 
     va_start(va, oflags);
 
     if (oflags & O_CREAT) {
         mode = va_arg(va, mode_t);
-        attrs = va_arg(va, mq_attr*);
+        attrs = va_arg(va, struct mq_attr *);
+
+        if (attrs == NULL) {
+            attrs = &defaultAttrs;
+        }
     }
 
     va_end(va);
@@ -169,42 +211,37 @@ mqd_t mq_open(const char *name, int oflags, ...)
         return ((mqd_t)(-1));
     }
 
-    if ((oflags & O_CREAT) && (attrs != NULL) && ((attrs->mq_maxmsg <= 0)
+    if ((oflags & O_CREAT) && ((attrs->mq_maxmsg <= 0)
             || (attrs->mq_msgsize <= 0))) {
         errno = EINVAL;
         return ((mqd_t)(-1));
     }
 
-    schedulerStarted = (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED);
-
-    /* Disable the scheduler */
-    SCHED_SUSPEND(schedulerStarted);
+    GATE_ENTER(mqGate)
 
     msgQueue = findInList(name);
-
-    /* Re-enable the scheduler */
-    SCHED_RESUME(schedulerStarted);
 
     if ((msgQueue != NULL) && (oflags & O_CREAT) && (oflags & O_EXCL)) {
         /* Error: Message queue has already been opened and O_EXCL is set */
         errno = EEXIST;
-        return ((mqd_t)(-1));
+        goto error_leave;
     }
 
     if (!(oflags & O_CREAT) && (msgQueue == NULL)) {
         errno = ENOENT;
-        return ((mqd_t)(-1));
+        goto error_leave;
     }
 
-    /* Allocate the MQueueDesc */
+    /* allocate the MQueueDesc */
     msgQueueDesc = pvPortMalloc(sizeof(MQueueDesc));
+
     if (msgQueueDesc == NULL) {
         errno = ENOMEM;
-        return ((mqd_t)(-1));
+        goto error_leave;
     }
 
     if (msgQueue == NULL) {
-        /* Allocate the MQueueObj */
+        /* allocate the MQueueObj */
         msgQueue = pvPortMalloc(sizeof(MQueueObj));
 
         if (msgQueue == NULL) {
@@ -212,7 +249,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
         }
 
         msgQueue->refCount = 1;
-        msgQueue->attrs = *attrs;
+        msgQueue->attrs.mq_msgsize = attrs->mq_msgsize;
+        msgQueue->attrs.mq_maxmsg = attrs->mq_maxmsg;
 
         msgQueue->name = pvPortMalloc(strlen(name) + 1);
 
@@ -229,13 +267,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
             goto error_handler;
         }
 
-        /*
-         *  Add the message queue to the list now
-         */
+        /* add the message queue to the list now */
         msgQueue->prev = NULL;
-
-        /* Disable the scheduler */
-        SCHED_SUSPEND(schedulerStarted);
 
         if (mqList != NULL) {
             mqList->prev = msgQueue;
@@ -245,13 +278,10 @@ mqd_t mq_open(const char *name, int oflags, ...)
         mqList = msgQueue;
     }
     else {
-        /* Disable the scheduler */
-        SCHED_SUSPEND(schedulerStarted);
-
         msgQueue->refCount++;
     }
 
-    SCHED_RESUME(schedulerStarted);
+    GATE_LEAVE(mqGate)
 
     msgQueueDesc->msgQueue = msgQueue;
     msgQueueDesc->flags = ((oflags & O_NONBLOCK) ? O_NONBLOCK : 0);
@@ -261,8 +291,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
     return ((mqd_t)msgQueueDesc);
 
 error_handler:
-    /*
-     *  We only get here if we attempted to allocate msgQueue (i.e., it
+    /*  We only get here if we attempted to allocate msgQueue (i.e., it
      *  was not already in the list), so we're ok to free it.
      */
     if (msgQueue != NULL) {
@@ -271,12 +300,13 @@ error_handler:
         }
         vPortFree(msgQueue);
     }
-
     if (msgQueueDesc != NULL) {
         vPortFree(msgQueueDesc);
     }
-
     errno = ENOMEM;
+
+error_leave:
+    GATE_LEAVE(mqGate)
     return ((mqd_t)(-1));
 }
 
@@ -296,7 +326,7 @@ ssize_t mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
      *  If msg_len is less than the message size attribute of the message
      *  queue, return an error.
      */
-    if (msg_len < (size_t)(msgQueue->attrs).mq_msgsize) {
+    if (msg_len < (size_t)((msgQueue->attrs).mq_msgsize)) {
         errno = EMSGSIZE;
         return (-1);
     }
@@ -373,45 +403,29 @@ int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 /*
  *  ======== mq_setattr ========
  */
-int mq_setattr(mqd_t mqdes, const struct mq_attr *mqstat,
-        struct mq_attr *omqstat)
+int mq_setattr(mqd_t mqdes, const struct mq_attr *newattr,
+        struct mq_attr *oldattr)
 {
     MQueueDesc *mqd = (MQueueDesc *)mqdes;
     MQueueObj  *msgQueue = mqd->msgQueue;
-    bool        schedulerStarted;
 
     /* mq_flags should be 0 or O_NONBLOCK */
-    if ((mqstat->mq_flags != 0) && (mqstat->mq_flags != O_NONBLOCK)) {
+    if ((newattr->mq_flags != 0) && (newattr->mq_flags != O_NONBLOCK)) {
         errno = EINVAL;
         return (-1);
     }
 
-    /*
-     *  The message queue attributes corresponding to the following
-     *  members defined in the mq_attr structure shall be set to the
-     *  specified values upon successful completion of mq_setattr():
-     *  mq_flags
-     *        The value of this member is the bitwise-logical OR of
-     *        zero or more of O_NONBLOCK and any implementation-defined flags.
-     *
-     *  The values of the mq_maxmsg, mq_msgsize, and mq_curmsgs members of
-     *  the mq_attr structure shall be ignored by mq_setattr().
-    */
-    schedulerStarted = (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED);
-
-    /* Disable the scheduler */
-    SCHED_SUSPEND(schedulerStarted);
-
-    if (omqstat != NULL) {
+    /* save old attribute values before updating message queue description */
+    if (oldattr != NULL) {
         msgQueue->attrs.mq_curmsgs = uxQueueMessagesWaiting(msgQueue->queue);
-        *omqstat = msgQueue->attrs;
-        omqstat->mq_flags = mqd->flags;
+        *oldattr = msgQueue->attrs;
+        oldattr->mq_flags = mqd->flags; /* overwrite with mqueue desc flag */
     }
 
-    mqd->flags = mqstat->mq_flags;
-
-    /* Re-enable the scheduler */
-    SCHED_RESUME(schedulerStarted);
+    /*  Only mq_flags is used to set the message queue description, the
+     *  remaining members of mq_attr structure are ignored.
+     */
+    mqd->flags = newattr->mq_flags;
 
     return (0);
 }
@@ -577,22 +591,18 @@ int mq_unlink(const char *name)
 {
     MQueueObj  *msgQueue;
     MQueueObj  *nextMQ, *prevMQ;
-    bool        schedulerStarted;
 
-    schedulerStarted = (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED);
-
-    /* Disable the scheduler */
-    SCHED_SUSPEND(schedulerStarted);
+    GATE_ENTER(mqGate)
 
     msgQueue = findInList(name);
 
     if (msgQueue == NULL) {
         errno = ENOENT;
-        goto done_restore;
+        goto done_leave;
     }
 
     if (msgQueue->refCount == 0) {
-        /* If the message queue is in the list, remove it. */
+        /* remove message queue from list */
         if (mqList == msgQueue) {
             mqList = msgQueue->next;
         }
@@ -600,18 +610,17 @@ int mq_unlink(const char *name)
             prevMQ = msgQueue->prev;
             nextMQ = msgQueue->next;
 
-            if (prevMQ) {
+            if (prevMQ != NULL) {
                 prevMQ->next = nextMQ;
             }
-            if (nextMQ) {
+            if (nextMQ != NULL) {
                 nextMQ->prev = prevMQ;
             }
         }
 
         msgQueue->next = msgQueue->prev = NULL;
 
-        /* Re-enable the scheduler */
-        SCHED_RESUME(schedulerStarted);
+        GATE_LEAVE(mqGate)
 
         if (msgQueue->queue != NULL) {
             vQueueDelete(msgQueue->queue);
@@ -625,11 +634,13 @@ int mq_unlink(const char *name)
 
         return (0);
     }
+    else {
+        /* temporary fix until TIRTOS-1323 is fixed */
+        errno = EBUSY;
+    }
 
-done_restore:
-    /* Re-enable the scheduler */
-    SCHED_RESUME(schedulerStarted);
-
+done_leave:
+    GATE_LEAVE(mqGate)
     return (-1);
 }
 
@@ -641,6 +652,10 @@ done_restore:
 
 /*
  *  ======== findInList ========
+ *  Look for the given name in the list of message queues
+ *
+ *  This function must be called inside a gate which protects
+ *  the message queue list.
  */
 static MQueueObj *findInList(const char *name)
 {

@@ -1,31 +1,42 @@
 /*
- *   Copyright (C) 2016 Texas Instruments Incorporated
+ * Copyright (C) 2016-2018, Texas Instruments Incorporated
+ * All rights reserved.
  *
- *   All rights reserved. Property of Texas Instruments Incorporated.
- *   Restricted rights to use, duplicate or disclose this code are
- *   granted through contract.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   The program may not be used without the written permission of
- *   Texas Instruments Incorporated or against the terms and conditions
- *   stipulated in the agreement under which this program has been supplied,
- *   and under no circumstances can it be used with non-TI connectivity device.
- *   
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//*****************************************************************************
-// includes
-//*****************************************************************************
 #include "client_mgmt.h"
 #include "server_util.h"
 #include "server_pkts.h"
 #include "server_plug.h"
 #include "server_core.h"
 
-//*****************************************************************************
-//defines
-//*****************************************************************************
-
-/* Definition for the maximum length of the sub 
+/* Definition for the maximum length of the sub
    topic name */
 #ifndef CFG_SR_MAX_SUBTOP_LEN
 #define MAX_SUBTOP_LEN 64
@@ -36,7 +47,7 @@
 /* Definition for the maximum topic nodes of the
    topic node tree.
    Each will message, subscription message
-   and publish message from each client creates 
+   and publish message from each client creates
    nodes that decrease the available topic nodes */
 #ifndef CFG_SR_MAX_TOPIC_NODE
 #define MAX_TOP_NODES  128
@@ -62,10 +73,6 @@
 #define CONN_FLAGS_WQID_GET(connFlags) ((connFlags >> 3) & QID_VMASK) /* WILL QOS VAL */
 
 #define MK_QOS_ENUM(qid) ((MQTT_QOS)(qid & QID_VMASK))
-
-//*****************************************************************************
-// typedefs
-//*****************************************************************************
 
 /* A topic name (or string or tree or hierarchy) is handled as a series of nodes.
  A 'topic node' refers to a level in the topic tree or hierarchy and it stores
@@ -155,7 +162,7 @@ typedef struct _MQTTServerCore_TopicNode_t_
 
 }MQTTServerCore_TopicNode_t;
 
-/* 
+/*
  Housekeeping to manage subtopics (nodes) at run-time.
  */
 typedef struct _MQTTServerCore_NodeStack_t_
@@ -186,15 +193,12 @@ typedef struct _MQTTServerCore_WillParams_t_
 
 }MQTTServerCore_WillParams_t;
 
-//*****************************************************************************
-//globals
-//*****************************************************************************
 /* Stack Index */
 static int32_t MQTTServerCore_stackIdx = 0;
 
 /* Counter for how many nodes are being used.
    Each will message, subscription message
-   and publish message from each client creates 
+   and publish message from each client creates
    nodes that increase the NodesInUse counter */
 static int32_t MQTTServerCore_NodesInUse = 0;
 
@@ -204,7 +208,7 @@ static MQTTServerCore_TopicNode_t *MQTTServerCore_rootNode = NULL;
 
 static char MQTTServerCore_workBuf[WBUF_LEN];
 
-MQTTServerCore_NodeStack_t node_stack[MAX_STACK_NODES];
+static MQTTServerCore_NodeStack_t node_stack[MAX_STACK_NODES];
 
 static void try_node_delete(MQTTServerCore_TopicNode_t *node);
 
@@ -357,10 +361,7 @@ static MQTTServerCore_TopicNode_t *alloc_topic_node(void)
             MQTTServerCore_NodesInUse++;
         }
     }
-    else
-    {
-        USR_INFO("S: Warning - Maximum space for topic nodes reached\n\r");
-    }
+    /* else - Warning - Maximum space for topic nodes reached */
 
     return node;
 }
@@ -450,7 +451,7 @@ static int32_t subtop_read(const char *topstr, char **subtop_buf, uint16_t buf_l
 
     if ( (idx == len) || (0 == idx) )
     {
-        USR_INFO("S: Fatal, insufficient buffer for sub-str\n\r");
+        /* Fatal, insufficient buffer for sub-str */
         return -1; /* zero or insufficient buffer provided */
     }
 
@@ -489,7 +490,7 @@ static MQTTServerCore_TopicNode_t *alloc_node_subtop(const char *topstr, char co
 {
     uint16_t len = 0;
     MQTTServerCore_TopicNode_t *node = alloc_topic_node();
-    
+
     if (NULL == node)
     {
         return NULL;
@@ -546,7 +547,7 @@ MQTTServerCore_TopicNode_t *subtop_nhbr_node_find(const MQTTServerCore_TopicNode
         root_nh = root_nh->dnNhbr;
     }
 
-    return (MQTTServerCore_TopicNode_t*) root_nh;/* Bad: const from pointer removed */
+    return (MQTTServerCore_TopicNode_t *)root_nh;/* Bad: const from pointer removed */
 }
 
 //*****************************************************************************
@@ -563,7 +564,7 @@ MQTTServerCore_TopicNode_t *nhbr_node_find(const MQTTServerCore_TopicNode_t *roo
 
 //*****************************************************************************
 //
-//! \brief Find leaf node of branch-combo that matches complete 'topstr'. 
+//! \brief Find leaf node of branch-combo that matches complete 'topstr'.
 //! Modus Operandi:  For each sub topic in 'topstr', go across neighbor list,
 //! then for matching neighbor node, make its child node as root of neighbor
 //! list for another iteration for next sub topic.
@@ -614,7 +615,7 @@ MQTTServerCore_TopicNode_t *leaf_node_find(const char *topstr)
 
 //*****************************************************************************
 //
-//! \brief Create 'child only' hierarchy of nodes to hold all sub topics in 'topstr'. 
+//! \brief Create 'child only' hierarchy of nodes to hold all sub topics in 'topstr'.
 //! The routine returns a start node of hierarchy and also provides leaf node.
 //
 //*****************************************************************************
@@ -659,9 +660,6 @@ static MQTTServerCore_TopicNode_t *hier_nodes_create(const char *topstr, MQTTSer
 
     *leaf = node;
 
-    DBG_INFO("S: Hierarchy of nodes created: Base: %s & Leaf: %s\n\r", base ? base->subtop : " ",
-            (*leaf) ? (*leaf)->subtop : " ");
-
     return base;
 }
 
@@ -679,8 +677,6 @@ static void install_nhbr_node(MQTTServerCore_TopicNode_t *base, MQTTServerCore_T
 
     base->dnNhbr = node;
     node->upNhbr = base;
-
-    DBG_INFO("S: %s added as a neighbor to %s\n\r", node->subtop, base->subtop);
 }
 
 //*****************************************************************************
@@ -692,8 +688,6 @@ static void set_up_hier_nodes(MQTTServerCore_TopicNode_t *upHier, MQTTServerCore
 {
     upHier->dnHier = dnHier;
     dnHier->upHier = upHier;
-
-    DBG_INFO("%s added as DN HIER to %s \n\r", dnHier->subtop, upHier->subtop);
 }
 
 //*****************************************************************************
@@ -728,8 +722,6 @@ MQTTServerCore_TopicNode_t *topic_node_create(const char *topstr)
      found for 'topstr'. Now, let's create remaining branches for string
      'next_subtop' and assign them to appropriately to topic tree.
      */
-    DBG_INFO("S: Creating Hierarchy for %s\n\r", next_subtop);
-
     node = hier_nodes_create(next_subtop, &leaf);
     if (node)
     {
@@ -761,7 +753,7 @@ static bool can_delete_node(const MQTTServerCore_TopicNode_t *node)
 {
     if (node->dnHier)
     {
-        USR_INFO("S: fatal, node w/ dn-hier.\n\r");
+        /* fatal, node w/ dn-hier */
         return false;
     }
     return true;
@@ -846,8 +838,6 @@ static MQTTServerCore_TopicNode_t *node_delete(MQTTServerCore_TopicNode_t *node)
         MQTTServerCore_rootNode = NULL;
     }
 
-    USR_INFO("S: Deleted node %s\n\r", node->subtop);
-
     /* free the memory of topic node (subtopic) */
     free_node(node);
 
@@ -866,7 +856,7 @@ static bool topbuf_add(MQTTServerCore_TopbufDesc_t *buf_desc, const MQTTServerCo
     char *allocated_buf = NULL;
     uint16_t len = buf_desc->maxlen - buf_desc->offset;
     int32_t rv = subtop_read(node->subtop, &allocated_buf, len, &next_subtop);
-    
+
     if (rv < 0)
     {
         return false;
@@ -874,7 +864,7 @@ static bool topbuf_add(MQTTServerCore_TopbufDesc_t *buf_desc, const MQTTServerCo
     if (NULL != next_subtop)
     {
         free(allocated_buf);
-        USR_INFO("S: topstr_add fatal, bad subtop.\n\r");
+        /* topstr_add fatal, bad subtop */
         return false;
     }
 
@@ -898,7 +888,7 @@ static bool topbuf_cpy(MQTTServerCore_TopbufDesc_t *buf_desc, const char *subtop
     char *allocated_buf = NULL;
     uint16_t len = buf_desc->maxlen - buf_desc->offset;
     int32_t rv = subtop_read(subtop, &allocated_buf, len, &next_subtop);
-    
+
     if (rv < 0)
     {
         return false;
@@ -906,7 +896,7 @@ static bool topbuf_cpy(MQTTServerCore_TopbufDesc_t *buf_desc, const char *subtop
     if (NULL != next_subtop)
     {
         free(allocated_buf);
-        USR_INFO("S: topstr_copy fatal, bad subtop.\n\r");
+        /* topstr_copy fatal, bad subtop */
         return false;
     }
     /* Coping the allocated memory and free the buffer */
@@ -925,7 +915,7 @@ static bool topbuf_cpy(MQTTServerCore_TopbufDesc_t *buf_desc, const char *subtop
 static bool has_a_wildcard(const MQTTServerCore_TopicNode_t *node)
 {
     const char *str = node->subtop;
-    
+
     while ('\0' != *str)
     {
         if (('+' == *str) || ('#' == *str))
@@ -947,7 +937,7 @@ static bool is_node_SUB_subtop(const MQTTServerCore_TopicNode_t *node, const cha
 {
     if (false == has_a_wildcard(node))
     {
-        return (((0 == strcmp(node->subtop, subtop)) || (node->dnHier && (0 == strcmp("+/", subtop))) || 
+        return (((0 == strcmp(node->subtop, subtop)) || (node->dnHier && (0 == strcmp("+/", subtop))) ||
                 (!node->dnHier && (0 == strcmp("+", subtop)))) ?
         true : false);
     }
@@ -1011,7 +1001,7 @@ static MQTTServerCore_TopicNode_t *pub_hier_search(const char *topSUB, const MQT
         node = prev;
     }
 
-    return (MQTTServerCore_TopicNode_t *) node;
+    return (MQTTServerCore_TopicNode_t *)node;
 }
 
 //*****************************************************************************
@@ -1022,7 +1012,7 @@ static MQTTServerCore_TopicNode_t *pub_hier_search(const char *topSUB, const MQT
 static bool is_node_PUB_subtop(const MQTTServerCore_TopicNode_t *node, const char *subtop, bool endtop)
 {
     /* Assumes that subtop hasn't got any wildcard character */
-    return (((0 == strcmp(subtop, node->subtop)) || (!endtop && (0 == strcmp("+/", node->subtop))) || 
+    return (((0 == strcmp(subtop, node->subtop)) || (!endtop && (0 == strcmp("+/", node->subtop))) ||
             (endtop && (0 == strcmp("+", node->subtop)))) ?
     true : false);
 }
@@ -1062,7 +1052,7 @@ static MQTTServerCore_TopicNode_t *SUB_leaf_search(const char *topPUB, const MQT
             free(subtop);
             return (MQTTServerCore_TopicNode_t *)node;
         }
-        
+
         if (false == is_node_PUB_subtop(node, subtop, !next_subtop))
         {
             free(subtop);
@@ -1100,7 +1090,7 @@ static void try_node_delete(MQTTServerCore_TopicNode_t *node)
 {
     while (node)
     {
-        if (is_node_retain(node) || is_node_willed(node) || enrolls_plugin(node) || 
+        if (is_node_retain(node) || is_node_willed(node) || enrolls_plugin(node) ||
             node->clMap[0] || node->clMap[1] || node->clMap[2])
         {
             break;
@@ -1114,7 +1104,7 @@ static void try_node_delete(MQTTServerCore_TopicNode_t *node)
 //! \brief
 //
 //*****************************************************************************
-static void pub_msg_send(const MQTT_UTF8String_t *topic, const uint8_t *dataBuf, 
+static void pub_msg_send(const MQTT_UTF8String_t *topic, const uint8_t *dataBuf,
                         uint32_t dataLen, uint8_t fh_flags, uint32_t clMap)
 {
     MQTT_QOS qos = MQTT_FH_BYTE1_QOS(fh_flags);
@@ -1125,7 +1115,7 @@ static void pub_msg_send(const MQTT_UTF8String_t *topic, const uint8_t *dataBuf,
     {
         return;
     }
-    if ((0 > MQTT_packetPubAppendTopic(mqp, topic, qos ? MQTTServerUtil_setMsgID() : 0)) || 
+    if ((0 > MQTT_packetPubAppendTopic(mqp, topic, qos ? MQTTServerUtil_setMsgID() : 0)) ||
         (dataLen && (0 > MQTT_packetPubAppendData(mqp, dataBuf, dataLen))))
     {
         MQTT_packetFree(mqp);
@@ -1155,7 +1145,7 @@ static MQTTServerCore_TopicNode_t *SUB_node_create(const char *topSUB, uint8_t q
     MQTTServerCore_TopicNode_t *leaf = topic_node_create(topSUB);
     uint8_t j;
     uint32_t map;
-    
+
     if (leaf)
     {
         j = 0;
@@ -1187,7 +1177,7 @@ static uint8_t proc_pub_leaf(MQTTServerCore_TopicNode_t *leaf, const MQTT_UTF8St
     {
         /* If it is an earlier created topic w/ retained
          data, then pick lower of the two QOS(s)  */
-        qid = MIN(node_qid_get(leaf), qid);
+        qid = MQTT_MIN(node_qid_get(leaf), qid);
 
         /* Publish the retained data to this client */
         pub_msg_send(topic, leaf->myData, leaf->myDlen, MQTT_MAKE_FH_FLAGS(false, qid, true), MQTTClientMgmt_bmapGet(usrCl));
@@ -1209,7 +1199,7 @@ static uint8_t proc_pub_hier_no_top(MQTTServerCore_TopicNode_t *base, MQTTServer
     MQTTServerCore_TopicNode_t *leaf = NULL;
     uint8_t ack = QOS_VALUE(qos);
     MQTT_UTF8String_t topic;
-    
+
     /* 1. Find the leaf node of a non wildcard branch-combo */
     while (node)
     {
@@ -1294,7 +1284,7 @@ static uint8_t proc_pub_hier_SUBtop(const char *topSUB, const MQTTServerCore_Top
     MQTTServerCore_TopicNode_t *leaf = pub_hier_search(topSUB, base, mk_pubtop);
     uint8_t min = QOS_VALUE(qos);
     MQTT_UTF8String_t topic;
-    
+
     if (leaf)
     {
         topic.buffer = mk_pubtop->buffer;
@@ -1317,7 +1307,7 @@ static uint8_t proc_pub_tree_SUBtop(const char *topSUB, MQTTServerCore_TopicNode
     uint8_t min = QOS_VALUE(qos);
     MQTTServerCore_NodeStack_t *stack;
     uint8_t ack;
-    
+
     if (NULL != base)
     {
         stack_add(base, (uint32_t) topSUB, mk_pubtop->offset);
@@ -1326,7 +1316,7 @@ static uint8_t proc_pub_tree_SUBtop(const char *topSUB, MQTTServerCore_TopicNode
     {
         stack = stack_pop();
         mk_pubtop->offset = stack->val2;
-        ack = proc_pub_hier_SUBtop((char*) stack->val1, stack->node, mk_pubtop, qos, usrCl);
+        ack = proc_pub_hier_SUBtop((char *)stack->val1, stack->node, mk_pubtop, qos, usrCl);
 
         if (ack < min)
         {
@@ -1342,7 +1332,7 @@ static uint8_t proc_pub_tree_SUBtop(const char *topSUB, MQTTServerCore_TopicNode
 //! \brief
 //
 //*****************************************************************************
-static uint8_t proc_sub_ml_wc_hier(const char *grandpa_topSUB, char *parent_subtop, MQTTServerCore_TopicNode_t *base, 
+static uint8_t proc_sub_ml_wc_hier(const char *grandpa_topSUB, char *parent_subtop, MQTTServerCore_TopicNode_t *base,
                                 MQTTServerCore_TopbufDesc_t *mk_pubtop, MQTT_QOS qos, void *usrCl)
 {
     uint8_t min = QOS_VALUE(qos), ack = QFL_VALUE;
@@ -1387,14 +1377,14 @@ static uint8_t proc_sub_ml_wc_hier(const char *grandpa_topSUB, char *parent_subt
         subtop[sublen] = '\0'; /* Get back, original subtop */
     }
 
-    min = MIN(min, ack);
+    min = MQTT_MIN(min, ack);
     /* 3. Process '#' WC by walking through entire sub-tree of parent 'base' */
     if (NULL != base)
     {
         ack = proc_pub_tree_no_top(base, mk_pubtop, qos, usrCl);
     }
 
-    return MIN(min, ack);
+    return MQTT_MIN(min, ack);
 }
 
 //*****************************************************************************
@@ -1419,7 +1409,7 @@ static uint8_t proc_sub_ml_wc_tree(char *grandpa_topSUB, char *parent_subtop, MQ
         stack = stack_pop();
 
         mk_pubtop.offset = stack->val2;
-        ack = proc_sub_ml_wc_hier((char*) stack->val1, parent_subtop, stack->node, &mk_pubtop, qos, usrCl);
+        ack = proc_sub_ml_wc_hier((char *)stack->val1, parent_subtop, stack->node, &mk_pubtop, qos, usrCl);
         if (ack < min)
         {
             min = ack;
@@ -1477,7 +1467,7 @@ static uint8_t ml_wc_nodes_create(char *parent_topSUB, uint16_t toplen, uint8_t 
 static uint8_t proc_sub_ml_wildcard(char *topSUB, uint16_t toplen, MQTT_QOS qos, void *usrCl)
 {
     uint16_t len = 0;
-    uint16_t limit = MIN(toplen, MAX_SUBTOP_LEN);
+    uint16_t limit = MQTT_MIN(toplen, MAX_SUBTOP_LEN);
     char subtop[MAX_SUBTOP_LEN];
     char *ptr = NULL;
     uint8_t min = QOS_VALUE(qos);
@@ -1551,7 +1541,7 @@ static uint16_t proc_forward_slash(char *buf, uint16_t len)
     uint16_t i;
     uint16_t j;
     char curr;
-    
+
     for (i = 1, j = 1; i < len; i++)
     {
         curr = buf[i];
@@ -1630,7 +1620,7 @@ static bool proc_sub_msg_rx(void *usrCl, const MQTT_UTF8StrQOS_t *qosTopics,
     {
         qos_top = qosTopics + i;
         qos = qos_top->qosreq;
-        buf = (char*) qos_top->buffer;
+        buf = (char *)qos_top->buffer;
         len = qos_top->length;
 
         /* Remove zero-topics and trailing '/' from SUB top */
@@ -1641,12 +1631,10 @@ static bool proc_sub_msg_rx(void *usrCl, const MQTT_UTF8StrQOS_t *qosTopics,
             continue;
         }
         buf[len] = '\0'; /* Dirty trick, cheeky one */
-        USR_INFO("SUB TOPIC: %s\r\n", buf);
 
         ack[i] = ('#' == buf[len - 1]) ? proc_sub_ml_wildcard(buf, len, qos, usrCl) :
                                         proc_sub_sl_or_no_wc(buf, qos, usrCl);
 
-        DBG_INFO("SUB Topic%-2d %s is ACK'ed w/ 0x%02x\n\r", i + 1, buf, ack[i]);
     }
 
     return true; /* Send SUB-ACK and do not close network */
@@ -1758,17 +1746,17 @@ static bool proc_un_sub_msg_locked(void *usrCl, const MQTT_UTF8String_t *topics,
 //! \brief
 //
 //*****************************************************************************
-static void leaf_msg_send(  const MQTTServerCore_TopicNode_t *leaf, const MQTT_UTF8String_t *topic, const uint8_t *dataBuf, 
+static void leaf_msg_send(  const MQTTServerCore_TopicNode_t *leaf, const MQTT_UTF8String_t *topic, const uint8_t *dataBuf,
                             uint32_t dataLen, bool dup, MQTT_QOS qos, bool retain)
 {
     uint8_t  qid = 0;
     uint8_t  fh_fgs = 0;
     uint32_t map;
-    
+
     for (qid = 0; qid < 3; qid++)
     {
         map = leaf->clMap[qid];
-        fh_fgs = MQTT_MAKE_FH_FLAGS(dup, MIN(qid, QOS_VALUE(qos)), retain);
+        fh_fgs = MQTT_MAKE_FH_FLAGS(dup, MQTT_MIN(qid, QOS_VALUE(qos)), retain);
 
         if (map)
         {
@@ -1889,7 +1877,7 @@ static int32_t pub_topic_read(const MQTT_UTF8String_t *topic, char *buf, uint32_
 //! \brief
 //
 //*****************************************************************************
-static void proc_sub_tree_topPUB(   const char *topPUB, const MQTT_UTF8String_t *topic, const uint8_t *dataBuf, 
+static void proc_sub_tree_topPUB(   const char *topPUB, const MQTT_UTF8String_t *topic, const uint8_t *dataBuf,
                                     uint32_t dataLen, MQTT_QOS qos, bool retain)
 {
     MQTTServerCore_TopicNode_t *leaf = NULL;
@@ -1905,7 +1893,7 @@ static void proc_sub_tree_topPUB(   const char *topPUB, const MQTT_UTF8String_t 
         stack = stack_pop();
 
         /* Find leaf node of SUB that matches the PUB topic */
-        leaf = SUB_leaf_search((char*) stack->val1, stack->node);
+        leaf = SUB_leaf_search((char *)stack->val1, stack->node);
         if (leaf)
         {
             leaf_msg_send(leaf, topic, dataBuf, dataLen, false, qos, retain);
@@ -1925,7 +1913,7 @@ static bool _proc_pub_msg_rx(void *usrCl, const MQTT_UTF8String_t *topic, const 
     int32_t err = -1;
 
     /* Prior to msg processing, check for topic or buffer errors */
-    if ((pub_topic_read(topic, MQTTServerCore_workBuf, WBUF_LEN) > 0) && 
+    if ((pub_topic_read(topic, MQTTServerCore_workBuf, WBUF_LEN) > 0) &&
         (proc_forward_slash(MQTTServerCore_workBuf, topic->length) > 0))
     {
         /* If a valid MSG ID is specified for a QOS2 pkt, track it */
@@ -1951,10 +1939,6 @@ static bool _proc_pub_msg_rx(void *usrCl, const MQTT_UTF8String_t *topic, const 
             }
         }
     }
-
-    DBG_INFO("Processing of PUB message from %s (0x%08x) has %s (%d)\n\r", 
-            usrCl ? "client" : "plugin", usrCl ? MQTTClientMgmt_bmapGet(usrCl) : 0, err ? "failed" : "succeeded", err);
-
     return ((err < 0) ? false : true);
 }
 
@@ -1963,7 +1947,7 @@ static bool _proc_pub_msg_rx(void *usrCl, const MQTT_UTF8String_t *topic, const 
 //! \brief
 //
 //*****************************************************************************
-static bool proc_pub_msg_rx_locked( void *usrCl, const MQTT_UTF8String_t *topic, const uint8_t *dataBuf, uint32_t dataLen, 
+static bool proc_pub_msg_rx_locked( void *usrCl, const MQTT_UTF8String_t *topic, const uint8_t *dataBuf, uint32_t dataLen,
                                     uint16_t msgID, bool dup, MQTT_QOS qos, bool retain)
 {
     return (_proc_pub_msg_rx(usrCl, topic, dataBuf, dataLen, msgID, qos, retain));
@@ -1980,7 +1964,7 @@ static int32_t utf8_str_rd(const MQTT_UTF8String_t *utf8, char *buf, uint32_t le
     {
         return -1;
     }
-    MQTT_bufWrNbytes((uint8_t*) buf, (uint8_t*) utf8->buffer, utf8->length);
+    MQTT_bufWrNbytes((uint8_t *)buf, (uint8_t *)utf8->buffer, utf8->length);
     buf[utf8->length] = '\0';
 
     return utf8->length;
@@ -2063,7 +2047,7 @@ static uint16_t proc_connect_rx(void *ctxCl, uint8_t connFlags, MQTT_UTF8String_
     void *appCl = NULL;
     uint16_t utf8_len = 0;
     uint16_t rv = MQTTServerPlug_connect(MQC_UTF8_CLIENTID(utf8Vec), MQC_UTF8_USERNAME(utf8Vec), MQC_UTF8_PASSWORD(utf8Vec), &appCl);
-    
+
     if (rv == 0)
     {
         rv = MQTT_CONNACK_RC_SVR_UNAVBL; /* Server (resource) unavailable */
@@ -2242,7 +2226,7 @@ static void proc_client_will(MQTTServerCore_TopicNode_t *leaf, MQTTServerCore_Wi
     topic.length = wbuf_len - offset;
 
     /* Forward data to all subscribers of PUB topic in server */
-    proc_sub_tree_topPUB((const char*) topic.buffer, &topic, (const uint8_t *) willParams->willMsg.buffer,
+    proc_sub_tree_topPUB((const char *)topic.buffer, &topic, (const uint8_t *) willParams->willMsg.buffer,
                          willParams->willMsg.length, MK_QOS_ENUM(willParams->willQoS), willParams->retain);
 
     /* If retain parameter of the will message is set to
@@ -2268,7 +2252,7 @@ static void onClNetClose(void *usrCl, bool due2err)
     void *appCl = NULL;
 
     /* See if client has a WILL that it intends to broadcast */
-    willParams = (MQTTServerCore_WillParams_t*) MQTTClientMgmt_willHndlGet(usrCl);
+    willParams = (MQTTServerCore_WillParams_t *)MQTTClientMgmt_willHndlGet(usrCl);
     if (NULL != willParams)
     {
         /* Copy the leaf location for ease of use */
@@ -2502,12 +2486,12 @@ int32_t MQTTServerCore_init(const MQTTServerPkts_LibCfg_t *libCfg, const MQTTSer
     /* If mutex is specified, then the following set of callbacks
      are invoked in the locked state - enumerated by 'locked' */
     MQTTServerPkts_MsgCBs_t pkts_cbs = {
-            proc_connect_rx_locked, proc_sub_msg_rx_locked, 
-            proc_un_sub_msg_locked, proc_pub_msg_rx_locked, 
-            proc_notify_ack_locked, on_cl_net_close_locked, 
+            proc_connect_rx_locked, proc_sub_msg_rx_locked,
+            proc_un_sub_msg_locked, proc_pub_msg_rx_locked,
+            proc_notify_ack_locked, on_cl_net_close_locked,
             on_connack_send_locked };
 
-    MQTTServerPlug_CBs_t core_cbs = { 
+    MQTTServerPlug_CBs_t core_cbs = {
             proc_topic_enroll_locked,
             proc_topic_cancel_locked,
             proc_app_pub_send_locked };
@@ -2516,7 +2500,7 @@ int32_t MQTTServerCore_init(const MQTTServerPkts_LibCfg_t *libCfg, const MQTTSer
     MQTTServerCore_NodesInUse = 0;
     MQTTServerCore_rootNode = NULL;
 
-    MQTTServerUtil_setParams(libCfg->debugPrintf, libCfg->mutex, libCfg->mutexLockin, libCfg->mutexUnlock);
+    MQTTServerUtil_setParams(*(libCfg->mutex), libCfg->mutexLockin, libCfg->mutexUnlock);
 
     MQTTClientMgmt_init();
 
@@ -2558,7 +2542,6 @@ void MQTTServerCore_topicNodeExit(void)
             /* Check if the node has up link hierarchy */
             if (NULL != node->upHier)
             {
-                USR_INFO("S: Deleted node %s\n\r", node->subtop);
                 /* Change the node to his upper link hierarchy */
                 node = node->upHier;
                 /* Free the down link hierarchy (the node that
@@ -2571,7 +2554,6 @@ void MQTTServerCore_topicNodeExit(void)
             /* Check if the node has up link neighbor */
             else if (NULL != node->upNhbr)
             {
-                USR_INFO("S: Deleted node %s\n\r", node->subtop);
                 /* Change the node to his upper link neighbor */
                 node = node->upNhbr;
                 /* Free the down link neighbor (the node that
@@ -2584,7 +2566,6 @@ void MQTTServerCore_topicNodeExit(void)
             /* Node that doesn't has any links is the root */
             else
             {
-                USR_INFO("S: Deleted node %s\n\r", node->subtop);
                 free_node(node);
                 node = NULL;
                 MQTTServerCore_rootNode = NULL;

@@ -1,15 +1,33 @@
 /*
- *   Copyright (C) 2016 Texas Instruments Incorporated
+ * Copyright (C) 2016-2018, Texas Instruments Incorporated
+ * All rights reserved.
  *
- *   All rights reserved. Property of Texas Instruments Incorporated.
- *   Restricted rights to use, duplicate or disclose this code are
- *   granted through contract.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   The program may not be used without the written permission of
- *   Texas Instruments Incorporated or against the terms and conditions
- *   stipulated in the agreement under which this program has been supplied,
- *   and under no circumstances can it be used with non-TI connectivity device.
- *   
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
@@ -20,17 +38,17 @@
   services outlined in this module.
 */
 
-#ifndef __MQTT_COMMON_H__
-#define __MQTT_COMMON_H__
+#ifndef ti_net_mqtt_common_MQTT__include
+#define ti_net_mqtt_common_MQTT__include
 
-/** @file mqtt_common.h 
+/** @file mqtt_common.h
     This file incorporates constructs that are common to both client and server
-    implementation. 
+    implementation.
 
     The applications are not expected to utilize the routines made available in
-    this module module. 
+    this module module.
 
-    @note the routines in this module do not check for availability and 
+    @note the routines in this module do not check for availability and
     correctness of the input parameters
 
     @warning The module is expected to under-go changes whilst incorporating
@@ -38,22 +56,18 @@
     not rely on the services provided in this module.
 */
 
-//*****************************************************************************
-// includes
-//*****************************************************************************
-
 #include <ti/net/slnetsock.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
-//*****************************************************************************
-// defines
-//*****************************************************************************
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MQTT_COMMON_VERSTR "1.2.0" /**< Version of Common LIB */
 
-#define MIN(a, b) ((a > b)? b : a)
+#define MQTT_MIN(a, b) ((a > b)? b : a)
 
 /** MQTT Message Types */
 #define MQTT_CONNECT      0x01
@@ -71,12 +85,25 @@
 #define MQTT_PINGRSP      0x0D
 #define MQTT_DISCONNECT   0x0E
 
+#ifndef MQTT_QOS_0
+#define MQTT_QOS_0  (0)
+#endif
+#ifndef MQTT_QOS_1
+#define MQTT_QOS_1  (1)
+#endif
+#ifndef MQTT_QOS_2
+#define MQTT_QOS_2  (2)
+#endif
+#ifndef MQTT_PUBLISH_RETAIN
+#define MQTT_PUBLISH_RETAIN (8)
+#endif
+
 #define MQTT_MAX_FH_LEN   0x05    /**< MAX Length of Fixed Header */
 
 #define MQTT_VH_SESSION_PRESENT 0x01 /**< Session Present Flag */
 
 /** Max number of bytes in remaining length field */
-#define MQTT_MAX_REMLEN_BYTES  (MQTT_MAX_FH_LEN - 1)  
+#define MQTT_MAX_REMLEN_BYTES  (MQTT_MAX_FH_LEN - 1)
 
 #define MQTT_MAKE_FH_BYTE1(msgType,  flags) (uint8_t)((msgType << 4) | flags)
 
@@ -183,9 +210,10 @@
 #define MQTT_DEV_NETCONN_OPT_URL                                   0x08  /**< Assert if the network address is a URL */
 #define MQTT_DEV_NETCONN_OPT_SEC                                   0x10  /**< Assert to indicate a secure connection */
 
-#define MQTT_DEV_NETCONN_OPT_SKIP_DOMAIN_NAME_VERIFICATION         0x20  /**< Assert to skip domain name verfication */
+#define MQTT_DEV_NETCONN_OPT_SKIP_DOMAIN_NAME_VERIFICATION         0x20  /**< Assert to skip domain name verification*/
 #define MQTT_DEV_NETCONN_OPT_SKIP_CERTIFICATE_CATALOG_VERIFICATION 0x40  /**< Assert to skip certificate catalog
-                                                                              verfication                            */
+                                                                              verification                           */
+#define MQTT_DEV_NETCONN_OPT_SKIP_DATE_VERIFICATION                0x80  /**< Assert to skip date verification       */
  /** @} */
 
 #define MQTT_MAX_PUBREL_INFLT 32
@@ -204,23 +232,23 @@
 */
 typedef struct _MQTT_Packet_t_
 {
-    uint8_t                 msgType;   /**< MQTT  Message  Type */
-    uint8_t                 fhByte1;   /**< Fixed Header: Byte1 */
+    uint8_t                 msgType;            /**< MQTT  Message  Type */
+    uint8_t                 fhByte1;            /**< Fixed Header: Byte1 */
 
-    uint16_t                msgID;     /**< Msg transaction  ID */
+    uint16_t                msgID;              /**< Msg transaction  ID */
 
-    uint8_t                 nRefs;     /**< # users of this msg */
+    uint8_t                 nRefs;              /**< # users of this msg */
     uint8_t                 pad[3];
 
-    uint8_t                 offset;    /**< Start of data index */
-    uint8_t                 fhLen;     /**< Fix Header Length   */
-    uint16_t                vhLen;     /**< Var Header Length   */
-    uint32_t                plLen;     /**< Pay Load   Length   */
+    uint8_t                 offset;             /**< Start of data index */
+    uint8_t                 fhLen;              /**< Fix Header Length   */
+    uint16_t                vhLen;              /**< Var Header Length   */
+    uint32_t                plLen;              /**< Pay Load   Length   */
 
-    uint32_t                private;
+    uint32_t                sessionDataPresent;
 
-    uint32_t                maxlen;    /**< Maximum buffer size */
-    uint8_t                 *buffer;   /**< The attached buffer */
+    uint32_t                maxlen;             /**< Maximum buffer size */
+    uint8_t                 *buffer;            /**< The attached buffer */
 
     /** Method to free this packet to a particular pool */
     void                    (*free)(struct _MQTT_Packet_t_ *mqp);
@@ -230,10 +258,10 @@ typedef struct _MQTT_Packet_t_
 
 /** Description of UTF8 information as used by MQTT Library. */
 typedef struct _MQTT_UTF8String_t_
-{        
+{
     const char *buffer;   /**< Refers to UTF8 content */
     uint16_t   length;   /**< Length of UTF8 content */
-        
+
 }MQTT_UTF8String_t;
 
 /*
@@ -248,10 +276,10 @@ typedef struct _MQTT_AckWlist_t_
 
 /** MQTT Quality of Service */
 typedef enum
-{        
-    MQTT_QOS0,  /**< QoS Level 0 */
-    MQTT_QOS1,  /**< QoS Level 1 */
-    MQTT_QOS2   /**< QoS Level 2 */
+{
+    MQTT_QOS0 = 0,  /**< QoS Level 0 */
+    MQTT_QOS1 = 1,  /**< QoS Level 1 */
+    MQTT_QOS2 = 2   /**< QoS Level 2 */
 
 }MQTT_QOS;
 
@@ -281,7 +309,7 @@ typedef struct _MQTT_UTF8StrQOS_t_
     3.  CA File Name
     4.  DH Key File Name
 
-example: 
+example:
 If you want to provide only CA File Name, following are the two way of doing it:
 for nFile = 1
 char *security_file_list[] = {"/cert/testcacert.der"};
@@ -292,7 +320,7 @@ where files = security_file_list
     @{
 */
 typedef struct _MQTT_SecureConn_t_
-{        
+{
     void     *method;  /**< Reference to information about protocol or methods */
     void     *cipher;  /**< Reference to information about cryptography ciphers*/
     uint32_t nFile;    /**< Count of secure connection related files, certs... */
@@ -304,11 +332,11 @@ typedef struct _MQTT_SecureConn_t_
 
 /** @defgroup net_ops_group Abstraction of Network Services on a platform
     Services to enable the MQTT Client-Server communication over network
-   
+
     These services are invoked by the MQTT Library.
-    
+
     @{
-*/ 
+*/
 typedef struct _MQTT_DeviceNetServices_t_
 {
 
@@ -403,7 +431,7 @@ typedef struct _MQTT_DeviceNetServices_t_
         routine to indicate the length of the remote network entity's IP
         address.
         @return on success, number of bytes received, 0 on connection reset,
-        otherwise -1 on error. 
+        otherwise -1 on error.
     */
     int32_t   (*recvFrom)(int32_t comm, uint8_t *buf, uint32_t len, uint16_t *fromPort,
                        uint8_t *fromIP, uint32_t *ipLen);
@@ -429,8 +457,10 @@ typedef struct _MQTT_DeviceNetServices_t_
         This routine creates a new communication channel for the (remote)
         requesting client.
 
+        @param[in] nwconnInfo parameter holds if the connection needs to be
+        secured or not.
         @param[in] listen handle to listen for the incoming connection
-        requests from the remote clients
+        requests from the remote clients.
         @param[out] clientIP IP address of the connected client. This value
         is valid only on successful return of the routine. The place holder
         must provide memory to store at least 16 bytes.
@@ -440,7 +470,7 @@ typedef struct _MQTT_DeviceNetServices_t_
         @return on success, a valid handle to the new connection, otherwise
         NULL
     */
-    int32_t (*accept)(int32_t listen, uint8_t *clientIP, uint32_t *ipLen);
+    int32_t (*accept)(uint32_t nwconnInfo, int32_t listen, uint8_t *clientIP, uint32_t *ipLen);
 
     /** Monitor activity on communication handles.
         The routine blocks for the specified period of time to monitor
@@ -458,12 +488,12 @@ typedef struct _MQTT_DeviceNetServices_t_
         provide a vector of the handles for which activity was observed.
 
         @param[in, out] recv_hvec a vector of handles which must be
-        monitored for receive activities. 
+        monitored for receive activities.
         @param[in, out] send_hvec a vector of handles which must be
         monitored for send activities.
         @param[in, out] rsvd_hvec reserved for future use.
         @param[in] waitSecs time to wait and monitor activity on
-        communication handles provided in one or more sets. If set 
+        communication handles provided in one or more sets. If set
         to 0, the routine returns immediately.
         @return on success, the total number of handles for which activity
         was observed. This number can be 0, if no activity was observed on
@@ -481,7 +511,7 @@ typedef struct _MQTT_DeviceNetServices_t_
         Library is able to track the Keep-Alive time across the cycles of
         low power states. It would be typical of battery operated systems
         to transition to low power states during the period of inactivity
-        or otherwise to conserve battery. 
+        or otherwise to conserve battery.
 
         In the absence of a sustained time reference across the low power
         states, if the system transitions away from the active state, the
@@ -512,7 +542,7 @@ typedef struct _MQTT_ListPubQOS2CQ_t_
 /* Data structure for managing the QoS2 PUB RX packets and follow-ups */
 /* Circular Queue CQ to track QOS2 PUB RX messages */
 typedef struct _MQTT_PubQOS2CQ_t_
-{ 
+{
     MQTT_ListPubQOS2CQ_t *idVec;  /* Vector to store RX Message-IDs */
     MQTT_ListPubQOS2CQ_t *rdIdx;  /* Index to Read  next Message-ID */
     MQTT_ListPubQOS2CQ_t *wrIdx;  /* Index to Write next Message-ID */
@@ -574,8 +604,15 @@ static inline uint32_t MQTT_bufWrNbo2B(uint8_t *buf, uint16_t val)
 /** Reading 2 bytes entity in network byte order */
 static inline uint32_t MQTT_bufRdNbo2B(const uint8_t *buf, uint16_t *val)
 {
-    *val = (uint16_t)((buf[0] << 8) | (buf[1]));
-    return 2;
+    if (buf != NULL)
+    {
+        *val = (uint16_t)((buf[0] << 8) | (buf[1]));
+        return 2;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 
@@ -584,9 +621,9 @@ static inline uint32_t MQTT_bufRdNbo2B(const uint8_t *buf, uint16_t *val)
  *---------------------------------------------------------------------
  */
 
-/** Free a MQTT Packet Buffer 
+/** Free a MQTT Packet Buffer
     Puts back the packet buffer in to the appropriate pool.
-    
+
     @param[in] mqp packet buffer to be freed
     @return none
 */
@@ -615,7 +652,7 @@ void MQTT_packetReset(MQTT_Packet_t *mqp);
 void MQTT_packetInit(MQTT_Packet_t *mqp, uint8_t offset);
 
 /** Initialize MQTT Packet Holder and attach the buffer */
-static 
+static
 inline void MQTT_packetBufferAttach(MQTT_Packet_t *mqp, uint8_t *buffer, uint32_t length,
                               uint8_t offset)
 {
@@ -628,7 +665,7 @@ inline void MQTT_packetBufferAttach(MQTT_Packet_t *mqp, uint8_t *buffer, uint32_
     return;
 }
 
-/** Write UTF8 information into the buffer. 
+/** Write UTF8 information into the buffer.
     The UTF8 information includes content and its length.
 
     @warning The routine does not check for correctness of the parameters.
@@ -641,12 +678,12 @@ int32_t MQTT_packetBufWrUtf8(uint8_t *buf, const MQTT_UTF8String_t *utf8);
 
 /** Write the MQTT construct 'Remaining Length' into trailing end of buffer.
     The 'remaining length' is written in the format as outlined in the MQTT
-    specification. 
+    specification.
 
     The implementation assumes availability of at-least 4 bytes in the buffer.
     Depending on the value of 'Remaining Length' appropriate trailing bytes in
     the buffer would be used.
-    
+
     @param[in] buf refers to memory to tail-write 'Remaining Length' into
     @param[in] remlen The 'Remaining Length' value
     @return in success, number of trailing bytes used, otherwise -1 on error
@@ -656,11 +693,11 @@ int32_t MQTT_packetBufTailWrRemlen(uint8_t *buf, uint32_t remlen);
 /** Read MQTT construct 'Remaining Length' from leading bytes of the buffer.
     The 'remaining length' is written in the format as outlined in the MQTT
     specification.
-     
+
     @param[in] buf refers to memory to head-read 'Remaining Length' from
     @param[in] remlen place-holder for The 'Remaining Length' value
     @return in success, number of header bytes read, otherwise -1 on error
-*/   
+*/
 int32_t MQTT_packetBufRdRemlen(uint8_t *buf, uint32_t *remlen);
 
 /** Include variable header Topic as part of PUB Message construction.
@@ -686,7 +723,7 @@ MQTT_packetPubAppendTopic(MQTT_Packet_t *mqp, const MQTT_UTF8String_t *topic,
 
 /** Include payload data for publishing
     The payload data is associated with a topic.
-    
+
     @warning This routine does not check for correctness of the input
     parameters.
 
@@ -702,10 +739,10 @@ int32_t MQTT_packetPubAppendData(MQTT_Packet_t *mqp, const uint8_t *dataBuf,
 
 /** Construct a packet for Message ID enabled ACK received from network
     Process the raw ACK message information to update the packet holder.
-   
+
     @warning This routine does not check for correctness of the input
     parameters.
-       
+
     @param[in] mqpRaw holds a raw buffer from the network
     @param[in] hasPayload asserted, if ACK message should have a payload
     @return on success, true, otherwise false
@@ -731,14 +768,14 @@ bool MQTT_packetProcPubRx(MQTT_Packet_t *mqpRaw);
 bool MQTT_packetAckWlistAppend(MQTT_AckWlist_t *list, MQTT_Packet_t *elem);
 
 /*
-   Removes element that has specified msgID from list. 
+   Removes element that has specified msgID from list.
 
    Returns, on success, pointer to removed element, otherwise NULL.
 */
 MQTT_Packet_t *MQTT_packetAckWlistRemove(MQTT_AckWlist_t *list,
                                           uint16_t msgID);
-/* 
-   Removes and frees all elements in list. 
+/*
+   Removes and frees all elements in list.
 */
 void MQTT_packetAckWlistPurge(MQTT_AckWlist_t *list);
 
@@ -749,12 +786,12 @@ void MQTT_packetAckWlistPurge(MQTT_AckWlist_t *list);
     among others, significant internal fields such as 'remaining length' and
     'fixed header length' in the packet construct and embeds the fixed header,
     so created, in the packet buffer.
-    
+
     This service must be utilized on a packet that has been already populated
     with all the payload data, topics and other contents. The fixed header
     must be the final step in the composition of MQTT packet prior to its
     dispatch to the server.
-    
+
     Returns size, in bytes, of the fixed-header, otherwise -1 on error.
 */
 int32_t MQTT_packetPrepFh(MQTT_Packet_t *mqp, uint8_t flags);
@@ -791,5 +828,9 @@ void MQTT_clCtxTimeoutInsert(MQTT_ClientCtx_t **head,MQTT_ClientCtx_t *elem);
 void MQTT_clCtxRemove(MQTT_ClientCtx_t **head, MQTT_ClientCtx_t *elem);
 
 void MQTT_clCtxTimeoutUpdate(MQTT_ClientCtx_t *clCtx, uint32_t nowSecs);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -85,11 +85,18 @@ extern "C" {
 /* Structure/Enum declarations                                               */
 /*****************************************************************************/
 
-/* Defines the size of the buffer that will be alocated */
+typedef struct
+{
+	_u8   *pOutputValues;
+	_u16  *pOutputLen;
+	_i16   Status;
+}_SlNetUtilCmdData_t;
+
+/* Defines the size of the buffer that will be allocated */
 /* (on the stack) by the sl_UtilsCmd API.               */
 #define SL_NETUTIL_CMD_BUFFER_SIZE                        (256)
 
-/* Enumaration of Signature types */
+/* Enumeration of Signature types */
 #define SL_NETUTIL_CRYPTO_SIG_SHAwDSA                     (0)
 #define SL_NETUTIL_CRYPTO_SIG_MD2wRSA                     (1)
 #define SL_NETUTIL_CRYPTO_SIG_MD5wRSA                     (2)
@@ -181,7 +188,7 @@ typedef union
 } SlNetUtilCryptoEcCurveParams_u;
 
 
-/* “curve-type” definitions */
+/* ?curve-type? definitions */
 #define SL_NETUTIL_CRYPTO_EC_CURVE_TYPE_NAMED             (1)  /* ECC Named Curve type */
 #define SL_NETUTIL_CRYPTO_EC_CURVE_TYPE_CUSTOM            (2)  /* ECC Custom curve type */
 
@@ -353,7 +360,7 @@ _i16 sl_NetUtilGet(const _u16 Option, const _u32 ObjID, _u8 *pValues, _u16 *pVal
                                     - <b>SL_NETUTIL_CRYPTO_CMD_SIGN_MSG</b>  \n
                                             Signs with a digital signature a data buffer using ECDSA algorithm. \n
                                     - <b>SL_NETUTIL_CRYPTO_CMD_VERIFY_MSG</b>  \n
-                                    Verify a digital signature given with a data buffer using ECDSA algorithm. \n
+                                             Verify a digital signature given with a data buffer using ECDSA algorithm. \n
     \param[in]      pAttrib         Pointer to the buffer holding the Attribute values
     \param[in]      AttribLen       Length of the Attribute-values 
     \param[in]      pInputValues    Pointer to the buffer holding the input-value
@@ -363,9 +370,9 @@ _i16 sl_NetUtilGet(const _u16 Option, const _u32 ObjID, _u8 *pValues, _u16 *pVal
                                     On input - provides the length of the buffer that the application allocates, and
                                     will hold the output\n
                                     On output - provides the actual length of the received output-values
-    \return    Zero on success, or negative error code on failure
-    \sa       sl_NetUtilGet sl_NetUtilSet  
-    \note
+    \return     Zero on success, or negative error code on failure
+    \sa         sl_NetUtilGet sl_NetUtilSet  
+    \note       The host driver API sl_NetUtilCmd is not valid for use with the CC3220R device.
     \warning
     \par   Examples
 
@@ -482,6 +489,11 @@ _i16 sl_NetUtilGet(const _u16 Option, const _u32 ObjID, _u8 *pValues, _u16 *pVal
                            (uint8_t *)&verifyResult , &resultLen);
     \endcode
     <br>
+
+   \endcode
+
+   
+
 
 */
 #if _SL_INCLUDE_FUNC(sl_NetUtilCmd)

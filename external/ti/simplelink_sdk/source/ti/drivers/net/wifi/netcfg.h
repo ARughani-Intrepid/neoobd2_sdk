@@ -71,6 +71,7 @@ extern "C" {
 #define SL_MAC_ADDR_LEN                              (6)
 #define SL_IPV6_ADDR_LEN                             (16)
 #define SL_IPV4_VAL(add_3,add_2,add_1,add_0)         ((((_u32)add_3 << 24) & 0xFF000000) | (((_u32)add_2 << 16) & 0xFF0000) | (((_u32)add_1 << 8) & 0xFF00) | ((_u32)add_0 & 0xFF) )
+#define SL_IPV6_VAL(add_1,add_2)                     ((((_u32)add_1 << 16) & 0xFFFF0000) | (((_u32)add_2 ) & 0x0000FFFF) )
 #define SL_IPV4_BYTE(val,index)                      ( (val >> (index*8)) & 0xFF )
 
 
@@ -91,7 +92,6 @@ extern "C" {
 #define    SL_NETCFG_IF_STATE                        (0)
 #define SL_NETCFG_ADDR_DHCP                          (1)
 #define SL_NETCFG_ADDR_DHCP_LLA                      (2)
-#define SL_NETCFG_ADDR_RELEASE_IP                    (3)
 #define SL_NETCFG_ADDR_STATIC                        (4)
 #define SL_NETCFG_ADDR_STATELESS                     (5)
 #define SL_NETCFG_ADDR_STATEFUL                      (6)
@@ -120,6 +120,7 @@ typedef enum
     SL_NETCFG_IPV6_ADDR_GLOBAL                  = 10,
     SL_NETCFG_IPV4_DHCP_CLIENT                  = 11,
     SL_NETCFG_IPV4_DNS_CLIENT                   = 12,
+    SL_NETCFG_RESERVED                          = 13,
     MAX_SETTINGS = 0xFF
 }SlNetCfg_e;
 
@@ -207,7 +208,6 @@ typedef struct
                                             - SL_NETCFG_IF_STATE            
                                             - SL_NETCFG_ADDR_DHCP           
                                             - SL_NETCFG_ADDR_DHCP_LLA       
-                                            - SL_NETCFG_ADDR_RELEASE_IP     
                                             - SL_NETCFG_ADDR_STATIC          
                                             - SL_NETCFG_ADDR_STATELESS      
                                             - SL_NETCFG_ADDR_STATEFUL       
@@ -218,15 +218,15 @@ typedef struct
     \par                  Persistent                 
     \par 
                           <b>Reset</b>:                
-                                            - SL_IPV4_AP_P2P_GO_STATIC_ENABLE
                                             - SL_NETCFG_MAC_ADDRESS_SET
+                                            - SL_NETCFG_IPV4_AP_ADDR_MODE
     \par
                           <b>Non- Persistent</b>:                 
                                             - SL_NETCFG_AP_STATION_DISCONNECT
     \par
                           <b>System Persistent</b>: 
                                             - SL_NETCFG_IPV4_STA_ADDR_MODE
-                                            - SL_NETCFG_IF_STATE
+                                            - SL_NETCFG_IF
                                             - SL_NETCFG_IPV6_ADDR_LOCAL
                                             - SL_NETCFG_IPV6_ADDR_GLOBAL
 
@@ -256,6 +256,7 @@ typedef struct
     <br>
 
     - <b>SL_NETCFG_IPV4_STA_ADDR_MODE</b><br>:
+        Setting/Releasing a DHCP/DHCP LLA /STATIC STA IP address
     
     - SL_NETCFG_ADDR_STATIC: <br>
     Setting a static IP address to the device working in STA mode or P2P client.
@@ -427,7 +428,7 @@ typedef struct
     <br>
 
     - SL_NETCFG_AP_STATION_DISCONNECT:<br>
-    Disconnet AP station by mac address.
+    Disconnect AP station by mac address.
     The AP connected stations list can be read by sl_NetCfgGet with options: SL_AP_STATIONS_NUM_CONNECTED, SL_AP_STATIONS_INFO_LIST
     \code
         _u8  ap_sta_mac[6] = { 0x00, 0x22, 0x33, 0x44, 0x55, 0x66 };     
@@ -436,7 +437,7 @@ typedef struct
     <br>
 
     - SL_NETCFG_IPV4_DNS_CLIENT:<br>
-    Set secondary DNS address (DHCP and static configuration) not persistent
+    Set additional IPv4 DNS address 
     \code                                                                        
         _i32 Status;
         SlNetCfgIpV4DnsClientArgs_t DnsOpt;
@@ -444,9 +445,10 @@ typedef struct
         Status = sl_NetCfgSet(SL_NETCFG_IPV4_DNS_CLIENT,0,sizeof(SlNetCfgIpV4DnsClientArgs_t),(unsigned char *)&DnsOpt);
         if( Status )
         {
-            // error
+            // error 
         }
     \endcode
+    <br>
 
 */
 #if _SL_INCLUDE_FUNC(sl_NetCfgSet)
@@ -571,7 +573,7 @@ _i16 sl_NetCfgSet(const _u16 ConfigId,const _u16 ConfigOpt,const _u16 ConfigLen,
     <br>
 
     - SL_NETCFG_AP_STATIONS_NUM_CONNECTED: <br>
-      Get AP numbber of connected stations.   
+      Get AP number of connected stations.   
     \code
         _u8 num_ap_connected_sta;
         _u16 len = sizeof(num_ap_connected_sta);
@@ -610,7 +612,7 @@ _i16 sl_NetCfgSet(const _u16 ConfigId,const _u16 ConfigOpt,const _u16 ConfigLen,
     <br>
 
     - SL_NETCFG_IPV4_DNS_CLIENT: <br>
-      Set secondary DNS address (DHCP and static configuration) 
+    Get secondary DNS address (DHCP and static configuration) 
     \code                                                               
         _u16 ConfigOpt = 0;
         _i32 Status;
@@ -622,6 +624,8 @@ _i16 sl_NetCfgSet(const _u16 ConfigId,const _u16 ConfigOpt,const _u16 ConfigLen,
             // error 
         }
     \endcode
+    <br>
+
 
     - SL_NETCFG_IPV4_DHCP_CLIENT: <br>
       Get DHCP Client info 

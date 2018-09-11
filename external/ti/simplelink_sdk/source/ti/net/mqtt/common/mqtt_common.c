@@ -1,50 +1,45 @@
 /*
- *   Copyright (C) 2016 Texas Instruments Incorporated
+ * Copyright (C) 2016-2018, Texas Instruments Incorporated
+ * All rights reserved.
  *
- *   All rights reserved. Property of Texas Instruments Incorporated.
- *   Restricted rights to use, duplicate or disclose this code are
- *   granted through contract.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   The program may not be used without the written permission of
- *   Texas Instruments Incorporated or against the terms and conditions
- *   stipulated in the agreement under which this program has been supplied,
- *   and under no circumstances can it be used with non-TI connectivity device.
- *   
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- mqtt_common.c
-
- This module implements routines that are common to both client and server
- components.
- */
-
-//*****************************************************************************
-// includes
-//*****************************************************************************
 #include "mqtt_common.h"
 
-
-//*****************************************************************************
-// defines
-//*****************************************************************************
-#define RET_IF_ERR_IN_NET_RECV(net, buf, len, waitSecs, timedOut, ctx)\
-        rv = netOps->recv(net, buf, len, waitSecs, timedOut, ctx);   \
+#define RET_IF_ERR_IN_NET_RECV(net, buf, len, waitSecs, timedOut, ctx) \
+        rv = netOps->recv(net, buf, len, waitSecs, timedOut, ctx);     \
         if(rv < 1) {return MQTT_PACKET_ERR_NETWORK;}
 
 #define MQTT_MAX_REMLEN_BYTES  (MQTT_MAX_FH_LEN - 1)
 
-#define MSG_TYPE(fhByte1)  (uint8_t)((fhByte1 & 0xf0) >> 4)
+#define MSG_TYPE(fhByte1)  ((uint8_t)(((fhByte1) & 0xf0) >> 4))
 
-//*****************************************************************************
-// MQTT Common Routines
-//*****************************************************************************
-
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 static bool mqpProcVhMsgIdRx(MQTT_Packet_t *mqpRaw)
 {
     uint8_t *buf = MQTT_PACKET_VHEADER_BUF(mqpRaw);
@@ -60,11 +55,6 @@ static bool mqpProcVhMsgIdRx(MQTT_Packet_t *mqpRaw)
     return true;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTT_packetFree(MQTT_Packet_t *mqp)
 {
     if ((NULL != mqp->free) && (0 == --mqp->nRefs))
@@ -73,57 +63,37 @@ void MQTT_packetFree(MQTT_Packet_t *mqp)
     }
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTT_packetReset(MQTT_Packet_t *mqp)
 {
     /* Fields not handled here are meant to be left unaltered. */
-    mqp->msgType = 0x00;
-    mqp->fhByte1 = 0x00;
-    mqp->msgID = 0;
-    mqp->fhLen = 0x00;
-    mqp->vhLen = 0;
-    mqp->plLen = 0;
-    mqp->private = 0;
+    mqp->msgType            = 0x00;
+    mqp->fhByte1            = 0x00;
+    mqp->msgID              = 0;
+    mqp->fhLen              = 0x00;
+    mqp->vhLen              = 0;
+    mqp->plLen              = 0;
+    mqp->sessionDataPresent = 0;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTT_packetInit(MQTT_Packet_t *mqp, uint8_t offset)
 {
     MQTT_packetReset(mqp);
 
     mqp->offset = offset;
-    mqp->nRefs = 0x01;
-    mqp->next = NULL;
+    mqp->nRefs  = 0x01;
+    mqp->next   = NULL;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 int32_t MQTT_packetBufWrUtf8(uint8_t *buf, const MQTT_UTF8String_t *utf8)
 {
     uint8_t *ref = buf;
 
     buf += MQTT_bufWrNbo2B(buf, utf8->length);
-    buf += MQTT_bufWrNbytes(buf, (uint8_t*) utf8->buffer, utf8->length);
+    buf += MQTT_bufWrNbytes(buf, (uint8_t*)utf8->buffer, utf8->length);
 
     return (buf - ref);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 int32_t MQTT_packetBufTailWrRemlen(uint8_t *buf, uint32_t remlen)
 {
     uint8_t val[MQTT_MAX_REMLEN_BYTES];
@@ -147,12 +117,6 @@ int32_t MQTT_packetBufTailWrRemlen(uint8_t *buf, uint32_t remlen)
     return i; /* # bytes written in buf */
 }
 
-
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 int32_t MQTT_packetBufRdRemlen(uint8_t *buf, uint32_t *remlen)
 {
     uint32_t val = 0;
@@ -172,11 +136,6 @@ int32_t MQTT_packetBufRdRemlen(uint8_t *buf, uint32_t *remlen)
     return ((buf[i - 1] & 0x80) ? -1 : i);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 int32_t MQTT_packetPubAppendTopic(MQTT_Packet_t *mqp, const MQTT_UTF8String_t *topic, uint16_t msgID)
 {
     uint8_t *buf = MQTT_PACKET_VHEADER_BUF(mqp);
@@ -203,11 +162,6 @@ int32_t MQTT_packetPubAppendTopic(MQTT_Packet_t *mqp, const MQTT_UTF8String_t *t
     return (buf - ref);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 int32_t MQTT_packetPubAppendData(MQTT_Packet_t *mqp, const uint8_t *dataBuf, uint32_t dataLen)
 {
     uint8_t *buf = MQTT_PACKET_PAYLOAD_BUF(mqp) + mqp->plLen;
@@ -228,11 +182,6 @@ int32_t MQTT_packetPubAppendData(MQTT_Packet_t *mqp, const uint8_t *dataBuf, uin
     return (buf - ref);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 bool MQTT_packetProcMsgIdAckRx(MQTT_Packet_t *mqpRaw, bool has_pl)
 {
     if ((false == mqpProcVhMsgIdRx(mqpRaw)) || (has_pl ^ (!!mqpRaw->plLen)))
@@ -242,11 +191,6 @@ bool MQTT_packetProcMsgIdAckRx(MQTT_Packet_t *mqpRaw, bool has_pl)
     return true;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 bool MQTT_packetProcPubRx(MQTT_Packet_t *mqpRaw)
 {
     uint8_t *buf = MQTT_PACKET_VHEADER_BUF(mqpRaw);
@@ -275,11 +219,6 @@ bool MQTT_packetProcPubRx(MQTT_Packet_t *mqpRaw)
     return true;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 bool MQTT_packetAckWlistAppend(MQTT_AckWlist_t *list, MQTT_Packet_t *elem)
 {
     elem->next = NULL;
@@ -298,14 +237,9 @@ bool MQTT_packetAckWlistAppend(MQTT_AckWlist_t *list, MQTT_Packet_t *elem)
     return true;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 MQTT_Packet_t *MQTT_packetAckWlistRemove(MQTT_AckWlist_t *list, uint16_t msgID)
 {
-    MQTT_Packet_t *elem = list->head; 
+    MQTT_Packet_t *elem = list->head;
     MQTT_Packet_t *prev = NULL;
 
     while (elem)
@@ -338,11 +272,6 @@ MQTT_Packet_t *MQTT_packetAckWlistRemove(MQTT_AckWlist_t *list, uint16_t msgID)
     return elem;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTT_packetAckWlistPurge(MQTT_AckWlist_t *list)
 {
     MQTT_Packet_t *elem = list->head;
@@ -361,11 +290,6 @@ void MQTT_packetAckWlistPurge(MQTT_AckWlist_t *list)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 int32_t MQTT_packetPrepFh(MQTT_Packet_t *mqp, uint8_t flags)
 {
     uint32_t remlen = mqp->vhLen + mqp->plLen;
@@ -438,11 +362,6 @@ int32_t MQTT_PacketRecv(int32_t net, const MQTT_DeviceNetServices_t *netOps, MQT
     return (fhLen + remlen);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTT_secureConnStructInit(MQTT_SecureConn_t *nwSecurity)
 {
     nwSecurity->method = nwSecurity->cipher = NULL;
@@ -473,11 +392,6 @@ void MQTT_qos2PubCqReset(MQTT_PubQOS2CQ_t *cq)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 bool MQTT_qos2PubCqLogup(MQTT_PubQOS2CQ_t *cq, uint16_t msgID)
 {
     MQTT_ListPubQOS2CQ_t * temp;
@@ -517,11 +431,6 @@ bool MQTT_qos2PubCqLogup(MQTT_PubQOS2CQ_t *cq, uint16_t msgID)
     return false;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 bool MQTT_qos2PubCqUnlog(MQTT_PubQOS2CQ_t *cq, uint16_t msgID)
 {
     MQTT_ListPubQOS2CQ_t * temp;
@@ -584,11 +493,6 @@ bool MQTT_qos2PubCqUnlog(MQTT_PubQOS2CQ_t *cq, uint16_t msgID)
     return false;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 bool MQTT_qos2PubCqCheck(MQTT_PubQOS2CQ_t *cq, uint16_t msgID)
 {
     uint8_t nFree = cq->nFree;
@@ -642,11 +546,6 @@ void MQTT_clCtxReset(MQTT_ClientCtx_t *clCtx)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTT_clCtxTimeoutInsert(MQTT_ClientCtx_t **head, MQTT_ClientCtx_t *elem)
 {
     MQTT_ClientCtx_t *curr;
@@ -687,11 +586,6 @@ void MQTT_clCtxTimeoutInsert(MQTT_ClientCtx_t **head, MQTT_ClientCtx_t *elem)
     }
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTT_clCtxRemove(MQTT_ClientCtx_t **head, MQTT_ClientCtx_t *elem)
 {
     MQTT_ClientCtx_t *curr = *head;
@@ -720,11 +614,6 @@ void MQTT_clCtxRemove(MQTT_ClientCtx_t **head, MQTT_ClientCtx_t *elem)
     }
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTT_clCtxTimeoutUpdate(MQTT_ClientCtx_t *clCtx, uint32_t nowSecs)
 {
     uint32_t timeout = MQTT_KA_TIMEOUT_NONE;

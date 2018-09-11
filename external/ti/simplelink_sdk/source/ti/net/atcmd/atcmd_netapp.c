@@ -735,6 +735,8 @@ int32_t ATCmdNetapp_recvResult(void *args, int32_t num, char *buff)
     StrMpl_setVal(&params->handle, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_16 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
     /* flags */
     StrMpl_setBitmaskListStr(ATCmd_netappFlags, sizeof(ATCmd_netappFlags)/sizeof(StrMpl_List_t),&params->flags, &buff, ATCMD_DELIM_ARG, ATCMD_DELIM_BIT, STRMPL_FLAG_PARAM_SIZE_32);
+    /* format */
+    StrMpl_setVal(&params->format, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_8 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
     /* length */
     outputLen = params->len;
     if (params->format == ATCMD_DATA_FORMAT_BASE64)

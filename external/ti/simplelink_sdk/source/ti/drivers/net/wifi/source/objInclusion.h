@@ -192,6 +192,8 @@ extern "C" {
 #define _SL_INC_sl_NetAppSet           __nap__ext
 #define _SL_INC_sl_NetAppGet           __nap__ext
 #define _SL_INC_sl_NetAppRecv          __nap__ext
+#define _SL_INC_sl_NetAppArpFlush       __nap__ext
+#define _SL_INC_sl_NetAppNdFlush        __nap__ext
 
 #define _SL_INC_sl_NetAppSend          __nap__ext
 
@@ -265,6 +267,8 @@ extern "C" {
 
 #define _SL_INC_sl_WlanProfileAdd       __wln__ext
 
+#define _SL_INC_sl_WlanProfileUpdate    __wln__ext
+
 #define _SL_INC_sl_WlanProfileGet       __wln__ext
 
 #define _SL_INC_sl_WlanProfileDel       __wln__ext
@@ -274,6 +278,8 @@ extern "C" {
 #define _SL_INC_sl_WlanPolicyGet        __wln__ext
 
 #define _SL_INC_sl_WlanGetNetworkList   __wln__ext
+
+#define _SL_INC_sl_WlanGetExtNetworkList    __wln__ext
 
 #define _SL_INC_sl_WlanRxFilterAdd      __wln__ext
 

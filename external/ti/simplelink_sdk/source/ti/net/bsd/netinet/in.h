@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,12 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*****************************************************************************/
-/* Include files                                                             */
-/*****************************************************************************/
-
-#ifndef __IN_H__
-#define __IN_H__
+#ifndef ti_net_bsd_netinet_in__include
+#define ti_net_bsd_netinet_in__include
 
 #include <ti/net/slnetsock.h>
 
@@ -43,23 +39,13 @@
 extern "C" {
 #endif
 
-/*!
+/* protocols */
+#define IPPROTO_IP                          SLNETSOCK_LVL_IP
+#define IPPROTO_TCP                         SLNETSOCK_PROTO_TCP
+#define IPPROTO_UDP                         SLNETSOCK_PROTO_UDP
+#define IPPROTO_RAW                         SLNETSOCK_PROTO_RAW
 
-    \addtogroup BSD_Socket
-    @{
-*/
-
-/*
- *  Protocols
- */
-#define IPPROTO_IP                          SLNETSOCK_LVL_IP     /* dummy for IP */
-#define IPPROTO_TCP                         SLNETSOCK_PROTO_TCP  /* tcp */
-#define IPPROTO_UDP                         SLNETSOCK_PROTO_UDP  /* user datagram protocol */
-#define IPPROTO_RAW                         SLNETSOCK_PROTO_RAW  /* Raw Socket */
-
-/*
- *  Internet Address integers
- */
+/* address integers */
 #define INADDR_ANY                          SLNETSOCK_INADDR_ANY
 #define IN6ADDR_ANY                         SLNETSOCK_IN6ADDR_ANY
 
@@ -68,13 +54,11 @@ extern "C" {
 #define in6_addr                            SlNetSock_In6Addr_t
 #define sockaddr_in6                        SlNetSock_AddrIn6_t
 
-/*
- * IP ADDR LEN
- */
-#define INET_ADDRSTRLEN                     (4)
-#define INET6_ADDRSTRLEN                    (16)
+/* address string lengths */
+#define INET_ADDRSTRLEN                     SLNETSOCK_INET_ADDRSTRLEN
+#define INET6_ADDRSTRLEN                    SLNETSOCK_INET6_ADDRSTRLEN
 
-/* Sock options */
+/* sock options */
 #define IP_ADD_MEMBERSHIP                   SLNETSOCK_OPIP_ADD_MEMBERSHIP
 #define IP_DROP_MEMBERSHIP                  SLNETSOCK_OPIP_DROP_MEMBERSHIP
 #define IP_MULTICAST_TTL                    SLNETSOCK_OPIP_DROP_MEMBERSHIP
@@ -82,14 +66,8 @@ extern "C" {
 #define IPV6_ADD_MEMBERSHIP                 SLNETSOCK_OPIPV6_ADD_MEMBERSHIP
 #define IPV6_DROP_MEMBERSHIP                SLNETSOCK_OPIPV6_DROP_MEMBERSHIP
 
-/*!
-
- Close the Doxygen group.
- @}
-
- */
-
 #ifdef  __cplusplus
 }
-#endif /* __cplusplus */
-#endif /* __IN_H__ */
+#endif
+
+#endif /* ti_net_bsd_netinet_in__include */

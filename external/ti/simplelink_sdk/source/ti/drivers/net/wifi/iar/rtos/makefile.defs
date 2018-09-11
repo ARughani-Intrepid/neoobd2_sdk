@@ -46,9 +46,7 @@ CFILES = \
     spawn.c \
     wlan.c \
     cc_pal.c \
-    eventreg.c \
-    socket.c \
-    netdb.c
+    eventreg.c
 
 OBJCFILES = $(CFILES:.c=.obj)
 

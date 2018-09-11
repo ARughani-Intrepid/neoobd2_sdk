@@ -1,20 +1,34 @@
 /*
- *   Copyright (C) 2016 Texas Instruments Incorporated
+ * Copyright (C) 2016-2018, Texas Instruments Incorporated
+ * All rights reserved.
  *
- *   All rights reserved. Property of Texas Instruments Incorporated.
- *   Restricted rights to use, duplicate or disclose this code are
- *   granted through contract.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   The program may not be used without the written permission of
- *   Texas Instruments Incorporated or against the terms and conditions
- *   stipulated in the agreement under which this program has been supplied,
- *   and under no circumstances can it be used with non-TI connectivity device.
- *   
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#ifndef __SERVER_PKTS_H__
-#define __SERVER_PKTS_H__
-
 
 /*-----------------------------------------------------------------------------
  * Note: Do not create additional dependency of this file on any header other
@@ -30,7 +44,7 @@
    for user's server application(s) to exchange the MQTT packets with one or
    more remote clients. The Server Packet LIB is a simple and easy-to-use
    implementation to support both un-packing of the messages received from the
-   remote clients and formation of packets to be sent to the remote clients. 
+   remote clients and formation of packets to be sent to the remote clients.
 
    The library is targeted to conform to MQTT 3.1.1 specification.
 
@@ -61,15 +75,17 @@
    b) must ensure simple design and implementation
 */
 
-//*****************************************************************************
-// includes
-//*****************************************************************************
+#ifndef ti_net_mqtt_server_MQTTServerPkts__include
+#define ti_net_mqtt_server_MQTTServerPkts__include
+
+#include <stdbool.h>
+#include <pthread.h>
 
 #include <ti/net/mqtt/common/mqtt_common.h>
 
-//*****************************************************************************
-// defines
-//*****************************************************************************
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @defgroup server_pktlib The Server Library API(s)
     @{
@@ -113,10 +129,6 @@
 #else
 #define MQP_SERVER_RX_LEN  CFG_SR_MAX_MQP_RX_LEN
 #endif
-
-//*****************************************************************************
-// typedefs
-//*****************************************************************************
 
 /** <b> Working Principle </b> for implementing the call-back services:
     Implementation of the call-back services should report in return value, only
@@ -294,7 +306,7 @@ typedef struct _MQTTServerPkts_MsgCBs_t_
 typedef struct _MQTTServerPkts_LibCfg_t_
 {
         /** Port to listen to incoming network connections from the clients */
-        uint16_t   listenerPort;
+        uint16_t listenerPort;
 
         /** If the server application has more than one task and / or supports
             at-least one plug-in, then a non-zero value must be provided.
@@ -302,17 +314,14 @@ typedef struct _MQTTServerPkts_LibCfg_t_
             used by the implementation to synchronize multiple tasks for the
             network connection.
         */
-        uint16_t   loopbackPort;
+        uint16_t loopbackPort;
 
         /** For a multi-task environment, provide a handle to platform mutex */
-        void  *mutex;
-        void (*mutexLockin)(void *mutex);
-        void (*mutexUnlock)(void *mutex);
+        pthread_mutex_t **mutex;
+        void (*mutexLockin)(pthread_mutex_t *mutex);
+        void (*mutexUnlock)(pthread_mutex_t *mutex);
 
-        int32_t  (*debugPrintf)(const char *format, ...);  /**< Debug, mandatory */
-        bool   auxDebugEn;  /**< Assert to indicate additional debug info */
         MQTT_SecureConn_t  secure;
-
 }MQTTServerPkts_LibCfg_t;
 
 //*****************************************************************************
@@ -346,7 +355,7 @@ int32_t MQTTServerPkts_sendVhMsg(void *ctxCl, uint8_t msgType, MQTT_QOS qos,
 int32_t MQTTServerPkts_sendLockedVhMsg(void *ctxCl, uint8_t msgType, MQTT_QOS qos,
                             bool hasVH, uint16_t vhData);
 
-/** Dispatch application constructed PUBLISH message to the client. 
+/** Dispatch application constructed PUBLISH message to the client.
     Prior to sending the message to the client, this routine shall update the
     fixed-header to account for the duplicate flag that has been indicated by
     the caller.
@@ -386,7 +395,7 @@ int32_t MQTTServerPkts_dispatchLockedPub(void *ctxCl, MQTT_Packet_t *mqp,
 /** Run the server packet LIB for the specified wait time.
     This routine yields the control back to the application after the specified
     duration of wait time. Such an arrangement enable the application to make
-    overall progress to meet it intended functionality. 
+    overall progress to meet it intended functionality.
 
     The wait time implies the maximum intermediate duration between the reception
     of two successive messages from the server. If no message is received before
@@ -439,5 +448,8 @@ int32_t MQTTServerPkts_libInit(const MQTTServerPkts_LibCfg_t *cfg,
                          const MQTTServerPkts_MsgCBs_t *cbs);
 
 /** @} */ /* End of server_pktlib */
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -138,7 +138,7 @@ extern "C" {
 /* proprietary secure */
 #define SLNETERR_ESEC_GENERAL                                           (-450L)  /**< error secure level general error                                               */
 #define SLNETERR_ESEC_DECRYPT                                           (-451L)  /**< error secure level, decrypt recv packet fail                                   */
-#define SLNETERR_ESEC_CLOSED                                            (-452L)  /**< secure layrer is closed by other size , tcp is still connected                 */
+#define SLNETERR_ESEC_CLOSED                                            (-452L)  /**< secure layer is closed by other size, tcp is still connected                   */
 #define SLNETERR_ESEC_SNO_VERIFY                                        (-453L)  /**< Connected without server verification                                          */
 #define SLNETERR_ESEC_NO_CA_FILE                                        (-454L)  /**< error secure level CA file not found                                           */
 #define SLNETERR_ESEC_MEMORY                                            (-455L)  /**< error secure level No memory  space available                                  */
@@ -151,7 +151,7 @@ extern "C" {
 #define SLNETERR_ESEC_HAND_SHAKE_TIMED_OUT                              (-462L)  /**< connection timed out due to handshake time                                     */
 #define SLNETERR_ESEC_TX_BUFFER_NOT_EMPTY                               (-463L)  /**< cannot start ssl connection while send buffer is full                          */
 #define SLNETERR_ESEC_RX_BUFFER_NOT_EMPTY                               (-464L)  /**< cannot start ssl connection while recv buffer is full                          */
-#define SLNETERR_ESEC_SSL_DURING_HAND_SHAKE                             (-465L)  /**< cannot use while in hanshaking                                                 */
+#define SLNETERR_ESEC_SSL_DURING_HAND_SHAKE                             (-465L)  /**< cannot use while in handshaking                                                */
 #define SLNETERR_ESEC_NOT_ALLOWED_WHEN_LISTENING                        (-466L)  /**< the operation is not allowed when listening, do before listen                  */
 #define SLNETERR_ESEC_CERTIFICATE_REVOKED                               (-467L)  /**< connected but on of the certificates in the chain is revoked                   */
 #define SLNETERR_ESEC_UNKNOWN_ROOT_CA                                   (-468L)  /**< connected but the root CA used to validate the peer is unknown                 */
@@ -301,20 +301,20 @@ extern "C" {
 #define SLNETERR_RXFL_DEPENDENCY_IS_NOT_PERSISTENT                      (-2090L) /**< Dependency filter is not persistent                                                     */
 #define SLNETERR_RXFL_RXFL_ALLOCATION_PROBLEM                           (-2091L)
 #define SLNETERR_RXFL_SYSTEM_STATE_NOT_SUPPORTED_FOR_THIS_FILTER        (-2092L) /**< System state is not supported                                                           */
-#define SLNETERR_RXFL_TRIGGER_USE_REG5_TO_REG8                          (-2093L) /**< Only counters 5 - 8 are allowed, for Tigger                                             */
+#define SLNETERR_RXFL_TRIGGER_USE_REG5_TO_REG8                          (-2093L) /**< Only counters 5 - 8 are allowed, for trigger                                            */
 #define SLNETERR_RXFL_TRIGGER_USE_REG1_TO_REG4                          (-2094L) /**< Only counters 1 - 4 are allowed, for trigger                                            */
 #define SLNETERR_RXFL_ACTION_USE_REG5_TO_REG8                           (-2095L) /**< Only counters 5 - 8 are allowed, for action                                             */
 #define SLNETERR_RXFL_ACTION_USE_REG1_TO_REG4                           (-2096L) /**< Only counters 1 - 4 are allowed, for action                                             */
 #define SLNETERR_RXFL_FIELD_SUPPORT_ONLY_EQUAL_AND_NOTEQUAL             (-2097L) /**< Rule compare function Id is out of range                                                */
-#define SLNETERR_RXFL_WRONG_MULTICAST_BROADCAST_ADDRESS                 (-2098L) /**< The address should be of type mutlicast or broadcast                                    */
+#define SLNETERR_RXFL_WRONG_MULTICAST_BROADCAST_ADDRESS                 (-2098L) /**< The address should be of type multicast or broadcast                                    */
 #define SLNETERR_RXFL_THE_FILTER_IS_NOT_OF_HEADER_TYPE                  (-2099L) /**< The filter should be of header type                                                     */
-#define SLNETERR_RXFL_WRONG_COMPARE_FUNC_FOR_BROADCAST_ADDRESS          (-2100L) /**< The compare funcion is not suitable for broadcast address                               */
-#define SLNETERR_RXFL_WRONG_MULTICAST_ADDRESS                           (-2101L) /**< The address should be of muticast type                                                  */
+#define SLNETERR_RXFL_WRONG_COMPARE_FUNC_FOR_BROADCAST_ADDRESS          (-2100L) /**< The compare function is not suitable for broadcast address                              */
+#define SLNETERR_RXFL_WRONG_MULTICAST_ADDRESS                           (-2101L) /**< The address should be of multicast type                                                 */
 #define SLNETERR_RXFL_DEPENDENT_FILTER_IS_NOT_PERSISTENT                (-2102L) /**< The dependency filter is not persistent                                                 */
 #define SLNETERR_RXFL_DEPENDENT_FILTER_IS_NOT_ENABLED                   (-2103L) /**< The dependency filter is not enabled                                                    */
 #define SLNETERR_RXFL_FILTER_HAS_CHILDS                                 (-2104L) /**< The filter has childs and can't be removed                                              */
 #define SLNETERR_RXFL_CHILD_IS_ENABLED                                  (-2105L) /**< Can't disable filter while the child is enabled                                         */
-#define SLNETERR_RXFL_DEPENDENCY_IS_DISABLED                            (-2106L) /**< Can't enable filetr in case its depndency filter is disabled                            */
+#define SLNETERR_RXFL_DEPENDENCY_IS_DISABLED                            (-2106L) /**< Can't enable filter in case its dependency filter is disabled                           */
 #define SLNETERR_RXFL_MAC_SEND_MATCHDB_FAILED                           (-2107L)
 #define SLNETERR_RXFL_MAC_SEND_ARG_DB_FAILED                            (-2108L)
 #define SLNETERR_RXFL_MAC_SEND_NODEDB_FAILED                            (-2109L)
@@ -324,14 +324,14 @@ extern "C" {
 #define SLNETERR_RXFL_DEPENDENT_FILTER_DEPENDENCY_ACTION_IS_DROP        (-2113L) /**< The dependent filter has Drop action, thus the filter can't be created                  */
 #define SLNETERR_RXFL_FILTER_DO_NOT_EXISTS                              (-2114L) /**< The filter doesn't exists                                                               */
 #define SLNETERR_RXFL_DEPEDENCY_NOT_ON_THE_SAME_LAYER                   (-2115L) /**< The filter and its dependency must be on the same layer                                 */
-#define SLNETERR_RXFL_NUMBER_OF_ARGS_EXCEEDED                           (-2116L) /**< Number of arguments excceded                                                            */
+#define SLNETERR_RXFL_NUMBER_OF_ARGS_EXCEEDED                           (-2116L) /**< Number of arguments exceeded                                                            */
 #define SLNETERR_RXFL_ACTION_NO_REG_NUMBER                              (-2117L) /**< Action require counter number                                                           */
 #define SLNETERR_RXFL_DEPENDENT_FILTER_LAYER_DO_NOT_FIT                 (-2118L) /**< the filter and its dependency should be from the same layer                             */
 #define SLNETERR_RXFL_DEPENDENT_FILTER_SYSTEM_STATE_DO_NOT_FIT          (-2119L) /**< The filter and its dependency system state don't fit                                    */
 #define SLNETERR_RXFL_DEPENDENT_FILTER_DO_NOT_EXIST_2                   (-2120L) /**< The parent filter don't exist                                                           */
 #define SLNETERR_RXFL_DEPENDENT_FILTER_DO_NOT_EXIST_1                   (-2121L) /**< The parent filter is null                                                               */
 #define SLNETERR_RXFL_RULE_HEADER_ACTION_TYPE_NOT_SUPPORTED             (-2122L) /**< The action type is not supported                                                        */
-#define SLNETERR_RXFL_RULE_HEADER_TRIGGER_COMPARE_FUNC_OUT_OF_RANGE     (-2123L) /**< The Trigger comparision function is out of range                                        */
+#define SLNETERR_RXFL_RULE_HEADER_TRIGGER_COMPARE_FUNC_OUT_OF_RANGE     (-2123L) /**< The Trigger comparison function is out of range                                         */
 #define SLNETERR_RXFL_RULE_HEADER_TRIGGER_OUT_OF_RANGE                  (-2124L) /**< The Trigger is out of range                                                             */
 #define SLNETERR_RXFL_RULE_HEADER_COMPARE_FUNC_OUT_OF_RANGE             (-2125L) /**< The rule compare function is out of range                                               */
 #define SLNETERR_RXFL_FRAME_TYPE_NOT_SUPPORTED                          (-2126L) /**< ASCII frame type string is illegal                                                      */
@@ -339,7 +339,7 @@ extern "C" {
 #define SLNETERR_RXFL_RULE_HEADER_FIELD_ID_ASCII_NOT_SUPPORTED          (-2128L) /**< This ASCII field ID is not supported                                                    */
 #define SLNETERR_RXFL_RULE_HEADER_NOT_SUPPORTED                         (-2129L) /**< The header rule is not supported on current release                                     */
 #define SLNETERR_RXFL_RULE_HEADER_OUT_OF_RANGE                          (-2130L) /**< The header rule is out of range                                                         */
-#define SLNETERR_RXFL_RULE_HEADER_COMBINATION_OPERATOR_OUT_OF_RANGE     (-2131L) /**< Combination function Id is out of ramge                                                 */
+#define SLNETERR_RXFL_RULE_HEADER_COMBINATION_OPERATOR_OUT_OF_RANGE     (-2131L) /**< Combination function Id is out of range                                                 */
 #define SLNETERR_RXFL_RULE_HEADER_FIELD_ID_OUT_OF_RANGE                 (-2132L) /**< rule field Id is out of range                                                           */
 #define SLNETERR_RXFL_UPDATE_NOT_SUPPORTED                              (-2133L) /**< Update not supported                                                                    */
 #define SLNETERR_RXFL_NO_FILTER_DATABASE_ALLOCATE                       (-2134L)
@@ -349,7 +349,7 @@ extern "C" {
 #define SLNETERR_RXFL_READ_FILE_NUMBER_OF_FILTER_FAILED                 (-2138L)
 #define SLNETERR_RXFL_READ_FILE_FAILED                                  (-2139L)
 #define SLNETERR_RXFL_NO_FILTERS_ARE_DEFINED                            (-2140L) /**< No filters are defined in the system                                                    */
-#define SLNETERR_RXFL_NUMBER_OF_FILTER_EXCEEDED                         (-2141L) /**< Number of max filters excceded                                                          */
+#define SLNETERR_RXFL_NUMBER_OF_FILTER_EXCEEDED                         (-2141L) /**< Number of max filters exceeded                                                          */
 #define SLNETERR_RXFL_BAD_FILE_MODE                                     (-2142L)
 #define SLNETERR_RXFL_FAILED_READ_NVFILE                                (-2143L)
 #define SLNETERR_RXFL_FAILED_INIT_STORAGE                               (-2144L)
@@ -414,7 +414,7 @@ extern "C" {
 
 
 #define SLNETERR_PENDING_TXRX_STOP_TIMEOUT_EXP                          (-4118L) /**< Timeout expired before completing all TX/RX                                                                   */
-#define SLNETERR_PENDING_TXRX_NO_TIMEOUT                                (-4119L) /**< No Timeout , still have pending  TX/RX                                                                        */
+#define SLNETERR_PENDING_TXRX_NO_TIMEOUT                                (-4119L) /**< No Timeout, still have pending  TX/RX                                                                         */
 #define SLNETERR_INVALID_PERSISTENT_CONFIGURATION                       (-4120L) /**< persistency configuration can only be set to 0 (disabled) or 1 (enabled)                                      */
 
 
@@ -550,7 +550,7 @@ extern "C" {
 #define SLNETERR_ESMALLBUF                                              (-2001L)
 
 /* Receive this error in case zero length is supplied to a "get" API
-   Recommend to supply length according to requested information (view options defines for helpL) */
+   Recommend to supply length according to requested information (view options defines for help) */
 #define SLNETERR_EZEROLEN                                               (-2002L)
 
 /* User supplied invalid parameter */
@@ -653,6 +653,29 @@ extern "C" {
 
 /* util related API's from SlNetIf_Config_t failed */
 #define SLNETUTIL_ERR_UTILGETHOSTBYNAME_FAILED                          (-3100L)
+
+/*
+ * base for util error codes related to SlNetUtil_getAddrInfo and
+ * SlNetUtil_gaiStrErr
+ */
+#define SLNETUTIL_EAI_BASE                                              (-3120L)
+
+/*
+ * util error codes related to SlNetUtil_getAddrInfo and SlNetUtil_gaiStrErr
+ * The numbering of these codes MUST match the order of the strErrorMsgs array
+ * in <ti/net/slnetutils.c>
+ */
+#define SLNETUTIL_EAI_AGAIN                                             (-3121L)
+#define SLNETUTIL_EAI_BADFLAGS                                          (-3122L)
+#define SLNETUTIL_EAI_FAIL                                              (-3123L)
+#define SLNETUTIL_EAI_FAMILY                                            (-3124L)
+#define SLNETUTIL_EAI_MEMORY                                            (-3125L)
+#define SLNETUTIL_EAI_NONAME                                            (-3126L)
+#define SLNETUTIL_EAI_SERVICE                                           (-3127L)
+#define SLNETUTIL_EAI_SOCKTYPE                                          (-3128L)
+#define SLNETUTIL_EAI_SYSTEM                                            (-3129L)
+#define SLNETUTIL_EAI_OVERFLOW                                          (-3130L)
+#define SLNETUTIL_EAI_ADDRFAMILY                                        (-3131L)
 
 /* if related API's from SlNetIf_Config_t failed */
 #define SLNETIF_ERR_IFLOADSECOBJ_FAILED                                 (-3200L)

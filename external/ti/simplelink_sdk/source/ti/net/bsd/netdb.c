@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,11 +32,18 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <ti/net/bsd/sys/socket.h>
 
+#include <ti/net/slnetif.h>
 #include <ti/net/slnetutils.h>
 #include <ti/net/bsd/netdb.h>
+
+#define IPv4_ADDR_LEN                (4)
+#define IPv6_ADDR_LEN                (16)
+
+#define GET_HOST_BY_NAME_MAX_ANSWERS (5)
 
 /*******************************************************************************/
 /*  gethostbyname */
@@ -44,7 +51,7 @@
 struct hostent* gethostbyname(const char *name)
 {
     static struct  hostent Hostent;
-    static char    Addr[GET_HOST_BY_NAME_MAX_ANSWERS][IPv6_ADDR_LEN] = { 0 };
+    static char    Addr[GET_HOST_BY_NAME_MAX_ANSWERS][IPv6_ADDR_LEN] = { {0} };
     uint16_t       AddrLen = GET_HOST_BY_NAME_MAX_ANSWERS;
 
     int RetVal = 0;
@@ -85,4 +92,69 @@ struct hostent* gethostbyname(const char *name)
 
     /* Return the address of the reused buffer */
     return (&Hostent);
+}
+
+/******************************************************************************/
+/*  getaddrinfo */
+/******************************************************************************/
+int getaddrinfo(const char *node, const char *service,
+        const struct addrinfo *hints, struct addrinfo **res)
+{
+    int retVal = 0;
+    int32_t ifId = 0; /* Default: choose the highest priority IF */
+    char *newName = NULL;
+    char *ifStr = NULL;
+    size_t nameLen = 0;
+
+    if (node) {
+        /*
+         * Caller passed an IP address or host name. Check to see if an IF name
+         * is appended to the end. E.g. "FE80::1%eth0"
+         */
+
+        nameLen = strlen(node);
+        if (nameLen == 0) {
+            /* Error: 0 length string */
+            retVal = EAI_NONAME;
+            goto gai_exit;
+        }
+
+        /* Allocate memory to store a copy of the node string (+1 for '\0') */
+        newName = malloc(nameLen + 1);
+        if (!newName) {
+            /* Error: out of memory */
+            retVal = EAI_MEMORY;
+            goto gai_exit;
+        }
+
+        if (!strcpy(newName, node)) {
+            /* Error: couldn't copy string */
+            retVal = EAI_NONAME;
+            goto gai_exit;
+        }
+
+        /* Search node for '%' */
+        ifStr = strchr(newName, '%');
+        if (ifStr) {
+            /* found %, IF name should follow. Find its IF number */
+            ifId = SlNetIf_getIDByName(ifStr + 1);
+            if (ifId < 0) {
+                /* Error: problem with the IF name */
+                retVal = EAI_NONAME;
+                goto gai_exit;
+            }
+
+            /* Terminate the new string here (we don't want the "%eth0") */
+            *ifStr = '\0';
+
+        }
+    }
+
+    retVal = SlNetUtil_getAddrInfo(ifId, newName, service, hints, res);
+
+gai_exit:
+    if (newName) {
+        free(newName);
+    }
+    return (retVal);
 }

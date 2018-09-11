@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,132 +30,28 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*****************************************************************************/
-/* Include files                                                             */
-/*****************************************************************************/
+#ifndef ti_net_bsd_arpa_inet__include
+#define ti_net_bsd_arpa_inet__include
 
-#ifndef __INET_H__
-#define __INET_H__
+#include <ti/net/slnetutils.h>
 
 #ifdef    __cplusplus
 extern "C" {
 #endif
 
-/*!
-
-    \addtogroup BSD_Socket
-    @{
-*/
-
-/*!
-    \brief Reorder the bytes of a 32-bit unsigned value
-
-    This function is used to Reorder the bytes of a 32-bit unsigned value from processor order to network order.
-
-    \param [in] val             Variable to reorder
-
-    \return                     Return the reordered variable.
-
-    \sa     sendto  bind  connect  recvfrom  accept
-*/
+/* byte reorder macros */
 #define htonl                SlNetUtil_htonl
-
-/*!
-    \brief Reorder the bytes of a 32-bit unsigned value
-
-    This function is used to Reorder the bytes of a 32-bit unsigned value from network order to processor order.
-
-    \param[in] val              Variable to reorder
-
-    \return                     Return the reordered variable.
-
-    \sa     sendto  bind  connect  recvfrom  accept
-*/
 #define ntohl                SlNetUtil_ntohl
-
-/*!
-    \brief Reorder the bytes of a 16-bit unsigned value
-
-    This function is used to Reorder the bytes of a 16-bit unsigned value from processor order to network order.
-
-    \param[in] val              Variable to reorder
-
-    \return                     Return the reordered variable.
-
-    \sa     sendto  bind  connect  recvfrom  accept
-*/
 #define htons                SlNetUtil_htons
-
-/*!
-    \brief Reorder the bytes of a 16-bit unsigned value
-
-    This function is used to Reorder the bytes of a 16-bit unsigned value from network order to processor order.
-
-    \param[in] val              Variable to reorder
-
-    \return                     Return the reordered variable.
-
-    \sa     sendto  bind  connect  recvfrom  accept
-*/
 #define ntohs                SlNetUtil_ntohs
 
-/*!
-    \brief Converts IP address in binary representation to string representation
-
-    This functions is used to converts IP address in binary representation
-    to IP address in string representation.
-
-    \param[in]  af       Specifies the address family of the created socket
-                         For example:
-                           - AF_INET for network address IPv4
-                           - AF_INET6 for network address IPv6
-    \param[in]  src      Pointer to an IP address structure indicating the
-                         address in binary representation
-    \param[out] dst      Pointer to the address string representation for IPv4
-                         or IPv6 according to the address family
-    \param[in]  size     Specifies the length of the StrAddress_dst, the maximum
-                         length of the address in string representation for IPv4
-                         or IPv6 according to the address family
-
-    \return              strAddr on success, or NULL on failure
-
-    \sa
-    \note
-    \warning
-    \par    Example
-    - IPv4 demo of inet_ntop()
-    \code
-        SlNetSock_AddrIn_t sa;
-        char str[SLNETSOCK_INET_ADDRSTRLEN];
-
-        // store this IP address in sa:
-        SlNetSock_inet_pton(SLNETSOCK_AF_INET, "192.0.2.33", &(sa.sin_addr));
-        // now get it back and print it
-        SlNetSock_inet_ntop(SLNETSOCK_AF_INET, &(sa.sin_addr), str, SLNETSOCK_INET_ADDRSTRLEN);
-    \endcode
-*/
+/* utility functions */
+#define inet_aton            SlNetUtil_inetAton
 #define inet_ntop            SlNetUtil_inetNtop
-
-/*!
-    \brief Reorder the bytes of a 16-bit unsigned value
-
-    This function is used to Reorder the bytes of a 16-bit unsigned value from network order to processor order.
-
-    \param[in] val              Variable to reorder
-
-    \return                     Return the reordered variable.
-
-    \sa     sendto  bind  connect  recvfrom  accept
-*/
 #define inet_pton            SlNetUtil_inetPton
-/*!
-
- Close the Doxygen group.
- @}
-
- */
 
 #ifdef  __cplusplus
 }
-#endif /* __cplusplus */
-#endif /* __INET_H__ */
+#endif
+
+#endif /* ti_net_bsd_arpa_inet__include */

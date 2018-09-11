@@ -50,6 +50,10 @@ static _i16 _SlDeviceGetStartResponseConvert(_i32 Status);
 void _SlDeviceHandleResetRequestInternally(void);
 void _SlDeviceResetRequestInitCompletedCB(_u32 Status, SlDeviceInitInfo_t *DeviceInitInfo);
 
+#ifdef SL_PLATFORM_MULTI_THREADED
+extern void usleep(int usec);
+#endif
+
 #define RESET_REQUEST_STOP_TIMEOUT (300)
 
 #ifndef SL_IF_OPEN_FLAGS
@@ -83,9 +87,9 @@ static const _i16 StartResponseLUT[16] =
     SL_ERROR_FS_ALERT_ERR,
     SL_ERROR_RESTORE_IMAGE_COMPLETE, 
     SL_ERROR_INCOMPLETE_PROGRAMMING,
-    SL_ERROR_UNKNOWN_ERR,
-    SL_ERROR_UNKNOWN_ERR,
-    SL_ERROR_UNKNOWN_ERR,
+    ROLE_RESERVED2,
+    SL_ERROR_GENERAL_ERR,
+    SL_ERROR_GENERAL_ERR,
     SL_ERROR_GENERAL_ERR
 };
 
@@ -123,7 +127,7 @@ _i16 sl_Start(const void* pIfHdl, _i8*  pDevName, const P_INIT_CALLBACK pInitCal
 
     _SlDrvMemZero(&AsyncRsp, sizeof(InitComplete_t));
 
-    /* verify no erorr handling in progress. if in progress than
+    /* verify no error handling in progress. if in progress than
     ignore the API execution and return immediately with an error */
     VERIFY_NO_ERROR_HANDLING_IN_PROGRESS();
     if (SL_IS_DEVICE_STARTED)
@@ -177,9 +181,8 @@ _i16 sl_Start(const void* pIfHdl, _i8*  pDevName, const P_INIT_CALLBACK pInitCal
 #ifdef SL_TINY
             _SlDrvSyncObjWaitForever(&g_pCB->ObjPool[ObjIdx].SyncObj);
 #else
-            SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                                         INIT_COMPLETE_TIMEOUT,
-                                         SL_OPCODE_DEVICE_INITCOMPLETE);
+
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, INIT_COMPLETE_TIMEOUT, SL_OPCODE_DEVICE_INITCOMPLETE));
 #endif
 
             SL_UNSET_DEVICE_START_IN_PROGRESS;
@@ -336,9 +339,8 @@ _i16 sl_Stop(const _u16 Timeout)
             _SlDrvSyncObjWaitForever(&g_pCB->ObjPool[ObjIdx].SyncObj);
             /* Wait for sync object to be signaled */
 #else
-             SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                                           STOP_DEVICE_TIMEOUT,
-                                           SL_OPCODE_DEVICE_STOP_ASYNC_RESPONSE);
+
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, STOP_DEVICE_TIMEOUT, SL_OPCODE_DEVICE_STOP_ASYNC_RESPONSE));
 #endif
             Msg.Rsp.status = AsyncRsp.status;
             RetVal = Msg.Rsp.status;
@@ -360,7 +362,16 @@ _i16 sl_Stop(const _u16 Timeout)
         /* Set the stop-in-progress flag */
         SL_SET_DEVICE_STOP_IN_PROGRESS;
     }
+    /* Release (signal) all active and pending commands */
+    _SlDrvReleaseAllActivePendingPoolObj();
 
+#ifdef SL_PLATFORM_MULTI_THREADED
+    /* Do not continue until all sync object deleted (in relevant context) */
+    while (g_pCB->NumOfDeletedSyncObj < MAX_CONCURRENT_ACTIONS)
+    {
+        usleep(100000);
+    }
+#endif	
     sl_IfRegIntHdlr(NULL, NULL);
     sl_DeviceDisable();
     RetVal = sl_IfClose(g_pCB->FD);

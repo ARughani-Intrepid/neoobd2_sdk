@@ -192,6 +192,10 @@ typedef struct
 #define SL_OPCODE_WLAN_WLANCONNECTEAPCRESPONSE                          0x0C82
 #define SL_OPCODE_WLAN_PROFILEADDCOMMAND                                0x8C83
 #define SL_OPCODE_WLAN_PROFILEADDRESPONSE                               0x0C83
+#define SL_OPCODE_WLAN_PROFILEUPDATECOMMAND                             0x8CC2
+#define SL_OPCODE_WLAN_PROFILEUPDATERESPONSE                            0x0CC2
+#define SL_OPCODE_WLAN_PROFILEEAPUPDATECOMMAND                          0x8CC3
+#define SL_OPCODE_WLAN_PROFILEEAPUPDATERESPONSE                         0x0CC0
 #define SL_OPCODE_WLAN_PROFILEGETCOMMAND                                0x8C84
 #define SL_OPCODE_WLAN_PROFILEGETRESPONSE                               0x0C84
 #define SL_OPCODE_WLAN_PROFILEDELCOMMAND                                0x8C85
@@ -232,6 +236,7 @@ typedef struct
 #define SL_OPCODE_WLAN_CFG_GET_RESPONSE                                 0x0CB6
 #define SL_OPCODE_WLAN_EAP_PROFILEADDCOMMAND                            0x8C67
 #define SL_OPCODE_WLAN_EAP_PROFILEADDCOMMAND_RESPONSE                   0x0C67
+#define SL_OPCODE_WLAN_RESERVED_RESPONSE                                0x08BA
 
 #define SL_OPCODE_SOCKET_SOCKET                                         0x9401
 #define SL_OPCODE_SOCKET_SOCKETRESPONSE                                 0x1401
@@ -300,9 +305,12 @@ typedef struct
 #define SL_OPCODE_NETAPP_PINGREPORTREQUESTRESPONSE                      0x1822
 #define SL_OPCODE_NETAPP_ARPFLUSH                                       0x9C24
 #define SL_OPCODE_NETAPP_ARPFLUSHRESPONSE                               0x1C24
-#define SL_OPCODE_NETAPP_IPACQUIRED                                     0x1825
+#define SL_OPCODE_NETAPP_NDFLUSH_V6                                     0x9EC2
+#define SL_OPCODE_NETAPP_NDFLUSHHRESPONSE_V6                            0x1EC3
+#define SL_OPCODE_NETAPP_IPACQUIRED                                 	0x1825
 #define SL_OPCODE_NETAPP_IPV4_LOST                                      0x1832
 #define SL_OPCODE_NETAPP_DHCP_IPV4_ACQUIRE_TIMEOUT                      0x1833
+#define SL_OPCODE_LINK_QUALITY_EVENT                                    0x1834
 #define SL_OPCODE_NETAPP_IPACQUIRED_V6                                  0x1A25
 #define SL_OPCODE_NETAPP_IPV6_LOST_V6                                   0x1A32
 #define SL_OPCODE_NETAPP_IPERFSTARTCOMMAND                              0x9C28
@@ -320,6 +328,9 @@ typedef struct
 #define SL_OPCODE_NETAPP_HTTPSENDTOKENVALUE                             0x9C2F
 #define SL_OPCODE_NETAPP_HTTPPOSTTOKENVALUE                             0x1830
 #define SL_OPCODE_NETAPP_IP_COLLISION                                   0x1831
+#define SL_OPCODE_NETAPP_RESERVED1                                      0x18C4
+#define SL_OPCODE_NETAPP_RESERVED2                                      0x1AC5
+#define SL_OPCODE_NETAPP_RESERVED3                                      0x1AC6
 
 #define SL_OPCODE_NETAPP_REQUEST                                        0x1878
 #define SL_OPCODE_NETAPP_RESPONSE                                       0x9C78
@@ -379,8 +390,8 @@ typedef struct
 
 #define SL_OPCODE_WLAN_SCANRESULTSGETCOMMAND                            0x8C8C
 #define SL_OPCODE_WLAN_SCANRESULTSGETRESPONSE                           0x0C8C
-#define SL_OPCODE_WLAN_SMARTCONFIGOPTSET                                0x8C8D
-#define SL_OPCODE_WLAN_SMARTCONFIGOPTSETRESPONSE                        0x0C8D
+#define SL_OPCODE_WLAN_EXTSCANRESULTSGETCOMMAND                         0x8C8D
+#define SL_OPCODE_WLAN_EXTSCANRESULTSGETRESPONSE                        0x0C8D
 #define SL_OPCODE_WLAN_SMARTCONFIGOPTGET                                0x8C8E
 #define SL_OPCODE_WLAN_SMARTCONFIGOPTGETRESPONSE                        0x0C8E
 
@@ -582,6 +593,22 @@ typedef struct{
     _u32                     EapBitmask;
 } SlWlanAddGetEapProfile_t;
 
+
+typedef struct{
+    _i16   SecType;
+    _u8    SsidLen;
+    _u8    Priority;
+    _u8    Bssid[6];
+    _u8    PasswordLen;
+    _u8    WepKeyId;
+    _u32   Index;
+    _u8    UserLen;
+    _u8    AnonUserLen;
+    _u8    CertIndex;
+    _u8    padding;
+    _u32   EapBitmask;
+} SlWlanUpdateProfile_t;
+
 #define PROFILE_SSID_STRING(pCmd)       ((_i8 *)((SlWlanAddGetProfile_t *)(pCmd) + 1))
 #define PROFILE_PASSWORD_STRING(pCmd)   (PROFILE_SSID_STRING(pCmd) + ((SlWlanAddGetProfile_t *)(pCmd))->SsidLen)
 
@@ -589,6 +616,15 @@ typedef struct{
 #define EAP_PROFILE_PASSWORD_STRING(pCmd)   (EAP_PROFILE_SSID_STRING(pCmd) + ((SlWlanAddGetEapProfile_t *)(pCmd))->Common.SsidLen)
 #define EAP_PROFILE_USER_STRING(pCmd)       (EAP_PROFILE_PASSWORD_STRING(pCmd) + ((SlWlanAddGetEapProfile_t *)(pCmd))->Common.PasswordLen)
 #define EAP_PROFILE_ANON_USER_STRING(pCmd)  (EAP_PROFILE_USER_STRING(pCmd) + ((SlWlanAddGetEapProfile_t *)(pCmd))->UserLen)
+
+#define PROFILE_SSID_STRING(pCmd)       ((_i8 *)((SlWlanAddGetProfile_t *)(pCmd) + 1))
+#define PROFILE_PASSWORD_STRING(pCmd)   (PROFILE_SSID_STRING(pCmd) + ((SlWlanAddGetProfile_t *)(pCmd))->SsidLen)
+
+#define UPDATE_PROFILE_SSID_STRING(pCmd)       (_i8 *)((SlWlanUpdateProfile_t *)(pCmd) + 1)
+#define UPDATE_PROFILE_PASSWORD_STRING(pCmd)   (UPDATE_PROFILE_SSID_STRING(pCmd) + ((SlWlanUpdateProfile_t *)(pCmd))->SsidLen)
+#define UPDATE_PROFILE_USER_STRING(pCmd)       (UPDATE_PROFILE_PASSWORD_STRING(pCmd) + ((SlWlanUpdateProfile_t *)(pCmd))->PasswordLen)
+#define UPDATE_PROFILE_ANON_USER_STRING(pCmd)  (UPDATE_PROFILE_USER_STRING(pCmd) + ((SlWlanUpdateProfile_t *)(pCmd))->UserLen)
+
 
 typedef struct
 {
@@ -605,6 +641,15 @@ typedef struct
     _i8     padding[2];
 } SlWlanGetNetworkListCommand_t;
 
+typedef _BasicResponse_t _WlanGetExtNetworkListResponse_t;
+
+typedef struct
+{
+    _u8  Index;
+    _u8  Count;
+    _i8  padding[2];
+} SlWlanGetExtNetworkListCommand_t;
+
 typedef struct
 {
     _u32    GroupIdBitmask;
@@ -612,6 +657,8 @@ typedef struct
     _u8     PublicKeyLen;        
     _u8     Padding[2];
 } SlWlanSmartConfigParams_t;
+
+#define SMART_CONFIG_START_PUBLIC_KEY_STRING(pCmd)       ((_i8 *)((SlWlanSmartConfigParams_t *)(pCmd) + 1))
 
 typedef    struct
 {
@@ -1233,17 +1280,23 @@ typedef struct
 
 /* TODO: Set MAx Async Payload length depending on flavor (Tiny, Small, etc.) */
 
+#define SL_ASYNC_HTTP_SRV_EVENT_LEN    1600  /* size must be aligned to 4 */
 #ifdef SL_TINY
 #define SL_ASYNC_MAX_PAYLOAD_LEN        120  /* size must be aligned to 4 */
+#elif defined(slcb_NetAppRequestHdlr) || defined(EXT_LIB_REGISTERED_NETAPP_REQUEST_EVENTS)
+#define SL_ASYNC_MAX_PAYLOAD_LEN             SL_ASYNC_HTTP_SRV_EVENT_LEN
 #else
-    #if defined(slcb_NetAppHttpServerHdlr) || defined(EXT_LIB_REGISTERED_HTTP_SERVER_EVENTS) || defined(slcb_NetAppRequestHdlr) || defined(EXT_LIB_REGISTERED_NETAPP_REQUEST_EVENTS)
-    #define SL_ASYNC_MAX_PAYLOAD_LEN    1600 /* size must be aligned to 4 */
-    #else
-    #define SL_ASYNC_MAX_PAYLOAD_LEN    220 /* size must be aligned to 4 */
-    #endif
+#define SL_ASYNC_MAX_PAYLOAD_LEN    220 /* size must be aligned to 4 */
+
 #endif
 
-#define SL_ASYNC_MAX_MSG_LEN            (_SL_RESP_HDR_SIZE + SL_ASYNC_MAX_PAYLOAD_LEN)
+
+
+
+#define  SL_ASYNC_MAX_MSG_LEN         (_SL_RESP_HDR_SIZE + SL_ASYNC_MAX_PAYLOAD_LEN)
+
+
+
 
 #define RECV_ARGS_SIZE                  (sizeof(SlSocketResponse_t))
 #define RECVFROM_IPV4_ARGS_SIZE         (sizeof(SlSocketAddrAsyncIPv4Response_t))

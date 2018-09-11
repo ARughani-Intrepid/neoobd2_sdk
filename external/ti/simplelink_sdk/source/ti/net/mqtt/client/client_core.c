@@ -1,19 +1,37 @@
 /*
- *   Copyright (C) 2016 Texas Instruments Incorporated
+ * Copyright (C) 2016-2018, Texas Instruments Incorporated
+ * All rights reserved.
  *
- *   All rights reserved. Property of Texas Instruments Incorporated.
- *   Restricted rights to use, duplicate or disclose this code are
- *   granted through contract.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   The program may not be used without the written permission of
- *   Texas Instruments Incorporated or against the terms and conditions
- *   stipulated in the agreement under which this program has been supplied,
- *   and under no circumstances can it be used with non-TI connectivity device.
- *   
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
- mqtt_client.c
+ client_core.c
 
  The module provides implementation to the public interface of the MQTT
  Client Library.
@@ -28,10 +46,6 @@
 //*****************************************************************************
 //defines
 //*****************************************************************************
-
-#define MQTTCLIENTCORE_USR_INFO   Report
-#define MQTTCLIENTCORE_DBG_INFO   Report
-
 
 #define MQTTCLIENTCORE_LOOP_DLEN  sizeof(MQTTClientCore_loopData)
 #define MQTTCLIENTCORE_VH_MSG_LEN 4
@@ -64,10 +78,10 @@
 #define MQTTClientCore_needNetClose(clCtx)   (clCtx->flags & MQTTCLIENTCORE_NETWORK_CLOSE_FLAG)
 #define MQTTClientCore_cfgConnackTo(clCtx)   (clCtx->flags & MQTTCLIENTCORE_DO_CONNACK_TO_FLAG)
 #define MQTTClientCore_ctxCBsPtr(clCtx)     &(CLIENT(clCtx)->appCtxCBs)
-#define CLIENT(clCtx)                        ((MQTTClientCore_ClientDesc_t *) clCtx)
+#define CLIENT(clCtx)                        ((MQTTClientCore_ClientDesc_t *)clCtx)
 
 /* Only if MQP has good RX data i.e. this macro shouldn't be used for bad RX */
-#define MQTTClientCore_mqpRxDoNotRptSet(mqp) (mqp->private = 1)
+#define MQTTClientCore_mqpRxDoNotRptSet(mqp) (mqp->sessionDataPresent = 1)
 
 #define MQTTClientCore_retIfinvalidUTF8(utf8)                                     \
         if(false == isValidUTF8String(utf8)) {return -1;}
@@ -92,7 +106,7 @@
 /* Buffer Pool and management, other registrations and initialization */
 typedef enum
 {
-    ModuleState_WaitInit,
+    ModuleState_WaitInit = 0x00,
     ModuleState_InitDone = 0x01
 }MQTTClientCore_ModuleStates;
 
@@ -163,11 +177,9 @@ static MQTT_Packet_t *MQTTClientCore_freeList = NULL;
 
 MQTTClientCore_ClientDesc_t clients[MQTTCLIENTCORE_MAX_NWCONN];
 
-static void *MQTTClientCore_mutex = NULL;
-static void (*MQTTClientCore_mutex_lockin)(void*) = NULL;
-static void (*MQTTClientCore_mutex_unlock)(void*) = NULL;
-
-int32_t (*debugPrintf)(const char *fmt, ...) = NULL;
+static pthread_mutex_t *MQTTClientCore_mutex = NULL;
+static void (*MQTTClientCore_mutex_lockin)(pthread_mutex_t *) = NULL;
+static void (*MQTTClientCore_mutex_unlock)(pthread_mutex_t *) = NULL;
 
 static const MQTT_DeviceNetServices_t *MQTTClientCore_netOps = NULL;
 
@@ -194,27 +206,12 @@ static int32_t MQTTClientCore_rsvdHvec = -1;
 static MQTTClientCore_ModuleStates MQTTClientCore_clLibState = ModuleState_WaitInit;
 
 extern int32_t MQTTClient_closeContext;
-extern int32_t Report(const char *pcFormat, ...);
 
-//*****************************************************************************
-// MQTT Client Core Internal Routines
-//*****************************************************************************
-
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static inline uint16_t assignNewMsgID(void)
 {
     return (MQTTClientCore_msgID += 2);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool txPartSetup(MQTTClientCore_txPartPkt_t *txPart, const uint8_t *buffer, uint32_t length, MQTT_Packet_t *mqpTx)
 {
     if (mqpTx)
@@ -236,11 +233,6 @@ static bool txPartSetup(MQTTClientCore_txPartPkt_t *txPart, const uint8_t *buffe
     return true;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void _txPartReset(MQTTClientCore_txPartPkt_t *txPart)
 {
     txPart->vhMsg[0] = 0x00;
@@ -249,15 +241,10 @@ static void _txPartReset(MQTTClientCore_txPartPkt_t *txPart)
     txPart->offset = 0;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void txPartReset(MQTTClientCore_txPartPkt_t *txPart)
 {
     MQTT_Packet_t *mqpTx = txPart->mqpTx;
-    
+
     if (mqpTx)
     {
         MQTT_packetFree(mqpTx);
@@ -267,11 +254,6 @@ static void txPartReset(MQTTClientCore_txPartPkt_t *txPart)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static const uint8_t *txPartBufP(MQTTClientCore_txPartPkt_t *txPart)
 {
     MQTT_Packet_t *mqpTx = txPart->mqpTx;
@@ -280,21 +262,11 @@ static const uint8_t *txPartBufP(MQTTClientCore_txPartPkt_t *txPart)
     return (mqpTx ? txPart->buffer + offset : txPart->vhMsg + offset);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void txPartAddup(MQTTClientCore_txPartPkt_t *txPart, uint32_t offset)
 {
     txPart->offset += offset;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void clCtxFreeup(MQTT_ClientCtx_t *clCtx)
 {
     clCtx->next = MQTTClientCore_freeCtxs;
@@ -303,17 +275,12 @@ static void clCtxFreeup(MQTT_ClientCtx_t *clCtx)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void clientReset(MQTTClientCore_ClientDesc_t *client)
 {
     MQTTClientCore_CtxCBs_t *ctxCBs = &client->appCtxCBs;
     int32_t i = 0;
 
-    MQTT_clCtxReset((MQTT_ClientCtx_t*)(client));
+    MQTT_clCtxReset((MQTT_ClientCtx_t *)(client));
 
     for (i = 0; i < 5; i++)
     {
@@ -343,21 +310,16 @@ static void clientReset(MQTTClientCore_ClientDesc_t *client)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void clientDescInit(void)
 {
     int32_t i = 0;
     MQTTClientCore_ClientDesc_t *client;
     MQTT_ClientCtx_t *clCtx;
-    
+
     for (i = 0; i < MQTTCLIENTCORE_MAX_NWCONN; i++)
     {
         client = clients + i;
-        clCtx = (MQTT_ClientCtx_t*)(client);
+        clCtx = (MQTT_ClientCtx_t *)(client);
 
         /* Initialize certain fields to defaults */
         client->qosAck1WaitList.head = NULL;
@@ -373,11 +335,6 @@ static void clientDescInit(void)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void mqpFreeLocked(MQTT_Packet_t *mqp)
 {
     MQTTClientCore_mutexLockin();
@@ -392,37 +349,27 @@ static void mqpFreeLocked(MQTT_Packet_t *mqp)
 //*****************************************************************************
 static bool mqpDoNotReportCor(MQTT_Packet_t *mqp)
 {
-    bool rv = (1 == mqp->private) ? true : false;
-    
-    mqp->private = 0;
+    bool rv = (1 == mqp->sessionDataPresent) ? true : false;
+
+    mqp->sessionDataPresent = 0;
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t loopbTrigger(void)
 {
     uint8_t ip_addr[] = { 127, 0, 0, 1 };
 
-    return ((-1 != MQTTClientCore_loopbNet) ? 
-            MQTTClientCore_netOps->sendTo(MQTTClientCore_loopbNet, MQTTClientCore_loopData, 
+    return ((-1 != MQTTClientCore_loopbNet) ?
+            MQTTClientCore_netOps->sendTo(MQTTClientCore_loopbNet, MQTTClientCore_loopData,
             MQTTCLIENTCORE_LOOP_DLEN, MQTTClientCore_loopbPortid, ip_addr, 4) : MQTT_PACKET_ERR_LIBQUIT);
 }
 
-//*****************************************************************************
-//
-//! \brief session311fix
-//!
-//*****************************************************************************
 static void session311fix(MQTT_ClientCtx_t *clCtx)
 {
     MQTT_AckWlist_t *wl = &CLIENT(clCtx)->qosAck1WaitList;
     MQTT_Packet_t *elem = wl->head;
     MQTT_Packet_t *next;
-    
+
     while (elem)
     {
         next = elem->next;
@@ -436,17 +383,11 @@ static void session311fix(MQTT_ClientCtx_t *clCtx)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief 
-//!
-//*****************************************************************************
 static void sessionDelete(MQTT_ClientCtx_t *clCtx)
 {
     MQTTClientCore_ClientDesc_t *client = CLIENT(clCtx);
 
-    MQTTCLIENTCORE_DBG_INFO("C: Cleaning session for net %d\n\r", clCtx->net);
-
+    /* Cleaning session */
     MQTT_qos2PubCqReset(&client->rxQos2CircularQueue);
     MQTT_qos2PubCqReset(&client->txQos2CircularQueue);
 
@@ -493,22 +434,14 @@ static void doNetClose(MQTT_ClientCtx_t *clCtx)
     clCtx->net = -1;
     MQTTClientCore_netOps->close(net);
 
-    MQTTCLIENTCORE_USR_INFO("C: Net %d now closed\n\r", net);
-
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void doNetCloseRx(MQTT_ClientCtx_t *clCtx, int32_t cause)
 {
     MQTTClientCore_CtxCBs_t *ctxCBs = MQTTClientCore_ctxCBsPtr(clCtx);
 
-    MQTTCLIENTCORE_DBG_INFO("C: RX closing Net %d [%d]\n\r", clCtx->net, cause);
-
+    /* RX closing */
     doNetClose(clCtx);
     if (ctxCBs->disconnCB)
     {
@@ -521,15 +454,9 @@ static void doNetCloseRx(MQTT_ClientCtx_t *clCtx, int32_t cause)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void doNetCloseTx(MQTT_ClientCtx_t *clCtx, char *cause)
 {
-    MQTTCLIENTCORE_DBG_INFO("C: TX closing Net %d [%s]\n\r", clCtx->net, cause);
-
+    /* TX closing */
     if (MQTTClientCore_recvTaskAvbl(clCtx))
     {
         clCtx->flags |= MQTTCLIENTCORE_NETWORK_CLOSE_FLAG;
@@ -549,46 +476,27 @@ static void doNetCloseTx(MQTT_ClientCtx_t *clCtx, char *cause)
 /*----------------------------------------------------------------------------
  * QoS2 PUB RX Message handling mechanism and associated house-keeping
  *--------------------------------------------------------------------------*/
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
+
 static bool qos2PubRxLogup(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
 {
     return MQTT_qos2PubCqLogup(&CLIENT(clCtx)->rxQos2CircularQueue, msgID);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool ack2MsgIdLogup(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
 {
     return MQTT_qos2PubCqLogup(&CLIENT(clCtx)->txQos2CircularQueue, msgID);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool qos2PubRxUnlog(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
 {
     return MQTT_qos2PubCqUnlog(&CLIENT(clCtx)->rxQos2CircularQueue, msgID);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool ack2MsgIdUnlog(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
 {
     MQTTClientCore_ClientDesc_t *client = CLIENT(clCtx);
     MQTTClientCore_CtxCBs_t *ctxCBs;
-    
+
     if (MQTT_qos2PubCqUnlog(&client->txQos2CircularQueue, msgID))
     {
         ctxCBs = MQTTClientCore_ctxCBsPtr(clCtx);
@@ -602,85 +510,51 @@ static bool ack2MsgIdUnlog(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
     return false;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool qos2PubRxIsDone(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
 {
     return MQTT_qos2PubCqCheck(&CLIENT(clCtx)->rxQos2CircularQueue, msgID);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool awaitsPkts(MQTT_ClientCtx_t *clCtx)
 {
     MQTTClientCore_ClientDesc_t *client = CLIENT(clCtx);
 
-    return (client->qosAck1WaitList.head || MQTT_qos2PubCqCount(&client->rxQos2CircularQueue) || 
+    return (client->qosAck1WaitList.head || MQTT_qos2PubCqCount(&client->rxQos2CircularQueue) ||
             MQTT_qos2PubCqCount(&client->txQos2CircularQueue) ? true : false);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static inline int32_t lenErrFreeMqp(MQTT_Packet_t *mqp)
 {
     mqpFreeLocked(mqp);
     return MQTT_PACKET_ERR_PKT_LEN;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t isValidUTF8String(const MQTT_UTF8String_t *utf8)
 {
     /* Valid topic should be > 0 byte and must hosted in usable buffer */
     return ((utf8->length > 0) && (NULL != utf8->buffer)) ? true : false;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool isConnected(MQTT_ClientCtx_t *clCtx)
 {
-    return ((MQTTClientCore_hasConnection(clCtx) && !MQTTClientCore_needNetClose(clCtx)) 
+    return ((MQTTClientCore_hasConnection(clCtx) && !MQTTClientCore_needNetClose(clCtx))
             ? true : false);
 }
 
 /*----------------------------------------------------------------------------
  * MQTT TX Routines
  *--------------------------------------------------------------------------*/
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
+
 static void usedCtxsTOSort(MQTT_ClientCtx_t *cl_ctx_TO)
 {
     MQTT_clCtxRemove(&MQTTClientCore_usedCtxs, cl_ctx_TO);
     MQTT_clCtxTimeoutInsert(&MQTTClientCore_usedCtxs, cl_ctx_TO);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static inline int32_t netSend(int32_t net, const uint8_t *buf, uint32_t len, void *ctx)
 {
     int32_t rv = MQTTClientCore_netOps->send(net, buf, len, ctx);
-    
+
     if (rv <= 0)
     {
         rv = MQTT_PACKET_ERR_NETWORK;
@@ -698,10 +572,8 @@ static int32_t clCtxPartSend(MQTT_ClientCtx_t *clCtx)
     MQTTClientCore_txPartPkt_t *txPart = &CLIENT(clCtx)->txPart;
     const uint8_t *buf = txPartBufP(txPart);
     uint32_t len = MQTTClientCore_txPartInUse(txPart);
-    uint32_t ofs = txPart->offset;
-    uint8_t B1 = *buf;
 
-    int32_t rv = netSend(clCtx->net, buf, len, (void*) clCtx);
+    int32_t rv = netSend(clCtx->net, buf, len, (void *)clCtx);
     if (rv > 0)
     { /* Do Follow-up for a good send */
         if (MQTTClientCore_hasConnection(clCtx))
@@ -731,16 +603,9 @@ static int32_t clCtxPartSend(MQTT_ClientCtx_t *clCtx)
         doNetCloseTx(clCtx, "snd-err");
     }
 
-    MQTTCLIENTCORE_USR_INFO("C: %s 0x%02x to net %d, %s (%d Bytes) [@ %u]\n\r", ofs ? "PartN" : "FH-B1", B1, clCtx->net, (rv > 0) ? "Sent" : "Fail", rv, MQTTClientCore_netOps->time());
-
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t clCtxSeg1Send(MQTT_ClientCtx_t *clCtx, const uint8_t *buf, uint32_t len,
                                 bool is_conn_msg, MQTT_Packet_t *mqpTx)
 {
@@ -761,11 +626,6 @@ static int32_t clCtxSeg1Send(MQTT_ClientCtx_t *clCtx, const uint8_t *buf, uint32
     return clCtxPartSend(clCtx);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t wrConnectPayload(MQTT_ClientCtx_t *clCtx, uint8_t *buf, uint32_t fsz, uint8_t *conn_opts)
 {
     /* UTF8 usage selection order: Client, W-Topic, W-Msg, User-Name, Pwd */
@@ -774,7 +634,7 @@ static int32_t wrConnectPayload(MQTT_ClientCtx_t *clCtx, uint8_t *buf, uint32_t 
     uint8_t *ref = buf;
     int32_t i = 0;
     const MQTT_UTF8String_t *utf8;
-    
+
     for (i = 0; i < 5; i++)
     {
         uint16_t len = 2;
@@ -815,22 +675,12 @@ static int32_t wrConnectPayload(MQTT_ClientCtx_t *clCtx, uint8_t *buf, uint32_t 
     return buf - ref;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static inline uint16_t getConnectVhLen(MQTT_ClientCtx_t *clCtx)
 {
-    return ((MQTTClientCore_isProtoVer31(clCtx) ? 
+    return ((MQTTClientCore_isProtoVer31(clCtx) ?
             sizeof(MQTTClientCore_mqtt310) : sizeof(MQTTClientCore_mqtt311)) + 3);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t wrConnectVh(MQTT_ClientCtx_t *clCtx, uint8_t *buf, uint16_t kaSecs, uint8_t conn_opts)
 {
     uint8_t *ref = buf;
@@ -849,11 +699,6 @@ static int32_t wrConnectVh(MQTT_ClientCtx_t *clCtx, uint8_t *buf, uint16_t kaSec
     return buf - ref;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t netConnect(MQTT_ClientCtx_t *clCtx)
 {
     MQTTClientCore_ClientDesc_t *client = CLIENT(clCtx);
@@ -866,24 +711,19 @@ static int32_t netConnect(MQTT_ClientCtx_t *clCtx)
     {
         return MQTT_PACKET_ERR_NET_OPS;
     }
-    clCtx->net = MQTTClientCore_netOps->open(client->nwconnOpts | MQTT_DEV_NETCONN_OPT_TCP, 
+    clCtx->net = MQTTClientCore_netOps->open(client->nwconnOpts | MQTT_DEV_NETCONN_OPT_TCP,
                 client->serverAddr, client->portNumber, &client->nwSecurity);
 
     return clCtx->net;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t clCtxConnStateTryLocked(MQTT_ClientCtx_t *clCtx, const uint8_t *buf, uint32_t len, uint16_t kaSecs, bool cleanSession, MQTT_Packet_t *mqpTx)
 {
     int32_t rv;
 
     MQTTClientCore_mutexLockin();
     rv = netConnect(clCtx);
-    if (rv == 0)
+    if (rv >= 0)
     {
         /* Ensure LIB is initialized & CTX isn't awaiting CONNACK */
         rv = MQTT_PACKET_ERR_BADCALL;
@@ -920,11 +760,6 @@ static int32_t clCtxConnStateTryLocked(MQTT_ClientCtx_t *clCtx, const uint8_t *b
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t connectMsgSend(MQTT_ClientCtx_t *clCtx, bool cleanSession, uint16_t kaSecs)
 {
     MQTT_Packet_t *mqp = MQTTClientCore_allocSend(MQTT_CONNECT);
@@ -937,10 +772,10 @@ static int32_t connectMsgSend(MQTT_ClientCtx_t *clCtx, bool cleanSession, uint16
     {
         return MQTT_PACKET_ERR_PKT_AVL;
     }
-    
+
     fsz = MQTT_PACKET_FREEBUF_LEN(mqp);
     if (fsz >= vhl)
-    {        
+    {
         mqp->vhLen = vhl; /* Reserve buffer for variable header */
         buf = ref = MQTT_PACKET_PAYLOAD_BUF(mqp);/* Get started to incorporate payload */
 
@@ -968,7 +803,7 @@ static int32_t connectMsgSend(MQTT_ClientCtx_t *clCtx, bool cleanSession, uint16
     {
         mqpFreeLocked(mqp);
     }
-    
+
     return rv;
 }
 
@@ -1020,11 +855,6 @@ static int32_t _msgDispatch(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, MQTT_QO
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t msgDispatchNoFree(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, MQTT_QOS qos, bool retain)
 {
     if ((NULL == mqp) || (NULL == clCtx))
@@ -1036,11 +866,6 @@ static int32_t msgDispatchNoFree(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, MQ
     return _msgDispatch(clCtx, mqp, qos, retain);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t tailIncorpMsgID(MQTT_Packet_t *mqp)
 {
     uint8_t *buf = MQTT_PACKET_FHEADER_BUF(mqp) + mqp->vhLen;
@@ -1057,11 +882,6 @@ static int32_t tailIncorpMsgID(MQTT_Packet_t *mqp)
     return 0;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t bufUTF8WrTry(uint8_t *buf, uint32_t fsz, const MQTT_UTF8String_t *topic, uint8_t qid)
 {
     uint8_t *ref = buf;
@@ -1082,11 +902,6 @@ static int32_t bufUTF8WrTry(uint8_t *buf, uint32_t fsz, const MQTT_UTF8String_t 
     return buf - ref;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t utf8ArraySend(MQTT_ClientCtx_t *clCtx, const MQTT_UTF8StrQOS_t *subsc_vec, const MQTT_UTF8String_t *unsub_vec, uint32_t n_elem)
 {
     MQTT_Packet_t *mqp;
@@ -1142,11 +957,6 @@ static int32_t utf8ArraySend(MQTT_ClientCtx_t *clCtx, const MQTT_UTF8StrQOS_t *s
     return _msgDispatch(clCtx, mqp, MQTT_QOS1, false);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t vhMsgSend(MQTT_ClientCtx_t *clCtx, uint8_t msgType, MQTT_QOS qos, bool hasVH, uint16_t vhData)
 {
     uint8_t buf[4];
@@ -1162,11 +972,6 @@ static int32_t vhMsgSend(MQTT_ClientCtx_t *clCtx, uint8_t msgType, MQTT_QOS qos,
     return clCtxSeg1Send(clCtx, buf, len, false, NULL);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t pingReqSend(MQTT_ClientCtx_t *clCtx, uint32_t rsp_flag)
 {
     int32_t rv = 0;
@@ -1185,18 +990,13 @@ static int32_t pingReqSend(MQTT_ClientCtx_t *clCtx, uint32_t rsp_flag)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief MQTT RX Routines
-//!
-//*****************************************************************************
 static bool ack1WlMqpDispatch(MQTT_ClientCtx_t *clCtx)
 {
     MQTT_AckWlist_t *wlist = &CLIENT(clCtx)->qosAck1WaitList;
     MQTT_Packet_t *mqp = NULL;
     bool rv = true;
     uint8_t *buf;
-    
+
     for (mqp = wlist->head; mqp && (true == rv); mqp = mqp->next)
     {
         buf = MQTT_PACKET_FHEADER_BUF(mqp);
@@ -1213,11 +1013,6 @@ static bool ack1WlMqpDispatch(MQTT_ClientCtx_t *clCtx)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool ack2MsgIdDispatch(MQTT_ClientCtx_t *clCtx)
 {
     MQTT_PubQOS2CQ_t     *tx_cq = &CLIENT(clCtx)->txQos2CircularQueue;
@@ -1235,15 +1030,9 @@ static bool ack2MsgIdDispatch(MQTT_ClientCtx_t *clCtx)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void sessionResume(MQTT_ClientCtx_t *clCtx)
 {
-    MQTTCLIENTCORE_DBG_INFO("C: Re-send ACK awaited QoS1/2 msgs to net %d\n\r", clCtx->net);
-
+    /* Re-send ACK awaited QoS1/2 msgs */
     if (ack1WlMqpDispatch(clCtx))
     {
         ack2MsgIdDispatch(clCtx);
@@ -1251,31 +1040,20 @@ static void sessionResume(MQTT_ClientCtx_t *clCtx)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool ack1WlRmfree(MQTT_AckWlist_t *wl, uint16_t msgID)
 {
     MQTT_Packet_t *mqp = MQTT_packetAckWlistRemove(wl, msgID);
-    
+
     if (NULL != mqp)
     {
         MQTT_packetFree(mqp);
         return true;
     }
 
-    MQTTCLIENTCORE_USR_INFO("Err: Unexpected ACK w/ ID 0x%04x\n\r", msgID);
-
+    /* Err: Unexpected ACK  */
     return false;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool _procPubRecRx(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
 {
     /* Follow-up messages for QOS2 PUB must be transacted in the
@@ -1297,11 +1075,6 @@ static bool _procPubRecRx(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
     return false; /* Unexpected PUBREC or QOS2 store exceeded */
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool _procPubRelRx(MQTT_ClientCtx_t *clCtx, uint16_t msgID)
 {
     /* For a PUB-REL RX, send PUBCOMP to let server make progress */
@@ -1340,11 +1113,6 @@ static bool _procAckMsgRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
     return true;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool procAckMsgRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
 {
     uint8_t msgType = mqpRaw->msgType;
@@ -1385,11 +1153,6 @@ static bool procAckMsgRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool procPubMsgRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
 {
     MQTTClientCore_CtxCBs_t *ctxCBs = MQTTClientCore_ctxCBsPtr(clCtx);
@@ -1444,11 +1207,6 @@ static bool procPubMsgRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
     return true;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool procConnackRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
 {
     MQTTClientCore_CtxCBs_t *ctxCBs = MQTTClientCore_ctxCBsPtr(clCtx);
@@ -1486,11 +1244,6 @@ static bool procConnackRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
     return true;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool procPingrspRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
 {
     MQTTClientCore_CtxCBs_t *ctxCBs = MQTTClientCore_ctxCBsPtr(clCtx);
@@ -1518,11 +1271,6 @@ static bool procPingrspRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
     return false;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool connSentStateRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
 {
     bool rv = false;
@@ -1542,11 +1290,6 @@ static bool connSentStateRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool connectedStateRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
 {
     bool rv = false;
@@ -1579,16 +1322,9 @@ static bool connectedStateRx(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static bool processRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
 {
     bool rv;
-
-    MQTTCLIENTCORE_USR_INFO("C: Rcvd msg Fix-Hdr (Byte1) 0x%02x from net %d [@ %u]\n\r", mqpRaw->fhByte1, clCtx->net, MQTTClientCore_netOps->time());
 
     /* Working Principle: Only RX processing errors should be
      reported as 'false'. Status of TX as a follow-up to RX
@@ -1600,31 +1336,19 @@ static bool processRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqpRaw)
      */
     rv = MQTTClientCore_awaitsConnack(clCtx) ? connSentStateRx(clCtx, mqpRaw) : connectedStateRx(clCtx, mqpRaw);
 
-    MQTTCLIENTCORE_DBG_INFO("C: Msg w/ ID 0x%04x, processing status: %s\n\r", mqpRaw->msgID, rv ? "Good" : "Fail");
-
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t netRecv(int32_t net, MQTT_Packet_t *mqp, uint32_t waitSecs, void *ctx)
 {
     bool timedOut = false;
     int32_t rv = MQTT_PacketRecv(net, MQTTClientCore_netOps, mqp, waitSecs, &timedOut, ctx);
-    
+
     if (rv <= 0)
     {
         if (timedOut)
         {
-            MQTTCLIENTCORE_USR_INFO("C: Net %d, Sending Ping request [%u]\n\r", net, MQTTClientCore_netOps->time());
             rv = MQTT_PACKET_ERR_TIMEOUT;
-        }
-        else
-        {
-            MQTTCLIENTCORE_USR_INFO("C: Net %d, Raw Error %d, Time Out: %c [%u]\n\r", net, rv, timedOut ? 'Y' : 'N', MQTTClientCore_netOps->time());
         }
     }
 
@@ -1643,11 +1367,6 @@ static int32_t netRecv(int32_t net, MQTT_Packet_t *mqp, uint32_t waitSecs, void 
  expected to be disconnected due to in-activity of MQTT messages. Value
  of 'waitSecs' is assumed to be quite smaller than (non-zero) 'kaSecs'.
  */
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void conn2usedCtxs(uint32_t waitSecs)
 {
     while (MQTTClientCore_connCtxs)
@@ -1659,11 +1378,6 @@ static void conn2usedCtxs(uint32_t waitSecs)
     }
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t singleCtxKaSequence(MQTT_ClientCtx_t *clCtx, uint32_t waitSecs)
 {
     uint32_t nowSecs = MQTTClientCore_netOps->time();
@@ -1688,15 +1402,9 @@ static int32_t singleCtxKaSequence(MQTT_ClientCtx_t *clCtx, uint32_t waitSecs)
         }
     }
 
-    MQTTCLIENTCORE_USR_INFO("C: Net %d, no RX MSG in reasonable time\n\r", clCtx->net);
     return -1;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static uint32_t singleCtxAdjWaitSecsGet(MQTT_ClientCtx_t *clCtx, uint32_t waitSecs)
 {
     uint32_t secs = MQTTClientCore_netOps->time();
@@ -1704,14 +1412,9 @@ static uint32_t singleCtxAdjWaitSecsGet(MQTT_ClientCtx_t *clCtx, uint32_t waitSe
     /* If 'secs' has gone past cl-timeout, then force new timeout to 1 sec */
     secs = (clCtx->timeout > secs) ? clCtx->timeout - secs : 1;
 
-    return (MQTT_KA_TIMEOUT_NONE != clCtx->timeout) ? MIN(secs, waitSecs) : waitSecs;
+    return (MQTT_KA_TIMEOUT_NONE != clCtx->timeout) ? MQTT_MIN(secs, waitSecs) : waitSecs;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t singleCtxRxPrep(MQTT_ClientCtx_t *clCtx, uint32_t *secs2wait)
 {
     int32_t rv;
@@ -1739,11 +1442,6 @@ static int32_t singleCtxRxPrep(MQTT_ClientCtx_t *clCtx, uint32_t *secs2wait)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t singleCtxRxPrepLocked(MQTT_ClientCtx_t *clCtx, uint32_t *secs2wait)
 {
     int32_t rv;
@@ -1755,11 +1453,6 @@ static int32_t singleCtxRxPrepLocked(MQTT_ClientCtx_t *clCtx, uint32_t *secs2wai
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t procCtxDataRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, uint32_t waitSecs, void **app)
 {
     int32_t rv = MQTT_PACKET_ERR_NOTCONN;
@@ -1767,7 +1460,7 @@ static int32_t procCtxDataRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, uint
 
     *app = clCtx->usr;
 
-    rv = netRecv(net, mqp, waitSecs, (void*) clCtx);
+    rv = netRecv(net, mqp, waitSecs, (void *)clCtx);
 
     MQTTClientCore_mutexLockin();
 
@@ -1779,7 +1472,7 @@ static int32_t procCtxDataRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, uint
      (a) there is a processing / protocol error other than time-out
      (b) A good MQTT CONNACK has a return code - connection refused
      */
-    if ((1 == MQTTClient_closeContext) || ((rv < 0) && (rv != MQTT_PACKET_ERR_TIMEOUT)) || 
+    if ((1 == MQTTClient_closeContext) || ((rv < 0) && (rv != MQTT_PACKET_ERR_TIMEOUT)) ||
         ((MQTT_CONNACK == mqp->msgType) && MQTTClientCore_packetConnackRC(mqp)))
     {
         doNetCloseRx(clCtx, rv);
@@ -1789,11 +1482,6 @@ static int32_t procCtxDataRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, uint
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t mqpSetupProcCtxDataRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, uint32_t waitSecs, void **app)
 {
     MQTT_Packet_t *mqpRx = CLIENT(clCtx)->mqpRx;
@@ -1848,11 +1536,6 @@ static int32_t mqpSetupProcCtxDataRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *m
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t clCtxRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, uint32_t waitSecs)
 {
     void *app = NULL;
@@ -1876,16 +1559,11 @@ static int32_t clCtxRecv(MQTT_ClientCtx_t *clCtx, MQTT_Packet_t *mqp, uint32_t w
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static MQTT_ClientCtx_t *groupCtxsKaSequence(uint32_t waitSecs)
 {
     MQTT_ClientCtx_t *clCtx = MQTTClientCore_usedCtxs;
     MQTT_ClientCtx_t *next;
-    
+
     while (clCtx)
     {
         next = clCtx->next;
@@ -1905,11 +1583,6 @@ static MQTT_ClientCtx_t *groupCtxsKaSequence(uint32_t waitSecs)
     return NULL;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static uint32_t groupCtxsAdjWaitSecsGet(uint32_t waitSecs)
 {
     return (MQTTClientCore_usedCtxs ? singleCtxAdjWaitSecsGet(MQTTClientCore_usedCtxs, waitSecs) : waitSecs);
@@ -1933,11 +1606,6 @@ static void recvHvecLoad(int32_t *hvec_recv, uint32_t size, MQTT_ClientCtx_t *li
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t groupCtxsRxPrep(uint32_t waitSecs, void **app)
 {
     /* CHK 'used ctx'(s) have live connection w/ server. If not, drop it */
@@ -1969,17 +1637,12 @@ static int32_t groupCtxsRxPrep(uint32_t waitSecs, void **app)
     return n_hnds;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t procLoopbackRecv(int32_t net)
 {
     uint8_t buf[MQTTCLIENTCORE_LOOP_DLEN];
     /* Thanks for waking-up thread, but ain't got much to do now */
     int32_t rv = MQTTClientCore_netOps->recvFrom(net, buf, MQTTCLIENTCORE_LOOP_DLEN, NULL, NULL, 0);
-    
+
     if (rv <= 0)
     {
         MQTTClientCore_netOps->close(net);
@@ -1989,11 +1652,6 @@ static int32_t procLoopbackRecv(int32_t net)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static MQTT_ClientCtx_t *netClCtxFind(int32_t net)
 {
     MQTT_ClientCtx_t *clCtx = MQTTClientCore_usedCtxs;
@@ -2005,11 +1663,6 @@ static MQTT_ClientCtx_t *netClCtxFind(int32_t net)
     return clCtx;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t procNetDataRecv(int32_t net, MQTT_Packet_t *mqp, void **app)
 {
     /* Note: MQTTClientCore_usedCtxs are always managed by a single RX task */
@@ -2023,11 +1676,6 @@ static int32_t procNetDataRecv(int32_t net, MQTT_Packet_t *mqp, void **app)
     return mqpSetupProcCtxDataRecv(clCtx, mqp, 1, app);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t clRecv(MQTT_Packet_t *mqp, uint32_t waitSecs, void **app)
 {
     int32_t rv = MQTT_PACKET_ERR_NETWORK;
@@ -2059,11 +1707,6 @@ static int32_t clRecv(MQTT_Packet_t *mqp, uint32_t waitSecs, void **app)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static int32_t grpNetSetupCreate()
 {
     if (0 == MQTTClientCore_loopbPortid)
@@ -2086,11 +1729,6 @@ static int32_t grpNetSetupCreate()
     return 1;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static MQTT_Packet_t *mqpAllocAtomic(void)
 {
     MQTT_Packet_t *mqp = NULL;
@@ -2106,11 +1744,6 @@ static MQTT_Packet_t *mqpAllocAtomic(void)
     return mqp;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void mqpFree(MQTT_Packet_t *mqp)
 {
     /* Must be used in a locked state */
@@ -2118,13 +1751,8 @@ static void mqpFree(MQTT_Packet_t *mqp)
     MQTTClientCore_freeList = mqp;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 static void clCtxSetup(MQTT_ClientCtx_t *clCtx, /* WR Object */
-                        const MQTTClientCore_CtxCfg_t *ctxCfg, 
+                        const MQTTClientCore_CtxCfg_t *ctxCfg,
                         const MQTTClientCore_CtxCBs_t *ctxCBs, void *app)
 {
     MQTTClientCore_ClientDesc_t *client = CLIENT(clCtx);
@@ -2139,7 +1767,7 @@ static void clCtxSetup(MQTT_ClientCtx_t *clCtx, /* WR Object */
 
     if (NULL != ctxCfg->nwSecurity)
     {
-        MQTT_bufWrNbytes((uint8_t*) &client->nwSecurity, (uint8_t*) ctxCfg->nwSecurity, sizeof(MQTT_SecureConn_t));
+        MQTT_bufWrNbytes((uint8_t *)&client->nwSecurity, (uint8_t *)ctxCfg->nwSecurity, sizeof(MQTT_SecureConn_t));
     }
     if (NULL != ctxCBs)
     {
@@ -2157,34 +1785,19 @@ static void clCtxSetup(MQTT_ClientCtx_t *clCtx, /* WR Object */
 // MQTT Client Core API Routines
 //*****************************************************************************
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 uint16_t MQTTClientCore_newMsgID(void)
 {
     return assignNewMsgID();
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 bool MQTTClientCore_isConnected(void *ctx)
 {
-    return isConnected((MQTT_ClientCtx_t*)(ctx));
+    return isConnected((MQTT_ClientCtx_t *)(ctx));
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_sendProgress(void *ctx)
 {
-    MQTT_ClientCtx_t *clCtx = (MQTT_ClientCtx_t*)(ctx);
+    MQTT_ClientCtx_t *clCtx = (MQTT_ClientCtx_t *)(ctx);
     MQTTClientCore_txPartPkt_t *txPart = NULL;
     int32_t rv = MQTT_PACKET_ERR_BADCALL;
 
@@ -2206,21 +1819,11 @@ int32_t MQTTClientCore_sendProgress(void *ctx)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_sendConnectMsg(void *ctx, bool cleanSession, uint16_t kaSecs)
 {
-    return (ctx ? connectMsgSend((MQTT_ClientCtx_t*)(ctx), cleanSession, kaSecs) : -1);
+    return (ctx ? connectMsgSend((MQTT_ClientCtx_t *)(ctx), cleanSession, kaSecs) : -1);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_sendPubMsg(void *ctx, const MQTT_UTF8String_t *topic, const uint8_t *dataBuf, uint32_t dataLen, MQTT_QOS qos, bool retain)
 {
     MQTT_Packet_t *mqp = NULL;
@@ -2246,80 +1849,45 @@ int32_t MQTTClientCore_sendPubMsg(void *ctx, const MQTT_UTF8String_t *topic, con
         return lenErrFreeMqp(mqp);
     }
 
-    return (_msgDispatch((MQTT_ClientCtx_t*)(ctx), mqp, qos, retain));
+    return (_msgDispatch((MQTT_ClientCtx_t *)(ctx), mqp, qos, retain));
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_dispatchPub(void *ctx, MQTT_Packet_t *mqp, MQTT_QOS qos, bool retain)
 {
-    return (msgDispatchNoFree((MQTT_ClientCtx_t*)(ctx), mqp, qos, retain));
+    return (msgDispatchNoFree((MQTT_ClientCtx_t *)(ctx), mqp, qos, retain));
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_sendSubMsg(void *ctx, const MQTT_UTF8StrQOS_t *qosTopics, uint32_t count)
 {
-    return (utf8ArraySend((MQTT_ClientCtx_t*)(ctx), qosTopics, NULL, count));
+    return (utf8ArraySend((MQTT_ClientCtx_t *)(ctx), qosTopics, NULL, count));
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_dispatchSub(void *ctx, MQTT_Packet_t *mqp)
 {
-    return (msgDispatchNoFree((MQTT_ClientCtx_t*)(ctx), mqp, MQTT_QOS1, false));
+    return (msgDispatchNoFree((MQTT_ClientCtx_t *)(ctx), mqp, MQTT_QOS1, false));
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_sendUnsubMsg(void *ctx, const MQTT_UTF8String_t *topics, uint32_t count)
 {
-    return (utf8ArraySend((MQTT_ClientCtx_t*)(ctx), NULL, topics, count));
+    return (utf8ArraySend((MQTT_ClientCtx_t *)(ctx), NULL, topics, count));
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_dispatchUnsub(void *ctx, MQTT_Packet_t *mqp)
 {
-    return (msgDispatchNoFree((MQTT_ClientCtx_t*)(ctx), mqp, MQTT_QOS1, false));
+    return (msgDispatchNoFree((MQTT_ClientCtx_t *)(ctx), mqp, MQTT_QOS1, false));
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_sendPingreq(void *ctx)
 {
     int32_t rv = 0;
 
     MQTTClientCore_mutexLockin();
-    rv = pingReqSend((MQTT_ClientCtx_t*)(ctx), MQTTCLIENTCORE_USER_PING_RSP_FLAG);
+    rv = pingReqSend((MQTT_ClientCtx_t *)(ctx), MQTTCLIENTCORE_USER_PING_RSP_FLAG);
     MQTTClientCore_mutexUnlock();
 
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_sendDisconn(void *ctx)
 {
     uint8_t buf[2];
@@ -2330,24 +1898,19 @@ int32_t MQTTClientCore_sendDisconn(void *ctx)
     MQTTClientCore_mutexLockin();
     /* Note: in case of error in network send, cl_ctx_send() may
      try to terminate connection with server. */
-    if (clCtxSeg1Send((MQTT_ClientCtx_t*)(ctx), buf, 2, false, NULL) > 0)
+    if (clCtxSeg1Send((MQTT_ClientCtx_t *)(ctx), buf, 2, false, NULL) > 0)
     {
         /* Terminate connection on application's request */
-        doNetCloseTx((MQTT_ClientCtx_t*)(ctx), "DISCONN");
+        doNetCloseTx((MQTT_ClientCtx_t *)(ctx), "DISCONN");
     }
     MQTTClientCore_mutexUnlock();
 
     return 0;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_ctxAwaitMsg(void *ctx, uint8_t msgType, MQTT_Packet_t *mqp, uint32_t waitSecs)
 {
-    MQTT_ClientCtx_t *clCtx = (MQTT_ClientCtx_t*)(ctx);
+    MQTT_ClientCtx_t *clCtx = (MQTT_ClientCtx_t *)(ctx);
     int32_t rv = -1;
 
     if ((NULL == clCtx) || (NULL == mqp))
@@ -2363,11 +1926,6 @@ int32_t MQTTClientCore_ctxAwaitMsg(void *ctx, uint8_t msgType, MQTT_Packet_t *mq
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_ctxRun(void *ctx, uint32_t waitSecs)
 {
     int32_t rv;
@@ -2378,22 +1936,17 @@ int32_t MQTTClientCore_ctxRun(void *ctx, uint32_t waitSecs)
     }
     do
     {
-        rv = clCtxRecv((MQTT_ClientCtx_t*)(ctx), NULL, waitSecs);
+        rv = clCtxRecv((MQTT_ClientCtx_t *)(ctx), NULL, waitSecs);
 
     } while (rv > 0);
 
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_awaitMsg(MQTT_Packet_t *mqp, uint32_t waitSecs, void **app)
 {
     int32_t rv = MQTT_PACKET_ERR_NOTCONN;
-    
+
     *app = NULL;
 
     if (NULL == mqp)
@@ -2418,11 +1971,6 @@ int32_t MQTTClientCore_awaitMsg(MQTT_Packet_t *mqp, uint32_t waitSecs, void **ap
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_run(uint32_t waitSecs)
 {
     void *app = NULL;
@@ -2444,22 +1992,17 @@ int32_t MQTTClientCore_run(uint32_t waitSecs)
     } while ((rv > 0) ||
             /* 'ctx' related errors are handled by the callbacks */
             ((rv != MQTT_PACKET_ERR_LIBQUIT) && (rv != MQTT_PACKET_ERR_TIMEOUT) && (rv != MQTT_PACKET_ERR_NETWORK)));
-            
+
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 MQTT_Packet_t *MQTTClientCore_alloc(uint8_t msgType, uint8_t offset)
 {
     MQTT_Packet_t *mqp = mqpAllocAtomic();
-    
+
     if (NULL == mqp)
     {
-        MQTTCLIENTCORE_USR_INFO("MQP allocation failed - msg type 0x%02x\n\r", msgType);
+        /* MQP allocation failed */
         return NULL;
     }
 
@@ -2469,16 +2012,11 @@ MQTT_Packet_t *MQTTClientCore_alloc(uint8_t msgType, uint8_t offset)
     return mqp;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_registerBuffers(uint32_t mqpNum, MQTT_Packet_t *mqpVec, uint32_t bufLen, uint8_t *bufVec)
 {
     uint32_t i, j;
     MQTT_Packet_t *mqp;
-    
+
     if ((0 == mqpNum) || (0 == bufLen) || MQTTClientCore_freeList)
     {
         return -1;
@@ -2498,11 +2036,6 @@ int32_t MQTTClientCore_registerBuffers(uint32_t mqpNum, MQTT_Packet_t *mqpVec, u
     return 0;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_registerWillInfo(void *ctx, const MQTT_UTF8String_t *willTop, const MQTT_UTF8String_t *willMsg, MQTT_QOS willQos, bool retain)
 {
     uint8_t B = 0;
@@ -2534,11 +2067,6 @@ int32_t MQTTClientCore_registerWillInfo(void *ctx, const MQTT_UTF8String_t *will
     return 0;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_registerCtxInfo(void *ctx, const MQTT_UTF8String_t *clientID, const MQTT_UTF8String_t *userName, const MQTT_UTF8String_t *password)
 {
     const MQTT_UTF8String_t *users_pwd = NULL;
@@ -2569,11 +2097,6 @@ int32_t MQTTClientCore_registerCtxInfo(void *ctx, const MQTT_UTF8String_t *clien
     return 0;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_registerNetSvc(const MQTT_DeviceNetServices_t *net)
 {
     if (net && net->open && net->send && net->recv && net->sendTo && net->recvFrom && net->close && net->ioMon && net->time)
@@ -2585,12 +2108,7 @@ int32_t MQTTClientCore_registerNetSvc(const MQTT_DeviceNetServices_t *net)
     return -1;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
-int32_t MQTTClientCore_createCtx(const MQTTClientCore_CtxCfg_t *ctxCfg, 
+int32_t MQTTClientCore_createCtx(const MQTTClientCore_CtxCfg_t *ctxCfg,
                     const MQTTClientCore_CtxCBs_t *ctxCBs, void *app, void **ctx)
 {
     MQTT_ClientCtx_t *clCtx = NULL;
@@ -2603,7 +2121,7 @@ int32_t MQTTClientCore_createCtx(const MQTTClientCore_CtxCfg_t *ctxCfg,
     {
         return -1;
     }
-    
+
     MQTTClientCore_mutexLockin();
     if (MQTTClientCore_freeCtxs)
     {
@@ -2623,14 +2141,9 @@ int32_t MQTTClientCore_createCtx(const MQTTClientCore_CtxCfg_t *ctxCfg,
     return -1;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_deleteCtx(void *ctx)
 {
-    MQTT_ClientCtx_t *clCtx = (MQTT_ClientCtx_t*) ctx;
+    MQTT_ClientCtx_t *clCtx = (MQTT_ClientCtx_t *)ctx;
     int32_t rv = -1; /* Not sure about deletion as yet */
 
     MQTTClientCore_mutexLockin();
@@ -2644,22 +2157,15 @@ int32_t MQTTClientCore_deleteCtx(void *ctx)
     return rv;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_initLib(const MQTTClientCore_LibCfg_t *lib_cfg_local)
 {
-    if ((NULL == lib_cfg_local) || (NULL == lib_cfg_local->debugPrintf))
+    if (NULL == lib_cfg_local)
     {
-        return -1;
-    }
-    debugPrintf = lib_cfg_local->debugPrintf; /* Facilitate debug */
 
+    }
     if (ModuleState_InitDone == MQTTClientCore_clLibState)
     {
-        MQTTCLIENTCORE_USR_INFO("C: Error trying to re-initialize \n\r");
+        /* Error trying to re-initialize */
         return -1;
     }
 
@@ -2670,17 +2176,14 @@ int32_t MQTTClientCore_initLib(const MQTTClientCore_LibCfg_t *lib_cfg_local)
     MQTTClientCore_loopbNet = -1;
     MQTTClientCore_freeList = NULL;
 
-    MQTTCLIENTCORE_USR_INFO("Version: Client LIB %s, Common LIB %s.\n\r",
-    MQTTCLIENTCORE_VERSTR, MQTT_COMMON_VERSTR);
-
     clientDescInit();
 
     MQTTClientCore_clLibState = ModuleState_InitDone;
 
     MQTTClientCore_loopbPortid = lib_cfg_local->loopbackPort;
-    MQTTClientCore_grpHasCBFn = lib_cfg_local->grpUsesCbfn;
+    MQTTClientCore_grpHasCBFn  = lib_cfg_local->grpUsesCbfn;
 
-    MQTTClientCore_mutex = lib_cfg_local->mutex;
+    MQTTClientCore_mutex        = lib_cfg_local->mutex;
     MQTTClientCore_mutex_lockin = lib_cfg_local->mutexLockin;
     MQTTClientCore_mutex_unlock = lib_cfg_local->mutexUnlock;
 
@@ -2688,11 +2191,6 @@ int32_t MQTTClientCore_initLib(const MQTTClientCore_LibCfg_t *lib_cfg_local)
     return 0;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//!
-//*****************************************************************************
 int32_t MQTTClientCore_exitLib()
 {
     MQTT_ClientCtx_t *clCtx = MQTTClientCore_freeCtxs;

@@ -168,17 +168,16 @@ typedef struct
 /*
     Declare the different IDs for sl_DeviceGet and sl_DeviceSet
  */  
-#define SL_DEVICE_GENERAL                          (1)
-#define SL_DEVICE_IOT                                (4)
-#define SL_DEVICE_STATUS                          (2)
+#define SL_DEVICE_GENERAL  (1)
+#define SL_DEVICE_IOT      (4)
+#define SL_DEVICE_STATUS   (2)
 
 /*
     Declare the different Options for SL_DEVICE_GENERAL in sl_DeviceGet and sl_DeviceSet
  */  
-#define SL_DEVICE_GENERAL_DATE_TIME (11)
+#define SL_DEVICE_GENERAL_DATE_TIME  (11)
 #define SL_DEVICE_GENERAL_PERSISTENT (5)
-#define SL_DEVICE_GENERAL_VERSION   (12)
-
+#define SL_DEVICE_GENERAL_VERSION    (12)
 /*
     Declare the different Options for SL_DEVICE_IOT in sl_DeviceGet and sl_DeviceSet
 */  
@@ -417,10 +416,11 @@ _i16 sl_Stop(const _u16 Timeout);
     
     \return    Zero on success, or a negative value if an error occurred
     \par Persistent
-        SL_DEVICE_GENERAL_DATE_TIME - Non-Persistent (Kept during hibernate)
+        SL_DEVICE_GENERAL_DATE_TIME - System Persistent (kept during hibernate only, See Note for details) \n
         SL_DEVICE_GENERAL_PERSISTENT - Persistent
     \sa         
-    \note 
+    \note   Persistency for SL_DEVICE_GENERAL_DATE_TIME -  The original setted value will be kept as System Persistence.\n
+            The updated date and time though, will be kept during hibernate only.
     \warning     
     \par   Examples:
 
@@ -701,7 +701,8 @@ void* sl_Task(void* pEntry);
                                          - flow control - enable/disable 
                                          - comm port    - the comm port number
     
-    \return         On success zero is returned, otherwise - Failed.   
+    \return         On success zero is returned, otherwise - Failed.  
+    \par Persistent  Non- Persistent
     \sa
     \note           Belongs to \ref basic_api
 

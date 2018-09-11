@@ -367,17 +367,26 @@ int32_t ATCmdNetUtil_cmdResult(void *args, int32_t num, char *buff)
 {    
     int32_t ret = 0;
     ATCmdNetUtil_Cmd_t *params = (ATCmdNetUtil_Cmd_t *)args;
-    uint16_t dataLen;
+    uint16_t dataLen = params->outValueLen;
 
     StrMpl_setStr(ATCmd_netUtilCmdStr,&buff,ATCMD_DELIM_EVENT);
 
     switch (params->cmd)
     {
         case SL_NETUTIL_CRYPTO_CMD_SIGN_MSG:
+            /* format */
+            StrMpl_setVal(&params->inValueFormat, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_8 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
             if (params->inValueFormat == ATCMD_DATA_FORMAT_BASE64)
             {
                 /* convert length from binary to base64 */
                 dataLen = StrMpl_getBase64EncBufSize(params->outValueLen);
+            }
+            /* signature length */
+            StrMpl_setVal(&dataLen, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_16 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
+
+            /* signature */
+            if (params->inValueFormat == ATCMD_DATA_FORMAT_BASE64)
+            {
                 /* convert data to base64 */
                 StrMpl_encodeBase64(params->outValue, params->outValueLen, (uint8_t *)buff, (uint32_t *)&dataLen);
             }
@@ -543,17 +552,25 @@ int32_t ATCmdNetUtil_getResult(void *args, int32_t num, char *buff)
 {    
     int32_t ret = 0;
     ATCmdNetUtil_Get_t *params = (ATCmdNetUtil_Get_t *)args;
-    uint16_t dataLen;
+    uint16_t dataLen = params->len;
 
     StrMpl_setStr(ATCmd_netUtilGetStr,&buff,ATCMD_DELIM_EVENT);
 
     switch (params->option)
     {
         case SL_NETUTIL_CRYPTO_PUBLIC_KEY:
+            /* format */
+            StrMpl_setVal(&params->format, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_8 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
             if (params->format == ATCMD_DATA_FORMAT_BASE64)
             {
                 /* convert length from binary to base64 */
                 dataLen = StrMpl_getBase64EncBufSize(params->len);
+            }
+            /* length */
+            StrMpl_setVal(&dataLen, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_16 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
+
+            if (params->format == ATCMD_DATA_FORMAT_BASE64)
+            {
                 /* convert data to base64 */
                 StrMpl_encodeBase64(params->value, params->len, (uint8_t *)buff, (uint32_t *)&dataLen);
             }

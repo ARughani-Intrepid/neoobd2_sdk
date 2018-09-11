@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -85,10 +85,12 @@ var cc26xxSrcList = genericDriverSrc.concat([
     "./pwm/PWMTimerCC26XX.c",
     "SPI.c",
     "./spi/SPICC26XXDMA.c",
+    "TRNG.c",
+    "./trng/TRNGCC26X0.c",
     "./timer/GPTimerCC26XX.c",
     "UART.c",
     "./uart/UARTCC26XX.c",
-    // "./uart/UARTCC26X0.c",
+    "./uart/UARTCC26X0.c",
     "Watchdog.c",
     "./watchdog/WatchdogCC26XX.c"
 ]);
@@ -116,10 +118,12 @@ var cc26xxHdrList = genericDriverHdrs.concat([
     "./pwm/PWMTimerCC26XX.h",
     "SPI.h",
     "./spi/SPICC26XXDMA.h",
+    "TRNG.h",
+    "./trng/TRNGCC26X0.h",
     "./timer/GPTimerCC26XX.h",
     "UART.h",
     "./uart/UARTCC26XX.h",
-    // "./uart/UARTCC26X0.h",
+    "./uart/UARTCC26X0.h",
     "Watchdog.h",
     "./watchdog/WatchdogCC26XX.h"
 ]);
@@ -128,12 +132,11 @@ var cc26x2SrcList = genericDriverSrc.concat([
     "ADC.c",
     "./adc/ADCCC26XX.c",
     "ADCBuf.c",
-    "./adcbuf/ADCBufCC26XX.c",
+    "./adcbuf/ADCBufCC26X2.c",
     "AESCCM.c",
     "./aesccm/AESCCMCC26XX.c",
     "AESECB.c",
     "./aesecb/AESECBCC26XX.c",
-    "./crypto/CryptoCC26XX.c",
     "./cryptoutils/cryptokey/CryptoKeyPlaintextCC26XX.c",
     "./cryptoutils/ecc/ECCParamsCC26X2.c",
     "./cryptoutils/sharedresources/CryptoResourceCC26XX.c",
@@ -161,10 +164,12 @@ var cc26x2SrcList = genericDriverSrc.concat([
     "./sha2/SHA2CC26X2.c",
     "SPI.c",
     "./spi/SPICC26XXDMA.c",
+    "TRNG.c",
+    "./trng/TRNGCC26X2.c",
     "./timer/GPTimerCC26XX.c",
     "UART.c",
     "./uart/UARTCC26XX.c",
-    // "./uart/UARTCC26X2.c",
+    "./uart/UARTCC26X2.c",
     "Watchdog.c",
     "./watchdog/WatchdogCC26XX.c"
 ]);
@@ -173,12 +178,11 @@ var cc26x2HdrList = genericDriverHdrs.concat([
     "ADC.h",
     "./adc/ADCCC26XX.h",
     "ADCBuf.h",
-    "./adcbuf/ADCBufCC26XX.h",
+    "./adcbuf/ADCBufCC26X2.h",
     "AESCCM.h",
     "./aesccm/AESCCMCC26XX.h",
     "AESECB.h",
     "./aesecb/AESECBCC26XX.h",
-    "./crypto/CryptoCC26XX.h",
     "./cryptoutils/cryptokey/CryptoKey.h",
     "./cryptoutils/cryptokey/CryptoKeyPlaintext.h",
     "./cryptoutils/ecc/ECCParams.h",
@@ -209,10 +213,12 @@ var cc26x2HdrList = genericDriverHdrs.concat([
     "./sha2/SHA2CC26X2.h",
     "SPI.h",
     "./spi/SPICC26XXDMA.h",
+    "TRNG.h",
+    "./trng/TRNGCC26X2.h",
     "./timer/GPTimerCC26XX.h",
     "UART.h",
     "./uart/UARTCC26XX.h",
-    // "./uart/UARTCC26X2.h",
+    "./uart/UARTCC26X2.h",
     "Watchdog.h",
     "./watchdog/WatchdogCC26XX.h"
 ]);
@@ -365,6 +371,10 @@ var msp432HdrList = genericDriverHdrs.concat([
 ]);
 
 var msp432e4SrcList = genericDriverSrc.concat([
+    "ADC.c",
+    "ADCBuf.c",
+    "./adc/ADCMSP432E4.c",
+    "./adcbuf/ADCBufMSP432E4.c",
     "./dma/UDMAMSP432E4.c",
     "./emac/EMACMSP432E4.c",
     "./gpio/GPIOMSP432E4.c",
@@ -376,6 +386,8 @@ var msp432e4SrcList = genericDriverSrc.concat([
     "./pwm/PWMMSP432E4.c",
     "SPI.c",
     "./spi/SPIMSP432E4DMA.c",
+    "Timer.c",
+    "./timer/TimerMSP432E4.c",
     "UART.c",
     "./uart/UARTMSP432E4.c",
     "Watchdog.c",
@@ -383,6 +395,10 @@ var msp432e4SrcList = genericDriverSrc.concat([
 ]);
 
 var msp432e4HdrList = genericDriverHdrs.concat([
+    "ADC.h",
+    "ADCBuf.h",
+    "./adc/ADCMSP432E4.h",
+    "./adcbuf/ADCBufMSP432E4.h",
     "./dma/UDMAMSP432E4.h",
     "./emac/EMACMSP432E4.h",
     "GPIO.h",
@@ -396,6 +412,8 @@ var msp432e4HdrList = genericDriverHdrs.concat([
     "./pwm/PWMMSP432E4.h",
     "SPI.h",
     "./spi/SPIMSP432E4DMA.h",
+    "Timer.h",
+    "./timer/TimerMSP432E4.h",
     "UART.h",
     "./uart/UARTMSP432E4.h",
     "Watchdog.h",
@@ -458,11 +476,17 @@ if (deviceWareOpts.cc26xxware) {
     libBuilder.makeLibs("lib/drivers_cc26x0r2", libBuilder.m3Targets,
         cc26xxSrcList, " -DDeviceFamily_CC26X0R2");
 
-    libBuilder.makeLibs("lib/drivers_cc13x2", libBuilder.m4fTargets,
-        cc26x2SrcList, " -DDeviceFamily_CC13X2");
+    libBuilder.makeLibs("lib/drivers_cc13x2_v1", libBuilder.m4fTargets,
+        cc26x2SrcList, " -DDeviceFamily_CC13X2_V1");
 
-    libBuilder.makeLibs("lib/drivers_cc26x2", libBuilder.m4fTargets,
-        cc26x2SrcList, " -DDeviceFamily_CC26X2");
+    libBuilder.makeLibs("lib/drivers_cc26x2_v1", libBuilder.m4fTargets,
+        cc26x2SrcList, " -DDeviceFamily_CC26X2_V1");
+
+    libBuilder.makeLibs("lib/drivers_cc13x2_v2", libBuilder.m4fTargets,
+        cc26x2SrcList, " -DDeviceFamily_CC13X2_V2");
+
+    libBuilder.makeLibs("lib/drivers_cc26x2_v2", libBuilder.m4fTargets,
+        cc26x2SrcList, " -DDeviceFamily_CC26X2_V2");
 
     /* restore M4F profile options for subsequent users */
     iarM4F.profiles["release"].compileOpts.copts = iarM4FCopts;
@@ -506,5 +530,5 @@ if (deviceWareOpts.msp432e4DriverLib) {
         msp432e4SrcList, " -D__MSP432E411Y__");
 }
 
-Pkg.otherFiles = packageFiles;
+Pkg.otherFiles = packageFiles.concat([".meta"]);
 Pkg.attrs.exportSrc = true;

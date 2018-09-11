@@ -161,6 +161,15 @@ if (retVal)         \
 /* Structure/Enum declarations                                               */
 /*****************************************************************************/
 
+typedef struct _SlSpawnMsgItem_s
+{
+    _SlSpawnEntryFunc_t      AsyncHndlr;
+    _u8                      ActionIndex;
+    void                     *Buffer;
+    struct _SlSpawnMsgItem_s *next;
+} _SlSpawnMsgItem_t;
+
+
 typedef struct
 {
     _u32  TSPrev;
@@ -280,7 +289,6 @@ typedef enum
 
 typedef struct
 {
-    _u8                     *pAsyncBuf;         /* place to write pointer to buffer with CmdResp's Header + Arguments */
     _u8                     ActionIndex; 
     _SlSpawnEntryFunc_t     AsyncEvtHandler;    /* place to write pointer to AsyncEvent handler (calc-ed by Opcode)   */
     _SlRxMsgClass_e         RxMsgClass;         /* type of Rx message                                                 */
@@ -343,24 +351,6 @@ typedef struct
 
 #endif
 
-#ifdef   SL_INC_INTERNAL_ERRNO
-
-#define  SL_DRVER_ERRNO_FLAGS_UNREAD    (1)
-
-typedef struct
-{
-#ifdef     SL_PLATFORM_MULTI_THREADED
-  _i32 Id;
-#endif
-  _i32       Errno;
-#ifdef     SL_PLATFORM_MULTI_THREADED
-   _u8       Index;
-   _u8       Flags;
-#endif
-
-}_SlDrvErrno_t;
-#endif
-
 typedef struct
 {
     _SlFd_t                 FD;
@@ -397,15 +387,18 @@ typedef struct
     _SlSockTriggerSelect_t  SocketTriggerSelect;
 #endif
 
-#ifdef SL_INC_INTERNAL_ERRNO
-    _SlDrvErrno_t Errno[MAX_CONCURRENT_ACTIONS];
-#ifdef     SL_PLATFORM_MULTI_THREADED
-    _SlLockObj_t  ErrnoLockObj;
-    _u8           ErrnoIndex;
+#ifdef SL_MEMORY_MGMT_DYNAMIC
+    _SlSpawnMsgItem_t *spawnMsgList;
 #endif
-#endif
-
+    _u8 NumOfDeletedSyncObj;
 }_SlDriverCb_t;
+
+typedef struct
+{
+    _SlSpawnEntryFunc_t AsyncHndlr;
+    _u8                 ActionIndex;
+    _u8                 Buffer[SL_ASYNC_MAX_MSG_LEN];
+}_SlAsyncRespBuf_t;
 
 extern _volatile _u8    RxIrqCnt;
 
@@ -433,14 +426,16 @@ extern _SlReturnVal_t _SlSocketHandleAsync_Close(void *pVoidBuf);
 extern _SlReturnVal_t _SlDrvGlobalObjUnLock(_u8 bDecrementApiInProgress);
 extern _SlReturnVal_t _SlDrvDriverIsApiAllowed(_u16 Silo);
 extern _SlReturnVal_t _SlDrvMsgReadSpawnCtx(void *pValue);
-
-
+extern void _SlInternalSpawnWaitForEvent(void);
+extern void _SlDrvSetGlobalLockOwner(_u8 Owner);
+extern _u8 _SlDrvIsSpawnOwnGlobalLock();
 #ifndef SL_TINY
-extern _i16  _SlDrvBasicCmd(_SlOpcode_t Opcode);
+extern _SlReturnVal_t  _SlDrvBasicCmd(_SlOpcode_t Opcode);
 extern _SlReturnVal_t _SlSocketHandleAsync_Accept(void *pVoidBuf);
 extern _SlReturnVal_t _SlNetAppHandleAsync_DnsGetHostByService(void *pVoidBuf);
 extern _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf);
 extern _SlReturnVal_t _SlSocketHandleAsync_StartTLS(void *pVoidBuf);
+extern _SlReturnVal_t _SlDrvReleaseAllActivePendingPoolObj();
 
 #ifdef slcb_GetTimestamp
 extern void _SlDrvStartMeasureTimeout(_SlTimeoutParams_t *pTimeoutInfo, _u32 TimeoutInMsec);
@@ -450,6 +445,9 @@ extern void _SlDrvSleep(_u16 DurationInMsec);
 
 #endif
 
+#if defined(SL_PLATFORM_MULTI_THREADED)
+extern void * pthread_self(void);
+#endif
 
 extern _SlReturnVal_t _SlNetAppHandleAsync_DnsGetHostByName(void *pVoidBuf);
 extern _SlReturnVal_t _SlNetAppHandleAsync_DnsGetHostByAddr(void *pVoidBuf);
@@ -466,10 +464,11 @@ extern void _SlDrvDispatchNetAppRequestEvents(SlNetAppRequest_t *slNetAppRequest
 
 extern void _SlDeviceHandleAsync_Stop(void *pVoidBuf);
 extern void _SlNetUtilHandleAsync_Cmd(void *pVoidBuf);
-extern _u8  _SlDrvWaitForPoolObj(_u8 ActionID, _u8 SocketID);
-extern void _SlDrvReleasePoolObj(_u8 pObj);
-extern _u16 _SlDrvAlignSize(_u16 msgLen); 
-extern _u8  _SlDrvProtectAsyncRespSetting(_u8 *pAsyncRsp, _SlActionID_e ActionID, _u8 SocketID);
+extern _SlReturnVal_t  _SlDrvWaitForPoolObj(_u8 ActionID, _u8 SocketID);
+extern _SlReturnVal_t _SlDrvReleasePoolObj(_u8 pObj);
+extern void _SlDrvReleaseAllPendingPoolObj();
+extern _SlReturnVal_t _SlDrvAlignSize(_u16 msgLen); 
+extern _SlReturnVal_t  _SlDrvProtectAsyncRespSetting(_u8 *pAsyncRsp, _SlActionID_e ActionID, _u8 SocketID);
 extern void _SlNetAppHandleAsync_NetAppReceive(void *pVoidBuf);
 
 
@@ -491,18 +490,14 @@ extern void  _SlDrvResetCmdExt(_SlCmdExt_t* pCmdExt);
 
 extern _i8 _SlDrvIsApiInProgress(void);
 extern void _SlDrvHandleResetRequest(const void* pIfHdl, _i8*  pDevName);
-
+extern _SlReturnVal_t _SlDrvWaitForInternalAsyncEvent(_u8 ObjIdx, _u32 Timeout, _SlOpcode_t Opcode);
+extern _SlReturnVal_t _SlSpawnMsgListInsert(_u16 AsyncEventLen, _u8 *pAsyncBuf);
+extern _SlReturnVal_t _SlSpawnMsgListProcess(void);
+extern _u16 _SlSpawnMsgListGetCount(void);
 #ifndef SL_TINY
 extern void _SlDrvHandleFatalError(_u32 errorId, _u32 info1, _u32 info2);
 extern void _SlDrvHandleAssert(void);
-
-#endif
-
-_i32 _SlDrvSetErrno(_i32 Errno);
-_i32* _SlDrvallocateErrno(_i32 Errno);
-
-#ifndef SL_INC_INTERNAL_ERRNO
-extern int slcb_SetErrno(int Errno);
+extern void _SlFindAndReleasePendingCmd();
 #endif
 
 #define _SL_PROTOCOL_ALIGN_SIZE(msgLen)             (((msgLen)+3) & (~3))

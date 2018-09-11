@@ -2,7 +2,7 @@
  *  Do not modify this file; it is automatically 
  *  generated and any modifications will be overwritten.
  *
- * @(#) xdc-D21
+ * @(#) xdc-E05
  */
 import java.util.*;
 import org.mozilla.javascript.*;
@@ -11,7 +11,7 @@ import xdc.services.spec.Session;
 
 public class ti_drivers
 {
-    static final String VERS = "@(#) xdc-D21\n";
+    static final String VERS = "@(#) xdc-E05\n";
 
     static final Proto.Elm $$T_Bool = Proto.Elm.newBool();
     static final Proto.Elm $$T_Num = Proto.Elm.newNum();
@@ -60,7 +60,6 @@ public class ti_drivers
     {
         Global.callFxn("loadPackage", xdcO, "ti.sysbios");
         Global.callFxn("loadPackage", xdcO, "ti.dpl");
-        Global.callFxn("loadPackage", xdcO, "third_party.fatfs");
         Global.callFxn("loadPackage", xdcO, "xdc");
         Global.callFxn("loadPackage", xdcO, "xdc.corevers");
         Global.callFxn("loadPackage", xdcO, "xdc.runtime");
@@ -244,7 +243,6 @@ public class ti_drivers
         imports.clear();
         imports.add(Global.newArray("ti.sysbios", Global.newArray()));
         imports.add(Global.newArray("ti.dpl", Global.newArray()));
-        imports.add(Global.newArray("third_party.fatfs", Global.newArray()));
         pkgV.bind("$imports", imports);
         StringBuilder sb = new StringBuilder();
         sb.append("var pkg = xdc.om['ti.drivers'];\n");

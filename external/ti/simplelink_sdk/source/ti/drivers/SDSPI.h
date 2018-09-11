@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-#warning "ti/drivers/SDSPI is deprecated & not recommended for new design. \
+#warning "ti/drivers/SDSPI is deprecated & not recommended for new designs. \
 The SDSPILegacy module & macros below are only for compatibility with \
 existing projects. A new SD driver implementation based on the SPI driver \
 (ti/drivers/sd/SDSPI) is provided as a means to communicate with SD cards via \

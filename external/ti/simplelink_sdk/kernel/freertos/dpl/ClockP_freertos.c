@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,9 @@
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/dpl/HwiP.h>
 
+/* System tick period in microseconds */
+#define TICK_PERIOD_US (1000000 / configTICK_RATE_HZ)
+
 static TickType_t ticksToWait = portMAX_DELAY;
 
 void ClockP_callbackFxn(uintptr_t arg);
@@ -63,15 +66,31 @@ typedef struct ClockP_StaticFreeRTOSObj {
 } ClockP_StaticFreeRTOSObj;
 #endif
 
+static bool setClockObjTimeout(ClockP_Handle pObj);
+
 /*
  *  ======== ClockP_callbackFxn ========
  */
 void ClockP_callbackFxn(uintptr_t arg)
 {
-    TimerHandle_t    handle = (TimerHandle_t)arg;
+    TimerHandle_t       handle = (TimerHandle_t)arg;
     ClockP_FreeRTOSObj *obj;
 
     obj = (ClockP_FreeRTOSObj *)pvTimerGetTimerID(handle);
+
+    /*
+     *  If the period is non-zero and different from the initial timeout
+     *  passed to ClockP_create() we need to change the FreeRTOS timer's
+     *  period to the ClockP object's period.  This should only happen
+     *  once.
+     */
+    if ((obj->period != 0) && (obj->timeout != obj->period)) {
+        obj->timeout = obj->period;
+
+        /* Set the xTimer timeout to the new value */
+        setClockObjTimeout(obj);
+    }
+
     (obj->fxn)(obj->arg);
 }
 
@@ -81,9 +100,11 @@ void ClockP_callbackFxn(uintptr_t arg)
 ClockP_Handle ClockP_create(ClockP_Fxn clockFxn, uint32_t timeout,
         ClockP_Params *params)
 {
-    ClockP_Params defaultParams;
+    ClockP_Params       defaultParams;
     ClockP_FreeRTOSObj *pObj;
-    TimerHandle_t    handle = NULL;
+    UBaseType_t         autoReload;
+    TimerHandle_t       handle = NULL;
+    TickType_t          initialTimeout = timeout;
 
     if (params == NULL) {
         params = &defaultParams;
@@ -94,8 +115,19 @@ ClockP_Handle ClockP_create(ClockP_Fxn clockFxn, uint32_t timeout,
         return (NULL);
     }
 
-    handle = xTimerCreate(NULL, 1, 0, (void *)pObj,
-                          (TimerCallbackFunction_t)ClockP_callbackFxn);
+    autoReload = (params->period == 0) ? 0 : 1;
+
+    /*
+     *  FreeRTOS does not allow you to create a timer with a timeout
+     *  of 0.  If timeout is 0, assume that ClockP_setTimeout() will be
+     *  called to change it, and create the timer with a non-zero timeout.
+     */
+    if (timeout == 0) {
+        initialTimeout = (TickType_t)0xFFFFFFFF;
+    }
+
+    handle = xTimerCreate(NULL, initialTimeout, autoReload,
+            (void *)pObj, (TimerCallbackFunction_t)ClockP_callbackFxn);
 
     if (handle == NULL) {
         vPortFree(pObj);
@@ -106,6 +138,7 @@ ClockP_Handle ClockP_create(ClockP_Fxn clockFxn, uint32_t timeout,
     pObj->fxn = clockFxn;
     pObj->arg = params->arg;
     pObj->timeout = timeout;
+    pObj->period = params->period;
 
     if (params->startFlag) {
         /* Just returns if timeout is 0 */
@@ -231,6 +264,11 @@ void ClockP_setTimeout(ClockP_Handle handle, uint32_t timeout)
 {
     ClockP_FreeRTOSObj *pObj = (ClockP_FreeRTOSObj *)handle;
 
+    /*
+     *  We are not allowed to change the timeout once the ClockP objecct has
+     *  been started.  The next call to ClockP_start() will set the FreeRTOS
+     *  timer's timeout to the new value.
+     */
     pObj->timeout = timeout;
 }
 
@@ -240,29 +278,18 @@ void ClockP_setTimeout(ClockP_Handle handle, uint32_t timeout)
 void ClockP_start(ClockP_Handle handle)
 {
     ClockP_FreeRTOSObj *pObj = (ClockP_FreeRTOSObj *)handle;
-    BaseType_t status;
 
     if (pObj->timeout == 0) {
         return;
     }
 
-    if (!HwiP_inISR()) {
-        status = xTimerChangePeriod(pObj->timer, (TickType_t)pObj->timeout,
-                ticksToWait);
-
-        configASSERT(status == pdPASS);
-
-        if (status == pdPASS) {
-            xTimerStart(pObj->timer, ticksToWait);
-        }
-    }
-    else {
-        status = xTimerChangePeriodFromISR(pObj->timer,
-                (TickType_t)pObj->timeout, NULL);
-        if (status == pdPASS) {
-            xTimerStartFromISR(pObj->timer, NULL);
-        }
-    }
+    /*
+     *  Set the timeout value in case ClockP_setTimeout() was called.
+     *  According to the FreeRTOS API documentation, xTimerChangePeriod()
+     *  actually starts a dormant timer, so calling xTimerStart() is
+     *  not necessary.
+     */
+    setClockObjTimeout(handle);
 }
 
 #if (configSUPPORT_STATIC_ALLOCATION == 1)
@@ -297,11 +324,14 @@ void ClockP_stop(ClockP_Handle handle)
  */
 void ClockP_sleep(uint32_t sec)
 {
-    uint32_t msecs = sec * 1000;
     TickType_t xDelay;
 
-    /* Take the ceiling */
-    xDelay = (msecs + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
+    if (sec > 0xFFFFFFFF / configTICK_RATE_HZ) {
+        xDelay = 0xFFFFFFFF;
+    }
+    else {
+        xDelay = sec * configTICK_RATE_HZ;
+    }
 
     vTaskDelay(xDelay);
 }
@@ -311,11 +341,36 @@ void ClockP_sleep(uint32_t sec)
  */
 void ClockP_usleep(uint32_t usec)
 {
-    uint32_t msecs = (usec + 999) / 1000;
     TickType_t xDelay;
 
     /* Take the ceiling */
-    xDelay = (msecs + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
+    xDelay = (usec + TICK_PERIOD_US - 1) / TICK_PERIOD_US;
 
     vTaskDelay(xDelay);
+}
+
+/*
+ *  ======== setClockObjPeriod ========
+ */
+static bool setClockObjTimeout(ClockP_Handle handle)
+{
+    ClockP_FreeRTOSObj *pObj = (ClockP_FreeRTOSObj *)handle;
+    BaseType_t          status;
+
+    if (!HwiP_inISR()) {
+        status = xTimerChangePeriod(pObj->timer, (TickType_t)pObj->timeout,
+                ticksToWait);
+
+        configASSERT(status == pdPASS);
+    }
+    else {
+        status = xTimerChangePeriodFromISR(pObj->timer,
+                (TickType_t)pObj->timeout, NULL);
+    }
+
+    if (status == pdPASS) {
+        return (true);
+    }
+
+    return (false);
 }

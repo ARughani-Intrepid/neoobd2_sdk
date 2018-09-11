@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 #include <ti/net/bsd/sys/socket.h>
 #include <ti/net/bsd/errnoutil.h>
 #include <ti/net/slnetsock.h>
+#include <ti/net/slneterr.h>
 
 /* The implementation assumes the various SLNETSOCK_MSG_ flags passed
  * to SlNetSock send/recv (and friends) are equivalent to the BSD

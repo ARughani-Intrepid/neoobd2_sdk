@@ -26,7 +26,7 @@ IPATH += -I$(COM_TI_SIMPLELINK_MSP432_SDK_INSTALL_DIR)/source
 endif
 IPATH += -I$(STDINC)
 
-CFLAGS = -c -Wunused -Wunknown-pragmas -ffunction-sections -g -fdata-sections -mcpu=cortex-m4 -mthumb -mabi=aapcs $(IPATH)
+CFLAGS = -c -Wunused -Wunknown-pragmas -ffunction-sections -g -fdata-sections -mcpu=cortex-m4 -mthumb -mabi=aapcs $(IPATH) -std=c99
 ifdef COM_TI_SIMPLELINK_MSP432_SDK_INSTALL_DIR
 CFLAGS += -mfloat-abi=hard
 else

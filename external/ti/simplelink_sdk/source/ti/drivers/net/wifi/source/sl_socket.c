@@ -180,7 +180,7 @@ static const _SlCmdCtrl_t _SlSockCloseCmdCtrl =
 _i16 sl_Close(_i16 sd)
 {
     _SlSockCloseMsg_u    Msg;
-    _u8                  ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16                 ObjIdx = MAX_CONCURRENT_ACTIONS;
     SlSocketResponse_t   AsyncRsp;
     _SlReturnVal_t       RetVal;
     _u8                  bSocketInAction = FALSE;
@@ -213,10 +213,8 @@ _i16 sl_Close(_i16 sd)
     {
         if( SL_RET_CODE_OK == RetVal)
         {    
-            SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                            SL_DRIVER_TIMEOUT_LONG,
-                            SL_OPCODE_SOCKET_SOCKETCLOSEASYNCEVENT
-                            );
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, SL_DRIVER_TIMEOUT_LONG, SL_OPCODE_SOCKET_SOCKETCLOSEASYNCEVENT));
+
             RetVal = AsyncRsp.StatusOrLen;
         }
 
@@ -459,7 +457,7 @@ _i16 sl_Connect(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen)
       _SlReturnVal_t       RetVal;
       _SlCmdCtrl_t         CmdCtrl = {0, (_SlArgSize_t)0, (_SlArgSize_t)sizeof(SlSocketResponse_t)};
       SlSocketResponse_t   AsyncRsp;
-      _u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
+      _i16 ObjIdx = MAX_CONCURRENT_ACTIONS;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -508,21 +506,22 @@ _i16 sl_Connect(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen)
         /*In case socket is non-blocking one, the async event should be received immediately */
         if( g_pCB->SocketNonBlocking & (1<<(sd & SL_BSD_SOCKET_ID_MASK) ))
         {
-            SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                                          SL_DRIVER_TIMEOUT_SHORT,
-                                          SL_OPCODE_SOCKET_CONNECTASYNCRESPONSE
-                                          );
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, SL_DRIVER_TIMEOUT_SHORT, SL_OPCODE_SOCKET_CONNECTASYNCRESPONSE));
         }
         else
 #endif
         {
 
-            /* wait for async and get Data Read parameters */
-            SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+            /* wait for async and get Data Read parameters */	
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, 0, 0));
         }
-
-        VERIFY_PROTOCOL(AsyncRsp.Sd == (_u8)sd);
+        
         RetVal = AsyncRsp.StatusOrLen;
+        
+        if (0 <= RetVal)
+        {
+            VERIFY_PROTOCOL(AsyncRsp.Sd == (_u8)sd);
+        }        
     }
 
     _SlDrvReleasePoolObj(ObjIdx);
@@ -695,7 +694,7 @@ _i16 sl_Accept(_i16 sd, SlSockAddr_t *addr, SlSocklen_t *addrlen)
     _SlReturnVal_t           RetVal;
     SlSocketAddrResponse_u   AsyncRsp;
 
-    _u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16 ObjIdx = MAX_CONCURRENT_ACTIONS;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -733,21 +732,23 @@ _i16 sl_Accept(_i16 sd, SlSockAddr_t *addr, SlSocklen_t *addrlen)
         /* in case socket is non-blocking one, the async event should be received immediately */
         if( g_pCB->SocketNonBlocking & (1<<(sd & SL_BSD_SOCKET_ID_MASK) ))
         {
-            SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                                         SL_DRIVER_TIMEOUT_SHORT,
-                                         SL_OPCODE_SOCKET_ACCEPTASYNCRESPONSE
-                                         );
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, SL_DRIVER_TIMEOUT_SHORT, SL_OPCODE_SOCKET_ACCEPTASYNCRESPONSE));
         }
         else
 #endif         
-        {
+        {  
             /* wait for async and get Data Read parameters */
-            SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+	    VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx,0,0));
         }
 
-        VERIFY_PROTOCOL(AsyncRsp.IpV4.Sd == (_u8)sd);
-
         RetVal = AsyncRsp.IpV4.StatusOrLen;
+
+        if (0 <= RetVal)
+        {
+            VERIFY_PROTOCOL(AsyncRsp.IpV4.Sd == (_u8)sd);
+        }
+
+       
 #if 0 /*  Kept for backup */
         _SlSocketParseAddress(&AsyncRsp, addr, addrlen);
 #else
@@ -1117,6 +1118,7 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
     _u32                         time_now;
     _u8                          TimeoutEvent = 0;
     _u16                         SelectEvent = 0;
+    _u8                          PendingSelect = FALSE;
 
     _SlDrvMemZero(&Msg, sizeof(_SlSelectMsg_u));
 
@@ -1125,7 +1127,7 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
     SL_DRV_OBJ_LOCK_FOREVER(&g_pCB->MultiSelectCB.SelectLockObj);
 
     /* Check if this context was triggered by a 'select joiner' only,
-     * without timeout occuering, in order to launch the next select as quick as possible */
+     * without timeout occurring, in order to launch the next select as quick as possible */
     if((CTRL_SOCK_FD == pMsgArgs->ReadFds) && (pMsgArgs->Status != SELECT_TIMEOUT))
     {
         RetVal = _SlDrvClearCtrlSocket();
@@ -1199,6 +1201,10 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
                 /* Clean it's table entry */
                 g_pCB->MultiSelectCB.SelectEntry[RegIdx] = NULL;
             }
+            else
+            {
+                PendingSelect = TRUE;
+            }
         }
     }
 
@@ -1210,7 +1216,7 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
     }
 
     /* If more readers/Writers are present, send select again */
-    if((0 != g_pCB->MultiSelectCB.readsds) || (0 != g_pCB->MultiSelectCB.writesds))
+    if((0 != g_pCB->MultiSelectCB.readsds) || (0 != g_pCB->MultiSelectCB.writesds) || (TRUE == PendingSelect))
     {
         Msg.Cmd.ReadFds  = g_pCB->MultiSelectCB.readsds;
         Msg.Cmd.ReadFds |= CTRL_SOCK_FD;
@@ -1475,7 +1481,24 @@ static _i16 _SlDrvRegisterForSelectAsync(_SlSelectEntry_t* pEntry, _SlSelectMsg_
         SL_DRV_OBJ_UNLOCK(&g_pCB->MultiSelectCB.SelectLockObj);
 
         /* Wait here to be signaled by a successfully completed select caller */
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->MultiSelectCB.SelectSyncObj);
+        if (_SlDrvIsSpawnOwnGlobalLock())
+        {
+           while (TRUE)
+           {
+               /* If we are in spawn context, this is an API which was called from event handler,
+               read any async event and check if we got signaled */
+               _SlInternalSpawnWaitForEvent();
+               /* is it mine? */
+               if (0 == sl_SyncObjWait(&g_pCB->MultiSelectCB.SelectSyncObj, SL_OS_NO_WAIT))
+               {
+                  break;
+               }
+           }
+        }
+        else
+        {
+           SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->MultiSelectCB.SelectSyncObj);
+        }
 
         _RetVal = sl_SendTo(g_pCB->MultiSelectCB.CtrlSockFD,
                                 &dummyBuf[0],
@@ -1597,7 +1620,26 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 
             SL_DRV_OBJ_UNLOCK(&g_pCB->MultiSelectCB.SelectLockObj);
 
-            SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->MultiSelectCB.SelectSyncObj);
+            /* Wait here to be signaled by a successfully completed select caller */
+            if (_SlDrvIsSpawnOwnGlobalLock())
+            {
+               while (TRUE)
+               {
+                   /* If we are in spawn context, this is an API which was called from event handler,
+                   read any async event and check if we got signaled */
+                   _SlInternalSpawnWaitForEvent();
+                   /* is it mine? */
+                   if (0 == sl_SyncObjWait(&g_pCB->MultiSelectCB.SelectSyncObj, SL_OS_NO_WAIT))
+                   {
+                      break;
+                   }
+               }
+            }
+            else
+            {
+               SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->MultiSelectCB.SelectSyncObj);
+            }
+
 
             if((_i16)g_pCB->MultiSelectCB.SelectCmdResp.status != SL_RET_CODE_OK)
             {
@@ -1624,8 +1666,7 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
     }
 
     /* Wait here for a Async event, or command response in case select fails.*/
-    SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[SelectParams.ObjIdx].SyncObj);
-
+    VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(SelectParams.ObjIdx, 0, 0));
     _SlDrvReleasePoolObj(SelectParams.ObjIdx);
 
     ret = (_i16)g_pCB->MultiSelectCB.SelectCmdResp.status;
@@ -1708,7 +1749,7 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 {
     _SlSelectMsg_u            Msg;
     SlSelectAsyncResponse_t   AsyncRsp;
-    _u8                       ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16                      ObjIdx = MAX_CONCURRENT_ACTIONS;
 #if ((defined(SL_RUNTIME_EVENT_REGISTERATION) || defined(slcb_SocketTriggerEventHandler)))
     _u8                       IsNonBlocking = FALSE;
 #endif
@@ -1837,7 +1878,7 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 
     if(SL_OS_RET_CODE_OK == (_i16)Msg.Rsp.status)
     {
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+	VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx,0,0));
 
         Msg.Rsp.status = (_i16)AsyncRsp.Status;
 
@@ -1908,7 +1949,7 @@ _i16 sl_StartTLS(_i16 sd)
     _SlReturnVal_t       RetVal;
     SlSocketAsyncEvent_t AsyncRsp;
     _u32                 tempValue;
-    _u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16 ObjIdx = MAX_CONCURRENT_ACTIONS;
 
     /* verify that this api is allowed. if not allowed then
        ignore the API execution and return immediately with an error */
@@ -1928,7 +1969,7 @@ _i16 sl_StartTLS(_i16 sd)
     if(SL_RET_CODE_OK == RetVal)
     {
         /* wait for async and get Data Read parameters */
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+        VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx,0,0));
 
         VERIFY_PROTOCOL(AsyncRsp.Sd == (_u8)sd);
 

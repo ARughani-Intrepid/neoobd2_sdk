@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -156,11 +156,11 @@
  *
  *  I2S_Params_init(&params);
  *  params.operationMode = I2S_MODE_TX_RX_SYNC;
- *  < Change other params as required >
  *
  *  handle = I2S_open(Board_I2S0, &params);
- *  if (!handle) {
- *      // Error opening I2S, handle accordingly
+ *  if (handle == NULL) {
+ *      // Error opening I2S
+ *      while (1);
  *  }
  *  @endcode
  *

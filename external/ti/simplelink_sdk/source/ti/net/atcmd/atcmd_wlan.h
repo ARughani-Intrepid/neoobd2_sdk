@@ -47,7 +47,6 @@ int32_t ATCmdWlan_policyGetCallback(void *arg);
 int32_t ATCmdWlan_setModeCallback(void *arg);
 int32_t ATCmdWlan_setCallback(void *arg);
 int32_t ATCmdWlan_getCallback(void *arg);
-int32_t ATCmdWlan_provisioningCallback(void *arg);
 
 
 #endif /* __ATCMD_WLAN_H__ */

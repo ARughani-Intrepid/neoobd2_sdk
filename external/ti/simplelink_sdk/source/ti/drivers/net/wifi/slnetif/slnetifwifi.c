@@ -42,11 +42,12 @@
 /*****************************************************************************/
 
 /* Macro which split the 8bit security flags from the input flags            */
-#define SPLIT_SEC_AND_INPUT_FLAGS(inputFlags, secFlags)  (secFlags = inputFlags >> 24)
+#define SPLIT_SEC_AND_INPUT_FLAGS(inputFlags, secFlags) (secFlags = inputFlags >> 24)
 
 /* Disable the 8bit security flags                                           */
-#define SECURITY_FLAGS_IN_32BIT_REPRESENTATION (0xFF000000)
-#define DISABLE_SEC_BITS_FROM_INPUT_FLAGS(inputFlags)  (inputFlags &= ~SECURITY_FLAGS_IN_32BIT_REPRESENTATION)
+#define SECURITY_FLAGS_IN_32BIT_REPRESENTATION          (0xFF000000)
+#define DISABLE_SEC_BITS_FROM_INPUT_FLAGS(inputFlags)   (inputFlags &= ~SECURITY_FLAGS_IN_32BIT_REPRESENTATION)
+
 
 /*****************************************************************************/
 /* Structure/Enum declarations                                               */
@@ -309,7 +310,7 @@ int32_t SlNetIfWifi_sockstartSec(int16_t sd, void *sdContext, SlNetSockSecAttrib
 
     if ( 0 != (flags & SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY)  )
     {
-        /* Start TLS session                                                     */
+        /* Start TLS session                                                 */
         retVal = sl_StartTLS(sd);
     }
 
@@ -388,42 +389,54 @@ int32_t SlNetIfWifi_getConnectionStatus(void *ifContext)
 //*****************************************************************************
 int32_t SlNetIfWifi_loadSecObj(void *ifContext, uint16_t objType, char *objName, int16_t objNameLen, uint8_t *objBuff, int16_t objBuffLen)
 {
+    int32_t   retVal;    /* negative retVal is an error */
     char     *deviceFileName   = objName;
     int32_t   DeviceFileHandle = -1;
-    int32_t   retVal;                //negative retVal is an error
     uint32_t  Offset           = 0;
     uint32_t  MasterToken      = 0;
     int32_t   OpenFlags        = 0;
+    uint8_t   macAddress[SL_MAC_ADDR_LEN];
+    uint16_t  macAddressLen = SL_MAC_ADDR_LEN;
 
-    /* Check if the inputs exists                                        */
+    /* Check if the inputs exists                                            */
     if ( (NULL == objName) || (NULL == objBuff) )
     {
-        /* input not valid, return error code                            */
+        /* input not valid, return error code                                */
         return SLNETERR_RET_CODE_INVALID_INPUT;
     }
 
+    /* Print device Mac address                                              */
+    retVal = sl_NetCfgGet(SL_NETCFG_MAC_ADDRESS_GET, 0, &macAddressLen, &macAddress[0]);
+
+    /* The masterToken is the Xor combination between the mac address of
+       the device and the object file name.                                  */
+    MasterToken = (uint32_t)deviceFileName ^ (uint32_t)macAddress;
+
     /* Create a file and write data. The file is secured, without
-       signature and with a fail safe commit                             */
+       signature and with a fail safe commit, with vendor token which is
+       a Xor combination between the mac address of the device and the
+       object file name                                                      */
     OpenFlags = SL_FS_CREATE;
     OpenFlags |= SL_FS_OVERWRITE;
     OpenFlags |= SL_FS_CREATE_SECURE;
+    OpenFlags |= SL_FS_CREATE_VENDOR_TOKEN;
     OpenFlags |= SL_FS_CREATE_NOSIGNATURE;
     OpenFlags |= SL_FS_CREATE_FAILSAFE;
 
-    /* Create a secure file if not exists and open it for write.         */
+    /* Create a secure file if not exists and open it for write.             */
     DeviceFileHandle =  sl_FsOpen((unsigned char *)deviceFileName, OpenFlags | SL_FS_CREATE_MAX_SIZE( objBuffLen ), (unsigned long *)&MasterToken);
 
-    /* Check if file created successfully                                */
+    /* Check if file created successfully                                    */
     if ( DeviceFileHandle < SLNETERR_RET_CODE_OK )
     {
         return DeviceFileHandle;
     }
 
     Offset = 0;
-    /* Write the buffer to the new file                                  */
+    /* Write the buffer to the new file                                      */
     retVal = sl_FsWrite(DeviceFileHandle, Offset, (unsigned char *)objBuff, objBuffLen);
 
-    /* Close the file                                                    */
+    /* Close the file                                                        */
     retVal = sl_FsClose(DeviceFileHandle, NULL, NULL , 0);
 
     return retVal;

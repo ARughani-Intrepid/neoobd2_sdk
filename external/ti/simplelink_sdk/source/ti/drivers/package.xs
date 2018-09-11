@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@ function getLibs()
 
     /* Determine libraries required by device name. */
     if (Program.cpu.deviceName.match(/CC13.2/)) {
-        driverString = "_cc13x2";
+        driverString = "_cc13x2_v1";
     }
     else if (Program.cpu.deviceName.match(/CC13.0/)) {
         driverString = "_cc13x0";
@@ -56,7 +56,7 @@ function getLibs()
         driverString = "_cc26x0r2";
     }
     else if (Program.cpu.deviceName.match(/CC26.2/)) {
-        driverString = "_cc26x2";
+        driverString = "_cc26x2_v1";
     }
     else if (Program.cpu.deviceName.match(/CC26.0/)) {
         driverString = "_cc26x0";

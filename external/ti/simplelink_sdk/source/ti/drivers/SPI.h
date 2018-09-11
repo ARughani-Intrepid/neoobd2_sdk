@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -112,12 +112,13 @@
  *  // Fill in transmitBuffer
  *
  *  spiTransaction.count = MSGSIZE;
- *  spiTransaction.txBuf = transmitBuffer;
- *  spiTransaction.rxBuf = receiveBuffer;
+ *  spiTransaction.txBuf = (void *)transmitBuffer;
+ *  spiTransaction.rxBuf = (void *)receiveBuffer;
  *
  *  transferOK = SPI_transfer(spi, &spiTransaction);
  *  if (!transferOK) {
  *      // Error in SPI or transfer already in progress.
+ *      while (1);
  *  }
  *  @endcode
  *
@@ -241,6 +242,7 @@
  *
  *  if (spi == NULL) {
  *      // Error opening SPI
+ *      while(1);
  *  }
  *  @endcode
  *
@@ -256,6 +258,7 @@
  *  spi = SPI_open(Board_SPI0, &spiParams);
  *  if (spi == NULL) {
  *      // Error opening SPI
+ *      while (1);
  *  }
  *  @endcode
  *
@@ -525,11 +528,13 @@ typedef struct SPI_Config_    *SPI_Handle;
  *  @brief      Status codes that are set by the SPI driver.
  */
 typedef enum SPI_Status_ {
-    SPI_TRANSFER_COMPLETED = 0, /*!< SPI transfer completed */
-    SPI_TRANSFER_STARTED,       /*!< SPI transfer started and in progress */
-    SPI_TRANSFER_CANCELED,      /*!< SPI transfer was canceled */
-    SPI_TRANSFER_FAILED,        /*!< SPI transfer failed */
-    SPI_TRANSFER_CSN_DEASSERT   /*!< SPI chip select was de-asserted */
+    SPI_TRANSFER_COMPLETED = 0,      /*!< SPI transfer completed */
+    SPI_TRANSFER_STARTED,            /*!< SPI transfer started and in progress */
+    SPI_TRANSFER_CANCELED,           /*!< SPI transfer was canceled */
+    SPI_TRANSFER_FAILED,             /*!< SPI transfer failed */
+    SPI_TRANSFER_CSN_DEASSERT,       /*!< SPI chip select was de-asserted */
+    SPI_TRANSFER_PEND_CSN_ASSERT,    /*!< SPI transfer is pending until the chip select is asserted */
+    SPI_TRANSFER_QUEUED              /*!< SPI transfer added to transaction queue */
 } SPI_Status;
 
 /*!
@@ -549,6 +554,9 @@ typedef struct SPI_Transaction_ {
 
     /* User output (read-only) fields */
     SPI_Status status;      /*!< Status code set by SPI_transfer */
+
+    void *nextPtr;          /*!< Field used internally by the driver and must
+                                 never be accessed by the application. */
 } SPI_Transaction;
 
 /*!

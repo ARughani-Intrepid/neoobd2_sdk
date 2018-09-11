@@ -109,6 +109,7 @@ typedef enum
     SL_WLAN_EVENT_RXFILTER,
     SL_WLAN_EVENT_PROVISIONING_STATUS,
     SL_WLAN_EVENT_PROVISIONING_PROFILE_ADDED,
+    SL_WLAN_EVENT_RESERVED,
     SL_WLAN_EVENT_MAX
 
 } SlWlanEventId_e;
@@ -213,7 +214,7 @@ typedef enum
 #define SL_WLAN_PROVISIONING_CMD_STOP                                                (4)
 #define SL_WLAN_PROVISIONING_CMD_ABORT_EXTERNAL_CONFIRMATION                         (5)
 
-/* Provisining API Flags */
+/* Provisioning API Flags */
 #define SL_WLAN_PROVISIONING_CMD_FLAG_EXTERNAL_CONFIRMATION                          (0x00000001)
 
 /* to be used only in provisioning stop command */
@@ -280,8 +281,8 @@ typedef enum
 #define SL_WLAN_GENERAL_PARAM_OPT_COUNTRY_CODE        (9)
 #define SL_WLAN_GENERAL_PARAM_OPT_STA_TX_POWER        (10)
 #define SL_WLAN_GENERAL_PARAM_OPT_AP_TX_POWER         (11)
-#define SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH (32) 
-#define SL_WLAN_GENERAL_PARAM_OPT_SUSPEND_PROFILES    (33)
+
+
 
 #define SL_WLAN_P2P_OPT_DEV_NAME                      (12)
 #define SL_WLAN_P2P_OPT_DEV_TYPE                      (13)
@@ -296,11 +297,15 @@ typedef enum
 #define SL_WLAN_AP_ACCESS_LIST_MODE                   (25)
 #define SL_WLAN_AP_OPT_MAX_STA_AGING                  (26)
 
-#define SL_WLAN_RX_FILTER_STATE                       (27)
-#define SL_WLAN_RX_FILTER_REMOVE                      (28)
-#define SL_WLAN_RX_FILTER_STORE                       (29)
-#define SL_WLAN_RX_FILTER_UPDATE_ARGS                 (30)
-#define SL_WLAN_RX_FILTER_SYS_STATE                   (31)
+#define SL_WLAN_RX_FILTER_STATE                        (27)
+#define SL_WLAN_RX_FILTER_REMOVE                       (28)
+#define SL_WLAN_RX_FILTER_STORE                        (29)
+#define SL_WLAN_RX_FILTER_UPDATE_ARGS                  (30)
+#define SL_WLAN_RX_FILTER_SYS_STATE                    (31)
+#define SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH  (32) 
+#define SL_WLAN_GENERAL_PARAM_OPT_SUSPEND_PROFILES     (33)
+
+
 
 /* SmartConfig CIPHER options */
 #define SL_WLAN_SMART_CONFIG_CIPHER_SFLASH            (0)      /* password is not delivered by the application. The Simple Manager should
@@ -501,7 +506,8 @@ typedef enum
     ROLE_STA      = 0,
     ROLE_RESERVED = 1,
     ROLE_AP       = 2,
-    ROLE_P2P      = 3
+    ROLE_P2P      = 3,
+    ROLE_RESERVED2 = 4
 }SlWlanMode_e;
 
 typedef struct
@@ -637,9 +643,24 @@ typedef struct
     _u8 SsidLen;
     _i8 Rssi;
     _i16 SecurityInfo;
-    _i8 Channel;
+    _u8 Channel;
     _i8 Reserved[1];
 }SlWlanNetworkEntry_t;
+
+typedef struct
+{
+    _u8 Ssid[SL_WLAN_SSID_MAX_LENGTH];
+    _u8 Bssid[SL_WLAN_BSSID_LENGTH];
+    _u8 SsidLen;
+    _i8 Rssi;
+    _i16 SecurityInfo;
+    _u8 Channel;
+    _i8 Reserved[1];
+    /* country info extended area */
+    _u8  CountryStr[2];
+    _u16 Supported_2_4G_Channels;
+    _u32 Supported_5_0G_Channels;
+}SlWlanExtNetworkEntry_t;
 
 typedef struct
 {
@@ -828,7 +849,7 @@ typedef union
     _u32 FrameLength[SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS]; /*  Binary Values for comparison */
 
     /* Buffer for port filter. number of argument may be up to SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS */
-    _u16 Port[SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS]; /*  Binary Values for comparison */
+    _u32 Port[SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS]; /*  Binary Values for comparison */
 
     /* Buffer for Ether filter. number of argument may be up to SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS (according to host endianity) */
     _u32 EtherType[SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS]; /*  Binary Values for comparison */
@@ -869,7 +890,7 @@ typedef struct
    For example destMacAddre is between ( 12:6::78:77,  12:6::78:90 ) */
 typedef struct 
 {
-    SlWlanRxFilterRuleHeaderArgs_t              Args; /* Filter arguemnts */
+    SlWlanRxFilterRuleHeaderArgs_t              Args; /* Filter arguments */
     SlWlanRxFilterRuleHeaderField_t             Field; /* Packet HDR field which will be compared to the argument */
     SlWlanRxFilterRuleHeaderCompareFunction_t   CompareFunc; /*  type of the comparison function */
     _u8                                         Padding[2];
@@ -945,12 +966,12 @@ typedef struct
     SlWlanRxFilterTriggerConnectionStates_t ConnectionState; /* Trigger only with specific connection state */
     SlWlanRxFilterTriggerRoles_t            Role; /* Trigger only with specific role */
     _u32                                    CounterVal;  /* Value for the counter if set */
-    SlWlanRxFilterTriggerCompareFunction_t  CompareFunction; /* The compare function reffers to the counter if set */
+    SlWlanRxFilterTriggerCompareFunction_t  CompareFunction; /* The compare function refers to the counter if set */
     _u8                                     Padding[3];
 } SlWlanRxFilterTrigger_t;
 
 /* The actions are executed only if the filter is matched,\n
- *  In case of false match the packet is transfered to the HOST. \n
+ *  In case of false match the packet is transferred to the HOST. \n
  *  The action is composed of bit field structure, up to 2 actions can be defined per filter.\n  */
 typedef _u8 SlWlanRxFilterActionType_t;
 /* Possible values for SlWlanRxFilterActionType_t */
@@ -1147,6 +1168,7 @@ _i16 sl_WlanProfileAdd(const _i8*  pName,const  _i16 NameLen,const _u8 *pMacAddr
     \param[out]     pPriority      Profile priority
 
     \return         Profile security type is returned (0 or positive number) on success, or negative error code on failure
+                    SL_ERROR_WLAN_GET_PROFILE_INVALID_INDEX is return is profile index does not exist
 
     \sa             sl_WlanProfileAdd , sl_WlanProfileDel
     \note           belongs to \ref ext_api
@@ -1189,7 +1211,7 @@ _i16 sl_WlanProfileDel(const _i16 Index);
     \return         Zero on success or negative error code on failure.
     \par Persistent 
             All parameters are <b>System Persistent</b>\n
-            Note that for SL_WLAN_POLICY_SCAN - only the interval will be saved.
+            Note that for SL_WLAN_POLICY_SCAN - Interval and Policy will be System persistent, but the hidden SSID option will not be persistent
         
     \sa             sl_WlanPolicyGet
     \note           belongs to \ref ext_api
@@ -1230,7 +1252,7 @@ _i16 sl_WlanProfileDel(const _i16 Index);
 
     <b>SL_WLAN_POLICY_SCAN:</b><br> defines system scan time interval. \nDefault interval is 10 minutes.
     After settings scan interval, an immediate scan is activated.\n The next scan will be based on the interval settings. 
-    For AP scan, minimun interval is 10 seconds.
+    For AP scan, minimum interval is 10 seconds.
 
     -  With hidden SSID: For example, setting scan interval to 1 minute interval use including hidden ssid: 
     \code
@@ -1315,7 +1337,7 @@ _i16 sl_WlanPolicySet(const _u8 Type , const _u8 Policy, _u8 *pVal,const _u8 Val
     \param[out]     pPolicy       argument may be set to any value 
     \param[out]     pVal         The returned values, depends on each policy type, will be stored in the allocated buffer pointed by pVal
                     with a maximum buffer length set by the calling function and pointed to by argument *pValLen
-    \param[out]     pValLen        actual value lenght
+    \param[out]     pValLen        actual value length
     \return         Zero on success, or negative error code on failure
 
     \sa             sl_WlanPolicySet
@@ -1369,7 +1391,7 @@ _i16 sl_WlanPolicySet(const _u8 Type , const _u8 Policy, _u8 *pVal,const _u8 Val
     ret = sl_WlanPolicyGet(SL_POLICY_PM ,&Policy,&PmPolicyParams,(_u8*)&length);
     if (Policy ==  SL_WLAN_LONG_SLEEP_INTERVAL_POLICY )
     {
-        printf("Connection Policy is set to LONG SLEEP INTERVAL POLICY with inteval = %d ",PmPolicyParams.MaxSleepTimeMs);
+        printf("Connection Policy is set to LONG SLEEP INTERVAL POLICY with interval = %d ",PmPolicyParams.MaxSleepTimeMs);
     }
     \endcode
     <br>
@@ -1532,9 +1554,9 @@ _i16 sl_WlanRxStatGet(SlWlanGetRxStatResponse_t *pRxStat,const _u32 Flags);
     \param[in]  InactivityTimeoutSec -      The period of time (in seconds) the system waits before it automatically
                                             stops the provisioning process when no activity is detected.
                                             set to 0 in order to stop provisioning. Minimum InactivityTimeoutSec is 30 seconds.
-    \param[in]  pSmartConfigKey             Smart Config key: public key for smart config process (relevent for smart config only)
+    \param[in]  pSmartConfigKey             Smart Config key: public key for smart config process (relevant for smart config only)
     \param[in]  Flags                       Can have the following values:
-                                                   - SL_WLAN_PROVISIONING_CMD_FLAG_EXTERNAL_CONFIRMATION - Confirmation phase will be completed externaly by host (e.g. via cloud assist)
+                                                   - SL_WLAN_PROVISIONING_CMD_FLAG_EXTERNAL_CONFIRMATION - Confirmation phase will be completed externally by host (e.g. via cloud assist)
 
 
     \return     Zero on success, or negative error code on failure
@@ -1646,7 +1668,7 @@ _i16 sl_WlanSetMode(const _u8  Mode);
                                       max_stations - 1 characters \n
                                       This options takes <b>_u8</b> buffer as parameter
                               - <b>SL_WLAN_AP_OPT_MAX_STA_AGING</b> \n
-                                      Set Max station aging time - default is 60 seconds \n
+                                      Set Max station ageing time - default is 60 seconds \n
                                       max_stations - 2 characters \n
                                       This options takes <b>_u16</b> buffer as parameter
                               - <b>SL_WLAN_AP_ACCESS_LIST_MODE</b> \n
@@ -1689,10 +1711,6 @@ _i16 sl_WlanSetMode(const _u8  Mode);
                                       Set scan parameters: RSSI threshold and channel mask.
                               - <b>SL_WLAN_GENERAL_PARAM_OPT_SUSPEND_PROFILES</b>
                                       Set suspended profiles mask (set bits 2 and 4 to suspend profiles 2 and 4).
-                               - <b>SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH</b>
-                                      This option enables to skip server authentication and is valid for one
-                                      use, when manually connection to an enterprise network
-                                      
 
                           - <b>SL_WLAN_CFG_P2P_PARAM_ID</b>
                               - <b>SL_WLAN_P2P_OPT_DEV_TYPE</b> \n
@@ -1730,15 +1748,15 @@ _i16 sl_WlanSetMode(const _u8  Mode);
     \return    Zero on success, or negative error code on failure
 
     \par Persistent
-                        <b>System Persistent</b>:        
-                                - SL_WLAN_CFG_GENERAL_PARAM_ID
-                                - SL_WLAN_CFG_P2P_PARAM_ID
-                                
+                        <b>System Persistent</b>:     
+                              - SL_WLAN_CFG_GENERAL_PARAM_ID
+                              - SL_WLAN_CFG_P2P_PARAM_ID
+
                         <b>Reset</b>:
-                                - SL_WLAN_CFG_AP_ID
-                                
+                              - SL_WLAN_CFG_AP_ID
+
                         <b>Non- Persistent</b>:
-                                  - SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH
+                              - SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH
     \sa
     \note
     \warning
@@ -1898,9 +1916,13 @@ _i16 sl_WlanSetMode(const _u8  Mode);
     - SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS:
     \code
         SlWlanScanParamCommand_t ScanParamConfig;
+        _u16 Option = SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS;
+        _u16 OptionLen = sizeof(ScanParamConfig);
+        // 2.4G channels bits order:  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 
+        
         ScanParamConfig.RssiThreshold = -70;
         ScanParamConfig.ChannelsMask = 0x1FFF;
-        sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID,SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS,sizeof(ScanParamConfig),(_u8* ) &ScanParamConfig);
+        sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID, &Option, &OptionLen, (_u8 *)&ScanParamConfig);
     \endcode
     <br>
 
@@ -1912,8 +1934,9 @@ _i16 sl_WlanSetMode(const _u8  Mode);
     <br>
     - SL_WLAN_RX_FILTER_STORE: 
     \code
-     sl_WlanSet(SL_WLAN_RX_FILTERS_ID, SL_WLAN_RX_FILTER_STORE, 0, NULL);
+         sl_WlanSet(SL_WLAN_RX_FILTERS_ID, SL_WLAN_RX_FILTER_STORE, 0, NULL);
     \endcode
+     
 */
 #if _SL_INCLUDE_FUNC(sl_WlanSet)
 _i16 sl_WlanSet(const _u16 ConfigId ,const _u16 ConfigOpt,const _u16 ConfigLen,const  _u8 *pValues);

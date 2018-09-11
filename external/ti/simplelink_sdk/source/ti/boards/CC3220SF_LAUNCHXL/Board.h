@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Texas Instruments Incorporated
+ * Copyright (c) 2016-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,20 +33,11 @@
 #ifndef __BOARD_H
 #define __BOARD_H
 
+#define Board_CC3220SF_LAUNCHXL
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <ti/drivers/ADC.h>
-#include <ti/drivers/GPIO.h>
-#include <ti/drivers/I2C.h>
-#include <ti/drivers/I2S.h>
-#include <ti/drivers/PWM.h>
-#include <ti/drivers/SD.h>
-#include <ti/drivers/SDFatFS.h>
-#include <ti/drivers/SPI.h>
-#include <ti/drivers/UART.h>
-#include <ti/drivers/Watchdog.h>
 
 #include "CC3220SF_LAUNCHXL.h"
 
@@ -88,6 +79,10 @@ extern "C" {
 
 /* CC3220SF_LAUNCHXL_SPI0 is reserved for the NWP */
 #define Board_SPI0                   CC3220SF_LAUNCHXL_SPI1
+#define Board_SPI_MASTER             CC3220SF_LAUNCHXL_SPI1
+#define Board_SPI_SLAVE              CC3220SF_LAUNCHXL_SPI1
+#define Board_SPI_MASTER_READY       CC3220SF_LAUNCHXL_SPI_MASTER_READY
+#define Board_SPI_SLAVE_READY        CC3220SF_LAUNCHXL_SPI_SLAVE_READY
 
 #define Board_TIMER0                 CC3220SF_LAUNCHXL_TIMER0
 #define Board_TIMER1                 CC3220SF_LAUNCHXL_TIMER1
@@ -101,36 +96,6 @@ extern "C" {
 /* Board specific I2C addresses */
 #define Board_TMP_ADDR               (0x41)
 #define Board_SENSORS_BP_TMP_ADDR    (0x40)
-
-/*
- * These macros are provided for backwards compatibility.
- * Please use the <Driver>_init functions directly rather
- * than Board_init<Driver>.
- */
-#define Board_initADC                ADC_init
-#define Board_initGPIO               GPIO_init
-#define Board_initI2C                I2C_init
-#define Board_initI2S                I2S_init
-#define Board_initPWM                PWM_init
-#define Board_initSD                 SD_init
-#define Board_initSDFatFS            SDFatFS_init
-#define Board_initSPI                SPI_init
-#define Board_initUART               UART_init
-#define Board_initWatchdog           Watchdog_init
-
-/*
- * These macros are provided for backwards compatibility.
- * Please use the corresponding 'Board_GPIO_xxx' macros as the macros
- * below are deprecated.
- */
-#define Board_LED_ON                 Board_GPIO_LED_ON
-#define Board_LED_OFF                Board_GPIO_LED_OFF
-#define Board_LED0                   Board_GPIO_LED0
-#define Board_LED1                   Board_GPIO_LED1
-#define Board_LED2                   Board_GPIO_LED2
-#define Board_BUTTON0                Board_GPIO_BUTTON0
-#define Board_BUTTON1                Board_GPIO_BUTTON1
-#define Board_TMP006_ADDR            Board_TMP_ADDR
 
 #ifdef __cplusplus
 }

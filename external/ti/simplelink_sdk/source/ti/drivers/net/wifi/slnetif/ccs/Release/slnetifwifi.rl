@@ -1,4 +1,4 @@
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/slnetif/slnetifwifi.c"
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/slnetif/slnetifwifi.c"
 N/*
 N * Copyright (c) 2017, Texas Instruments Incorporated
 N * All rights reserved.
@@ -37,7 +37,7 @@ N/* Include files                                                             */
 N/*****************************************************************************/
 N
 N#include <ti/drivers/net/wifi/slnetifwifi.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 1
 N/*
 N * Copyright (c) 2017, Texas Instruments Incorporated
 N * All rights reserved.
@@ -74,5453 +74,8 @@ N
 N/*****************************************************************************/
 N/* Include files                                                             */
 N/*****************************************************************************/
-N#include <ti/net/slnetsock.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetsock.h" 1
-N/*
-N * Copyright (c) 2017, Texas Instruments Incorporated
-N * All rights reserved.
-N *
-N * Redistribution and use in source and binary forms, with or without
-N * modification, are permitted provided that the following conditions
-N * are met:
-N *
-N * *  Redistributions of source code must retain the above copyright
-N *    notice, this list of conditions and the following disclaimer.
-N *
-N * *  Redistributions in binary form must reproduce the above copyright
-N *    notice, this list of conditions and the following disclaimer in the
-N *    documentation and/or other materials provided with the distribution.
-N *
-N * *  Neither the name of Texas Instruments Incorporated nor the names of
-N *    its contributors may be used to endorse or promote products derived
-N *    from this software without specific prior written permission.
-N *
-N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-N */
-N
-N /*!
-N
-N
-N  \page SlNetSock_overview SlNetSock
-N
-N  \section intro_sec Introduction
-N
-NSlNetSock provides a standard BSD API for TCP and UDP transport
-Nlayers, and a lower-level SlNetSock API for basic and extended
-Nusage. Supported use cases include:
-N
-N - Support of multi interface (WiFi NS, Ethernet NDK)
-N - Selecting which interfaces the host will use, one or more.
-N - Support of different types of sockets (TCP, TLS, UDP, RAW, RF, etc.)
-N - BSD and proprietary errors
-N
-N The SlNetSock API's lead to easier portability to microcontrollers,
-N without compromising the capabilities and robustness of the final
-N application.
-N
-N
-N \section modules_sec Module Names
-N TI's SlNetSock layer is divided into the following software modules:
-N     -# \ref SlNetSock  - Controls standard client/server sockets options and capabilities
-N     -# \ref SlNetIf    - Controls standard stack/interface options and capabilities
-N     -# \ref SlNetUtils - Provides sockets related commands and configuration
-N     -# \ref SlNetErr   - Provide BSD and proprietary errors
-N
-NIn addition, SlNetSock provides a standard BSD API, built atop the
-NSlNet* APIs.  The BSD headers are placed in ti/net/bsd directory,
-Nwhich users should place on their include path.
-N
-NAlso, there is a light
-N\subpage porting_guide "SL Interface Porting Guide"
-Nwith information available for adding SlNetSock support for other stacks.
-N
-N  \page porting_guide SL Interface Porting Guide
-N
-N \section Introduction
-N
-NThe generic SlNetSock layer sits between the application/service and
-Nthe interface stack.  This guide describes the details of adding a network stack into the SlNetSock environment.
-N
-NThe porting steps for adding new interface:
-N    -# Create slnetifxxx file for the new interface
-N    -# Select the capabilities set
-N    -# Adding the interface to your application/service
-N    -# Add the relevant functions to your application/service
-N    -# Test your code to validate the correctness of your porting
-N
-N  \subsection porting_step1   Step 1 - slnetifxxx.c and slnetifxxx.h file for your interface
-N
-N - Create slnetifxxx file (replace xxx with your interface/stack
-N   name).  Likely you will copy from an existing port.
-N
-N - Implement the needed API's.
-N
-NEach interface needs to provide a set of API's to work with the
-Ninterface.  Some are mandatory, others are optional (but recommended).
-N
-N - Mandatory API's:
-N  - \ref SlNetIf_Config_t.sockCreate            "sockCreate"
-N  - \ref SlNetIf_Config_t.sockClose             "sockClose"
-N  - \ref SlNetIf_Config_t.sockSelect            "sockSelect"
-N  - \ref SlNetIf_Config_t.sockSetOpt            "sockSetOpt"
-N  - \ref SlNetIf_Config_t.sockGetOpt            "sockGetOpt"
-N  - \ref SlNetIf_Config_t.sockRecvFrom          "sockRecvFrom"
-N  - \ref SlNetIf_Config_t.sockSendTo            "sockSendTo"
-N  - \ref SlNetIf_Config_t.ifGetIPAddr           "ifGetIPAddr"
-N  - \ref SlNetIf_Config_t.ifGetConnectionStatus "ifGetConnectionStatus"
-N
-N - The non-mandatory API's set:
-N  - \ref SlNetIf_Config_t.sockShutdown          "sockShutdown"
-N  - \ref SlNetIf_Config_t.sockAccept            "sockAccept"
-N  - \ref SlNetIf_Config_t.sockBind              "sockBind"
-N  - \ref SlNetIf_Config_t.sockListen            "sockListen"
-N  - \ref SlNetIf_Config_t.sockConnect           "sockConnect"
-N  - \ref SlNetIf_Config_t.sockGetPeerName       "sockGetPeerName"
-N  - \ref SlNetIf_Config_t.sockGetLocalName      "sockGetLocalName"
-N  - \ref SlNetIf_Config_t.sockRecv              "sockRecv"
-N  - \ref SlNetIf_Config_t.sockSend              "sockSend"
-N  - \ref SlNetIf_Config_t.sockstartSec          "sockstartSec"
-N  - \ref SlNetIf_Config_t.utilGetHostByName     "utilGetHostByName"
-N  - \ref SlNetIf_Config_t.ifLoadSecObj          "ifLoadSecOjb"
-N  - \ref SlNetIf_Config_t.ifCreateContext       "ifCreateContext"
-N
-N
-N  \note The list of API's and more data can be found in ::SlNetIf_Config_t structure in SlNetIf module \n \n
-N
-N \subsection    porting_step2   Step 2 - Select the capabilities set
-N
-N The capabilities prototype should be declared in your slnetifxxx.h and implemented in your slnetifxxx.c
-N
-N Each mandatory API's must be set, additional API's can be set or must
-N be set to NULL.
-N
-N An example config declaration for TI's SimpleLink CC31XX/CC32xx
-N
-N \code
-N SlNetIfConfig SlNetIfConfigWiFi =
-N {
-N    SlNetIfWifi_socket,              // Callback function sockCreate in slnetif module
-N    SlNetIfWifi_close,               // Callback function sockClose in slnetif module
-N    NULL,                            // Callback function sockShutdown in slnetif module
-N    SlNetIfWifi_accept,              // Callback function sockAccept in slnetif module
-N    SlNetIfWifi_bind,                // Callback function sockBind in slnetif module
-N    SlNetIfWifi_listen,              // Callback function sockListen in slnetif module
-N    SlNetIfWifi_connect,             // Callback function sockConnect in slnetif module
-N    NULL,                            // Callback function sockGetPeerName in slnetif module
-N    NULL,                            // Callback function sockGetLocalName in slnetif module
-N    SlNetIfWifi_select,              // Callback function sockSelect in slnetif module
-N    SlNetIfWifi_setSockOpt,          // Callback function sockSetOpt in slnetif module
-N    SlNetIfWifi_getSockOpt,          // Callback function sockGetOpt in slnetif module
-N    SlNetIfWifi_recv,                // Callback function sockRecv in slnetif module
-N    SlNetIfWifi_recvFrom,            // Callback function sockRecvFrom in slnetif module
-N    SlNetIfWifi_send,                // Callback function sockSend in slnetif module
-N    SlNetIfWifi_sendTo,              // Callback function sockSendTo in slnetif module
-N    SlNetIfWifi_sockstartSec,        // Callback function sockstartSec in slnetif module
-N    SlNetIfWifi_getHostByName,       // Callback function utilGetHostByName in slnetif module
-N    SlNetIfWifi_getIPAddr,           // Callback function ifGetIPAddr in slnetif module
-N    SlNetIfWifi_getConnectionStatus, // Callback function ifGetConnectionStatus in slnetif module
-N    SlNetIfWifi_loadSecObj,          // Callback function ifLoadSecObj in slnetif module
-N    NULL                             // Callback function ifCreateContext in slnetif module
-N };
-N \endcode
-N
-N In the example above the following API's are not supported by the interface,
-N and are set to NULL:
-N - sockShutdown
-N - sockGetPeerName
-N - sockGetLocalName
-N - utilGetHostByName
-N - ifCreateContext
-N
-N \subsection    porting_step3   Step 3 - Adding the interface to your application/service
-N
-N \b Include the new file in the board header file in the application.
-N
-N \subsection    porting_step4   Step 4 - Add the relevant functions to your application/service
-N
-N  After configuring the capabilities of the interface, Adding the interface to the SlNetSock
-N  is required.
-N
-N  Use ::SlNetIf_add in order to add the interface and set his ID, Name, function list and priority.
-N  Later on you need to use the BSD API's or SlNetSock API's for socket handling.
-N
-N \subsection    porting_step5   Step 5 - Test your code to validate the correctness of your porting
-N
-N After porting the layer into your setup, validate that your code work as expected
-N
-N*/
-N
-N/*****************************************************************************/
-N/* Include files                                                             */
-N/*****************************************************************************/
-N
-N#ifndef __SL_NET_SOCK_H__
-N#define __SL_NET_SOCK_H__
-N
-N
-N#ifdef    __cplusplus
-Sextern "C" {
-N#endif
-N
-N#include <stdint.h>
-L 1 "/opt/ti/ccs-latest/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdint.h" 1
-N/*****************************************************************************/
-N/* STDINT.H v16.9.6                                                          */
-N/*                                                                           */
-N/* Copyright (c) 2002-2017 Texas Instruments Incorporated                    */
-N/* http://www.ti.com/                                                        */
-N/*                                                                           */
-N/*  Redistribution and  use in source  and binary forms, with  or without    */
-N/*  modification,  are permitted provided  that the  following conditions    */
-N/*  are met:                                                                 */
-N/*                                                                           */
-N/*     Redistributions  of source  code must  retain the  above copyright    */
-N/*     notice, this list of conditions and the following disclaimer.         */
-N/*                                                                           */
-N/*     Redistributions in binary form  must reproduce the above copyright    */
-N/*     notice, this  list of conditions  and the following  disclaimer in    */
-N/*     the  documentation  and/or   other  materials  provided  with  the    */
-N/*     distribution.                                                         */
-N/*                                                                           */
-N/*     Neither the  name of Texas Instruments Incorporated  nor the names    */
-N/*     of its  contributors may  be used to  endorse or  promote products    */
-N/*     derived  from   this  software  without   specific  prior  written    */
-N/*     permission.                                                           */
-N/*                                                                           */
-N/*  THIS SOFTWARE  IS PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS    */
-N/*  "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT    */
-N/*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    */
-N/*  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT    */
-N/*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    */
-N/*  SPECIAL,  EXEMPLARY,  OR CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT    */
-N/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    */
-N/*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY    */
-N/*  THEORY OF  LIABILITY, WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT    */
-N/*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE    */
-N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
-N/*                                                                           */
-N/*****************************************************************************/
-N#ifndef _STDINT_H_
-N#define _STDINT_H_
-N
-N/* 7.18.1.1 Exact-width integer types */
-N
-N    typedef   signed char   int8_t;
-N    typedef unsigned char  uint8_t;
-N    typedef          short  int16_t;
-N    typedef unsigned short uint16_t;
-N    typedef          int    int32_t;
-N    typedef unsigned int   uint32_t;
-N
-N
-N    typedef          long long  int64_t;
-N    typedef unsigned long long uint64_t;
-N
-N/* 7.18.1.2 Minimum-width integer types */
-N
-N    typedef  int8_t   int_least8_t;
-N    typedef uint8_t  uint_least8_t;
-N
-N    typedef  int16_t  int_least16_t;
-N    typedef uint16_t uint_least16_t;
-N    typedef  int32_t  int_least32_t;
-N    typedef uint32_t uint_least32_t;
-N
-N
-N    typedef  int64_t  int_least64_t;
-N    typedef uint64_t uint_least64_t;
-N
-N/* 7.18.1.3 Fastest minimum-width integer types */
-N
-N    typedef  int32_t  int_fast8_t;
-N    typedef uint32_t uint_fast8_t;
-N    typedef  int32_t  int_fast16_t;
-N    typedef uint32_t uint_fast16_t;
-N
-N    typedef  int32_t  int_fast32_t;
-N    typedef uint32_t uint_fast32_t;
-N
-N
-N    typedef  int64_t  int_fast64_t;
-N    typedef uint64_t uint_fast64_t;
-N
-N/* 7.18.1.4 Integer types capable of holding object pointers */
-N    typedef          int intptr_t;
-N    typedef unsigned int uintptr_t;
-N
-N/* 7.18.1.5 Greatest-width integer types */
-N    typedef          long long intmax_t;
-N    typedef unsigned long long uintmax_t;
-N
-N/* 
-N   According to footnotes in the 1999 C standard, "C++ implementations
-N   should define these macros only when __STDC_LIMIT_MACROS is defined
-N   before <stdint.h> is included." 
-N*/
-N#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
-X#if !0L || 0L
-N
-N/* 7.18.2 Limits of specified width integer types */
-N
-N    #define  INT8_MAX   0x7f
-N    #define  INT8_MIN   (-INT8_MAX-1)
-N    #define UINT8_MAX   0xff
-N
-N    #define  INT16_MAX  0x7fff
-N    #define  INT16_MIN  (-INT16_MAX-1)
-N    #define UINT16_MAX  0xffff
-N
-N    #define  INT32_MAX  0x7fffffff
-N    #define  INT32_MIN  (-INT32_MAX-1)
-N    #define UINT32_MAX  0xffffffff
-N
-N
-N    #define  INT64_MAX  0x7fffffffffffffff
-N    #define  INT64_MIN  (-INT64_MAX-1)
-N    #define UINT64_MAX  0xffffffffffffffff
-N
-N    #define  INT_LEAST8_MAX   (INT8_MAX)
-N    #define  INT_LEAST8_MIN   (INT8_MIN)
-N    #define UINT_LEAST8_MAX   (UINT8_MAX)
-N
-N    #define  INT_LEAST16_MAX  (INT16_MAX)
-N    #define  INT_LEAST16_MIN  (INT16_MIN)
-N    #define UINT_LEAST16_MAX  (UINT16_MAX)
-N    #define  INT_LEAST32_MAX  (INT32_MAX)
-N    #define  INT_LEAST32_MIN  (INT32_MIN)
-N    #define UINT_LEAST32_MAX  (UINT32_MAX)
-N
-N
-N    #define  INT_LEAST64_MAX  (INT64_MAX)
-N    #define  INT_LEAST64_MIN  (INT64_MIN)
-N    #define UINT_LEAST64_MAX  (UINT64_MAX)
-N
-N    #define  INT_FAST8_MAX   (INT32_MAX)
-N    #define  INT_FAST8_MIN   (INT32_MIN)
-N    #define UINT_FAST8_MAX   (UINT32_MAX)
-N    #define  INT_FAST16_MAX  (INT32_MAX)
-N    #define  INT_FAST16_MIN  (INT32_MIN)
-N    #define UINT_FAST16_MAX  (UINT32_MAX)
-N
-N    #define  INT_FAST32_MAX  (INT32_MAX)
-N    #define  INT_FAST32_MIN  (INT32_MIN)
-N    #define UINT_FAST32_MAX  (UINT32_MAX)
-N
-N
-N    #define  INT_FAST64_MAX  (INT64_MAX)
-N    #define  INT_FAST64_MIN  (INT64_MIN)
-N    #define UINT_FAST64_MAX  (UINT64_MAX)
-N
-N    #define INTPTR_MAX   (INT32_MAX)
-N    #define INTPTR_MIN   (INT32_MIN)
-N    #define UINTPTR_MAX  (UINT32_MAX)
-N
-N    #define INTMAX_MIN   (INT64_MIN)
-N    #define INTMAX_MAX   (INT64_MAX)
-N    #define UINTMAX_MAX  (UINT64_MAX)
-N
-N/* 7.18.3 Limits of other integer types */
-N
-N    #define PTRDIFF_MAX (INT32_MAX)
-N    #define PTRDIFF_MIN (INT32_MIN)
-N
-N    #define SIG_ATOMIC_MIN (INT32_MIN)
-N    #define SIG_ATOMIC_MAX (INT32_MAX)
-N
-N    #define SIZE_MAX (UINT32_MAX)
-N
-N#ifndef WCHAR_MAX
-N#if !defined(__TI_WCHAR_T_BITS__) || __TI_WCHAR_T_BITS__ == 16
-X#if !1L || 16 == 16
-N#define WCHAR_MAX 0xffffu
-N#else 
-S#define WCHAR_MAX 0xffffffffu
-N#endif
-N#endif
-N
-N#ifndef WCHAR_MIN
-N#define WCHAR_MIN 0
-N#endif
-N
-N    #define WINT_MIN (INT32_MIN)
-N    #define WINT_MAX (INT32_MAX)
-N
-N/* 7.18.4.1 Macros for minimum-width integer constants */
-N
-N/*
-N   There is a defect report filed against the C99 standard concerning how 
-N   the (U)INTN_C macros should be implemented.  Please refer to --
-N   http://wwwold.dkuug.dk/JTC1/SC22/WG14/www/docs/dr_209.htm 
-N   for more information.  These macros are implemented according to the
-N   suggestion given at this web site.
-N*/
-N
-N    #define  INT8_C(value)  ((int_least8_t)(value))
-N    #define UINT8_C(value)  ((uint_least8_t)(value))
-N    #define  INT16_C(value) ((int_least16_t)(value))
-N    #define UINT16_C(value) ((uint_least16_t)(value))
-N    #define  INT32_C(value) ((int_least32_t)(value))
-N    #define UINT32_C(value) ((uint_least32_t)(value))
-N
-N
-N    #define  INT64_C(value) ((int_least64_t)(value))
-N    #define UINT64_C(value) ((uint_least64_t)(value))
-N
-N/* 7.18.4.2 Macros for greatest-width integer constants */
-N
-N    #define  INTMAX_C(value) ((intmax_t)(value))
-N    #define UINTMAX_C(value) ((uintmax_t)(value))
-N
-N#endif /* !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS) */
-N
-N#endif /* _STDINT_H_ */
-L 198 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetsock.h" 2
-N
-N/*!
-N    \defgroup SlNetSock SlNetSock group
-N
-N    \short Controls standard client/server sockets options and capabilities
-N
-N*/
-N/*!
-N
-N    \addtogroup SlNetSock
-N    @{
-N
-N*/
-N
-N/*****************************************************************************/
-N/* Macro declarations                                                        */
-N/*****************************************************************************/
-N
-N#define SLNETSOCK_MAX_CONCURRENT_SOCKETS                                    (32)  /**< Declares the maximum sockets that can be opened */
-N
-N/* Address families.  */
-N#define SLNETSOCK_AF_UNSPEC                                                 (0)   /**< Unspecified address family      */
-N#define SLNETSOCK_AF_INET                                                   (2)   /**< IPv4 socket (UDP, TCP, etc)     */
-N#define SLNETSOCK_AF_INET6                                                  (3)   /**< IPv6 socket (UDP, TCP, etc)     */
-N#define SLNETSOCK_AF_RF                                                     (6)   /**< Data include RF parameter, All layer by user (Wifi could be disconnected) */
-N#define SLNETSOCK_AF_PACKET                                                 (17)  /**< Network bypass                  */
-N
-N/* Protocol families, same as address families. */
-N#define SLNETSOCK_PF_UNSPEC                                                 SLNETSOCK_AF_UNSPEC
-N#define SLNETSOCK_PF_INET                                                   SLNETSOCK_AF_INET
-N#define SLNETSOCK_PF_INET6                                                  SLNETSOCK_AF_INET6
-N
-N/* Define argument types specifies the socket type.  */
-N#define SLNETSOCK_SOCK_STREAM                                               (1)   /**< TCP Socket                      */
-N#define SLNETSOCK_SOCK_DGRAM                                                (2)   /**< UDP Socket                      */
-N#define SLNETSOCK_SOCK_RAW                                                  (3)   /**< Raw socket                      */
-N#define SLNETSOCK_SOCK_RX_MTR                                               (4)   /**< RX Metrics socket               */
-N#define SLNETSOCK_SOCK_MAC_WITH_CCA                                         (5)
-N#define SLNETSOCK_SOCK_MAC_WITH_NO_CCA                                      (6)
-N#define SLNETSOCK_SOCK_BRIDGE                                               (7)
-N#define SLNETSOCK_SOCK_ROUTER                                               (8)
-N
-N/* Define some BSD protocol constants.  */
-N#define SLNETSOCK_PROTO_TCP                                                 (6)   /**< TCP Raw Socket                  */
-N#define SLNETSOCK_PROTO_UDP                                                 (17)  /**< UDP Raw Socket                  */
-N#define SLNETSOCK_PROTO_RAW                                                 (255) /**< Raw Socket                      */
-N#define SLNETSOCK_PROTO_SECURE                                              (100) /**< Secured Socket Layer (SSL,TLS)  */
-N
-N/* bind any addresses */
-N#define SLNETSOCK_INADDR_ANY                                                (0)
-N#define SLNETSOCK_IN6ADDR_ANY                                               (0)
-N
-N
-N/* socket options */
-N
-N/* possible values for the level parameter in slNetSock_setOpt / slNetSock_getOpt */
-N#define SLNETSOCK_LVL_SOCKET                                                (1)   /**< Define the socket option category. */
-N#define SLNETSOCK_LVL_IP                                                    (2)   /**< Define the IP option category.     */
-N#define SLNETSOCK_LVL_PHY                                                   (3)   /**< Define the PHY option category.    */
-N
-N/* possible values for the option parameter in slNetSock_setOpt / slNetSock_getOpt */
-N
-N/* socket level options (SLNETSOCK_LVL_SOCKET) */
-N#define SLNETSOCK_OPSOCK_RCV_BUF                                            (8)   /**< Setting TCP receive buffer size (window size) - This options takes SlNetSock_Winsize_t struct as parameter                 */
-N#define SLNETSOCK_OPSOCK_RCV_TIMEO                                          (20)  /**< Enable receive timeout - This options takes SlNetSock_Timeval_t struct as parameter                                        */
-N#define SLNETSOCK_OPSOCK_KEEPALIVE                                          (9)   /**< Connections are kept alive with periodic messages - This options takes SlNetSock_Keepalive_t struct as parameter           */
-N#define SLNETSOCK_OPSOCK_KEEPALIVE_TIME                                     (37)  /**< keepalive time out - This options takes <b>uint32_t</b> as parameter                                                       */
-N#define SLNETSOCK_OPSOCK_LINGER                                             (13)  /**< Socket lingers on close pending remaining send/receive packets - This options takes SlNetSock_linger_t struct as parameter */
-N#define SLNETSOCK_OPSOCK_NON_BLOCKING                                       (24)  /**< Enable/disable nonblocking mode - This options takes SlNetSock_Nonblocking_t struct as parameter                           */
-N#define SLNETSOCK_OPSOCK_NON_IP_BOUNDARY                                    (39)  /**< connectionless socket disable rx boundary - This options takes SlNetSock_NonIpBoundary_t struct as parameter               */
-N#define SLNETSOCK_OPSOCK_ERROR                                              (58)  /**< Socket level error code                                                                                                    */
-N#define SLNETSOCK_OPSOCK_SLNETSOCKSD                                        (59)  /**< Used by the BSD layer in order to retrieve the slnetsock sd                                                                */
-N
-N/* IP level options (SLNETSOCK_LVL_IP) */
-N#define SLNETSOCK_OPIP_MULTICAST_TTL                                        (61)  /**< Specify the TTL value to use for outgoing multicast packet. - This options takes <b>uint8_t</b> as parameter                                                      */
-N#define SLNETSOCK_OPIP_ADD_MEMBERSHIP                                       (65)  /**< Join IPv4 multicast membership - This options takes SlNetSock_IpMreq_t struct as parameter                                                                        */
-N#define SLNETSOCK_OPIP_DROP_MEMBERSHIP                                      (66)  /**< Leave IPv4 multicast membership - This options takes SlNetSock_IpMreq_t struct as parameter                                                                       */
-N#define SLNETSOCK_OPIP_HDRINCL                                              (67)  /**< Raw socket IPv4 header included - This options takes <b>uint32_t</b> as parameter                                                                                 */
-N#define SLNETSOCK_OPIP_RAW_RX_NO_HEADER                                     (68)  /**< Proprietary socket option that does not includeIPv4/IPv6 header (and extension headers) on received raw sockets - This options takes <b>uint32_t</b> as parameter */
-N#define SLNETSOCK_OPIP_RAW_IPV6_HDRINCL                                     (69)  /**< Transmitted buffer over IPv6 socket contains IPv6 header - This options takes <b>uint32_t</b> as parameter                                                        */
-N#define SLNETSOCK_OPIPV6_ADD_MEMBERSHIP                                     (70)  /**< Join IPv6 multicast membership - This options takes SlNetSock_IpV6Mreq_t struct as parameter                                                                      */
-N#define SLNETSOCK_OPIPV6_DROP_MEMBERSHIP                                    (71)  /**< Leave IPv6 multicast membership - This options takes SlNetSock_IpV6Mreq_t struct as parameter                                                                     */
-N#define SLNETSOCK_OPIPV6_MULTICAST_HOPS                                     (72)  /**< Specify the hops value to use for outgoing multicast packet.                                                                                                      */
-N
-N/* PHY level options (SLNETSOCK_LVL_PHY) */
-N#define SLNETSOCK_OPPHY_CHANNEL                                             (28)  /**< This option is available only when transceiver started - This options takes <b>uint32_t</b> as channel number parameter            */
-N#define SLNETSOCK_OPPHY_RATE                                                (100) /**< WLAN Transmit rate - This options takes <b>uint32_t</b> as parameter based on SlWlanRateIndex_e                                    */
-N#define SLNETSOCK_OPPHY_TX_POWER                                            (101) /**< TX Power level - This options takes <b>uint32_t</b> as parameter                                                                   */
-N#define SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX                                    (102) /**< Number of frames to transmit - This options takes <b>uint32_t</b> as parameter                                                     */
-N#define SLNETSOCK_OPPHY_PREAMBLE                                            (103) /**< Preamble for transmission - This options takes <b>uint32_t</b> as parameter                                                        */
-N#define SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD                                (104) /**< TX Inhibit Threshold (CCA) - This options takes <b>uint32_t</b> as parameter based on SlNetSockTxInhibitThreshold_e                */
-N#define SLNETSOCK_OPPHY_TX_TIMEOUT                                          (105) /**< TX timeout for Transceiver frames (lifetime) in miliseconds (max value is 100ms) - This options takes <b>uint32_t</b> as parameter */
-N#define SLNETSOCK_OPPHY_ALLOW_ACKS                                          (106) /**< Enable sending ACKs in transceiver mode - This options takes <b>uint32_t</b> as parameter                                          */
-N
-N/*!
-N    \brief The SlNetSockTxInhibitThreshold_e enumerations is used in SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD PHY level option
-N*/
-Ntypedef enum
-N{
-N    SLNETSOCK_TX_INHIBIT_THRESHOLD_MIN     = 1,
-N    SLNETSOCK_TX_INHIBIT_THRESHOLD_LOW     = 2,
-N    SLNETSOCK_TX_INHIBIT_THRESHOLD_DEFAULT = 3,
-N    SLNETSOCK_TX_INHIBIT_THRESHOLD_MED     = 4,
-N    SLNETSOCK_TX_INHIBIT_THRESHOLD_HIGH    = 5,
-N    SLNETSOCK_TX_INHIBIT_THRESHOLD_MAX     = 6
-N} SlNetSockTxInhibitThreshold_e;
-N
-N/*!
-N    \brief  The SlNetSockSecAttrib_e enumerations are used to declare security
-N            attribute objects in SlNetSock_secAttribSet().
-N
-N    \sa     SlNetSock_secAttribSet()
-N*/
-Ntypedef enum
-N{
-N     SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY               = 0,
-N     SLNETSOCK_SEC_ATTRIB_LOCAL_CERT                = 1,
-N     SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA              = 2,
-N     SLNETSOCK_SEC_ATTRIB_DH_KEY                    = 3,
-N     SLNETSOCK_SEC_ATTRIB_METHOD                    = 4,
-N     SLNETSOCK_SEC_ATTRIB_CIPHERS                   = 5,
-N     SLNETSOCK_SEC_ATTRIB_ALPN                      = 6,
-N     SLNETSOCK_SEC_ATTRIB_EXT_CLIENT_CHLNG_RESP     = 7,
-N     SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME               = 8,
-N
-N     /*!
-N            @c SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE is
-N            currently only supported on CC3x20 devices.
-N
-N            The certificate store is a file, provided by TI,
-N            containing a list of known and trusted root CAs by TI.
-N            For more information, see the CC3x20 documentation.
-N
-N            The certificate store is used only in client mode. Servers
-N            use a proprietary root CA to authenticate clients, and
-N            therefore cannot use the certificate store.
-N
-N            Using this attribute allows using root CA which isn't a
-N            part of the provided certificate store.
-N     */
-N
-N     SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE = 9
-N} SlNetSockSecAttrib_e;
-N
-N/* available values for SLNETSOCK_SEC_ATTRIB_METHOD */
-N#define SLNETSOCK_SEC_METHOD_SSLV3                                          (0)   /**< security metohd SSL v3                            */
-N#define SLNETSOCK_SEC_METHOD_TLSV1                                          (1)   /**< security metohd TLS v1                            */
-N#define SLNETSOCK_SEC_METHOD_TLSV1_1                                        (2)   /**< security metohd TLS v1_1                          */
-N#define SLNETSOCK_SEC_METHOD_TLSV1_2                                        (3)   /**< security metohd TLS v1_2                          */
-N#define SLNETSOCK_SEC_METHOD_SSLv3_TLSV1_2                                  (4)   /**< use highest possible version from SSLv3 - TLS 1.2 */
-N#define SLNETSOCK_SEC_METHOD_DLSV1                                          (5)   /**< security metohd DTL v1                            */
-N
-N/* available values for SLNETSOCK_SEC_ATTRIB_CIPHERS. The value is bitmap! */
-N#define SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_SHA                       (1 << 0)
-N#define SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_MD5                       (1 << 1)
-N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_CBC_SHA                   (1 << 2)
-N#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_256_CBC_SHA               (1 << 3)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA             (1 << 4)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_RC4_128_SHA                 (1 << 5)
-N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_128_CBC_SHA256                (1 << 6)
-N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_CBC_SHA256                (1 << 7)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256          (1 << 8)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256        (1 << 9)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA           (1 << 10)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA           (1 << 11)
-N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_128_GCM_SHA256                (1 << 12)
-N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_GCM_SHA384                (1 << 13)
-N#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256            (1 << 14)
-N#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384            (1 << 15)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256          (1 << 16)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384          (1 << 17)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256        (1 << 18)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384        (1 << 19)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256  (1 << 20)
-N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256    (1 << 21)
-N#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256      (1 << 22)
-N#define SLNETSOCK_SEC_CIPHER_FULL_LIST                                      (0xFFFFFFFF)
-N
-N/* available values for SLNETSOCK_SEC_ATTRIB_ALPN */
-N#define SLNETSOCK_SEC_ALPN_H1                                               (1 << 0)
-N#define SLNETSOCK_SEC_ALPN_H2                                               (1 << 1)
-N#define SLNETSOCK_SEC_ALPN_H2C                                              (1 << 2)
-N#define SLNETSOCK_SEC_ALPN_H2_14                                            (1 << 3)
-N#define SLNETSOCK_SEC_ALPN_H2_16                                            (1 << 4)
-N#define SLNETSOCK_SEC_ALPN_FULL_LIST                                        ((SLNETSOCK_SEC_ALPN_H2_16 << 1 ) - 1)
-N
-N/* available values for the flags of the SlNetSock_startSec function */
-N#define SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY                           (1 << 0) /**< Sends the command that will start the security session for a specific socket descriptor */
-N#define SLNETSOCK_SEC_BIND_CONTEXT_ONLY                                     (1 << 1) /**< Binds the security context to a specific socket descriptor */
-N#define SLNETSOCK_SEC_IS_SERVER                                             (1 << 2) /**< Used to define if the socket is client/server socket       */
-N
-N/* available values for the flags of the SlNetSock_create function */
-N
-N#define SLNETSOCK_CREATE_IF_STATE_ENABLE                                    (1 << 0) /**< Creation of the socket will be on enabled state      */
-N#define SLNETSOCK_CREATE_IF_STATUS_CONNECTED                                (1 << 1) /**< Creation of the socket will be on status connected   */
-N#define SLNETSOCK_CREATE_ALLOW_PARTIAL_MATCH                                (1 << 2) /**< Creation of the socket will be on the interface with
-N                                                                                        the highest priority if the other flags will fail    */
-N
-N/* Definitions for shutting down some or all parts of a full duplex connection */
-N#define SLNETSOCK_SHUT_RD                                                   (0) /**< Further receptions will be disallowed                   */
-N#define SLNETSOCK_SHUT_WR                                                   (1) /**< Further transmissions will be disallowed                */
-N#define SLNETSOCK_SHUT_RDWR                                                 (2) /**< Further receptions and transmissions will be disallowed */
-N
-N/* Length of address string representation  */
-N#define SLNETSOCK_INET6_ADDRSTRLEN                                          (40)
-N#define SLNETSOCK_INET_ADDRSTRLEN                                           (15)
-N
-N/* flags used in send/recv and friends.
-N *
-N * Note these flags must not exceed 24-bits.  The implementation will
-N * OR the 8-bits of security flags into the remaining high 8 bits of
-N * 32-bit flag variables.
-N */
-N#define SLNETSOCK_MSG_OOB         (0x0001)
-N#define SLNETSOCK_MSG_PEEK        (0x0002)
-N#define SLNETSOCK_MSG_WAITALL     (0x0004)
-N#define SLNETSOCK_MSG_DONTWAIT    (0x0008)
-N#define SLNETSOCK_MSG_DONTROUTE   (0x0010)
-N#define SLNETSOCK_MSG_NOSIGNAL    (0x0020)
-N
-N
-N/*****************************************************************************/
-N/* Structure/Enum declarations                                               */
-N/*****************************************************************************/
-N
-N/*!
-N    \brief Internet address
-N*/
-Ntypedef struct SlNetSock_InAddr_t
-N{
-N#ifndef s_addr
-N    uint32_t s_addr;  /* Internet address 32 bits */
-N#else
-S/*!
-S    \brief Different representations for in addr for different hosts.
-S*/
-S    union S_un
-S    {
-S        uint32_t S_addr;
-S        struct
-S        {
-S            uint8_t s_b1,s_b2,s_b3,s_b4;
-S        } S_un_b;
-S        struct
-S        {
-S            uint16_t s_w1,s_w2;
-S        } S_un_w;
-S    } S_un;
-N#endif
-N} SlNetSock_InAddr_t;
-N
-N/*!
-N    \brief IpV6 or Ipv6 EUI64
-N*/
-Ntypedef struct SlNetSock_In6Addr_t
-N{
-N    union
-N    {
-N        uint8_t  _S6_u8[16];
-N        uint16_t _S6_u16[8];
-N        uint32_t _S6_u32[4];
-N    } _S6_un;
-N} SlNetSock_In6Addr_t;
-N
-N/*!
-N    \brief The SlNetSock_Keepalive_t structure is used in #SLNETSOCK_OPSOCK_KEEPALIVE socket level option
-N*/
-Ntypedef struct SlNetSock_Keepalive_t
-N{
-N    uint32_t keepaliveEnabled;      /**< 0 = disabled;1 = enabled; default = 1 */
-N} SlNetSock_Keepalive_t;
-N
-N/*!
-N    \brief The SlNetSock_NonIpBoundary_t structure is used in #SLNETSOCK_OPSOCK_NON_IP_BOUNDARY socket level option
-N*/
-Ntypedef struct SlNetSock_NonIpBoundary_t
-N{
-N    int32_t nonIpBoundaryEnabled;   /**< 0 = keep IP boundary; 1 = don`t keep ip boundary; default = 0; */
-N} SlNetSock_NonIpBoundary_t;
-N
-N/*!
-N    \brief The SlNetSock_Winsize_t structure is used in #SLNETSOCK_OPSOCK_RCV_BUF socket level option
-N*/
-Ntypedef struct SlNetSock_Winsize_t
-N{
-N    uint32_t winSize;               /**< receive window size for tcp sockets   */
-N} SlNetSock_Winsize_t;
-N
-N/*!
-N    \brief The SlNetSock_Nonblocking_t structure is used in #SLNETSOCK_OPSOCK_NON_BLOCKING socket level option
-N*/
-Ntypedef struct SlNetSock_Nonblocking_t
-N{
-N    uint32_t nonBlockingEnabled;    /**< 0 = disabled, 1 = enabled, default = 1*/
-N} SlNetSock_Nonblocking_t;
-N
-N/*!
-N    \brief Secure socket attribute context
-N*/
-Ntypedef struct SlNetSock_SecAttribNode_t
-N{
-N    SlNetSockSecAttrib_e              attribName;    /**< Security attribute name          */
-N    uint8_t                          *attribBuff;    /**< Security attribute buffer        */
-N    uint16_t                          attribBuffLen; /**< Security attribute buffer length */
-N    struct SlNetSock_SecAttribNode_t *next;
-N} SlNetSock_SecAttribNode_t;
-N
-N/*!
-N    \brief Secure socket attribute handler
-N*/
-Ntypedef SlNetSock_SecAttribNode_t * SlNetSockSecAttrib_t;
-N
-N/*!
-N    \brief Secure ALPN structure
-N*/
-Ntypedef struct SlNetSock_SecureALPN_t
-N{
-N    uint32_t secureALPN;
-N} SlNetSock_SecureALPN_t;
-N
-N/*!
-N    \brief Secure Mask structure
-N*/
-Ntypedef struct SlNetSock_SecureMask_t
-N{
-N    uint32_t secureMask;
-N} SlNetSock_SecureMask_t;
-N
-N/*!
-N    \brief Secure Method structure
-N*/
-Ntypedef struct SlNetSock_SecureMethod_t
-N{
-N    uint8_t secureMethod;
-N} SlNetSock_SecureMethod_t;
-N
-N/*!
-N    \brief The SlNetSock_IpMreq_t structure is used in #SLNETSOCK_OPIP_ADD_MEMBERSHIP and #SLNETSOCK_OPIP_DROP_MEMBERSHIP IP level option
-N*/
-Ntypedef struct SlNetSock_IpMreq_t
-N{
-N    SlNetSock_InAddr_t imr_multiaddr;     /**< The IPv4 multicast address to join  */
-N    uint32_t           imr_interface;     /**< The interface to use for this group */
-N} SlNetSock_IpMreq_t;
-N
-N/*!
-N    \brief The SlNetSock_IpV6Mreq_t structure is used in #SLNETSOCK_OPIPV6_ADD_MEMBERSHIP and #SLNETSOCK_OPIPV6_DROP_MEMBERSHIP IP level option
-N*/
-Ntypedef struct SlNetSock_IpV6Mreq_t
-N{
-N    SlNetSock_In6Addr_t ipv6mr_multiaddr; /**< IPv6 multicast address of group                       */
-N    uint32_t            ipv6mr_interface; /**< should be 0 to choose the default multicast interface */
-N} SlNetSock_IpV6Mreq_t;
-N
-N/*!
-N    \brief The SlNetSock_linger_t structure is used in #SLNETSOCK_OPSOCK_LINGER socket level option
-N*/
-Ntypedef struct SlNetSock_linger_t
-N{
-N    uint32_t l_onoff;                    /**< 0 = disabled; 1 = enabled; default = 0; */
-N    uint32_t l_linger;                   /**< linger time in seconds; default = 0;    */
-N} SlNetSock_linger_t;
-N
-N/*!
-N    \brief The SlNetSockTime_t is used for setting/getting time in seconds
-N*/
-Ntypedef int32_t SlNetSockTime_t;
-N/*!
-N    \brief The SlNetSockuseconds_t is used for setting/getting time in micro-seconds
-N*/
-Ntypedef int32_t SlNetSockuseconds_t;
-N
-N/*!
-N    \brief The SlNetSock_Timeval_t structure is used in #SLNETSOCK_OPSOCK_RCV_TIMEO socket level option
-N*/
-Ntypedef struct SlNetSock_Timeval_t
-N{
-N    SlNetSockTime_t      tv_sec;         /**< Seconds      */
-N    SlNetSockuseconds_t  tv_usec;        /**< Microseconds */
-N} SlNetSock_Timeval_t;
-N
-N/*!
-N    \brief The SlNetSocklen_t is used for declaring the socket length parameter
-N*/
-Ntypedef uint16_t SlNetSocklen_t;
-N
-N/*!
-N    \brief IpV4 socket address
-N*/
-Ntypedef struct SlNetSock_Addr_t
-N{
-N    uint16_t sa_family;                  /**< Address family (e.g. , AF_INET)        */
-N    uint8_t  sa_data[14];                /**< Protocol- specific address information */
-N} SlNetSock_Addr_t;
-N
-N/*!
-N    \brief SlNetSock IPv6 address, Internet style
-N*/
-Ntypedef struct SlNetSock_AddrIn6_t
-N{
-N    uint16_t            sin6_family;     /**< SLNETSOCK_AF_INET6             */
-N    uint16_t            sin6_port;       /**< Transport layer port.          */
-N    uint32_t            sin6_flowinfo;   /**< IPv6 flow information.         */
-N    SlNetSock_In6Addr_t sin6_addr;       /**< IPv6 address.                  */
-N    uint32_t            sin6_scope_id;   /**< set of interfaces for a scope. */
-N} SlNetSock_AddrIn6_t;
-N
-N/*!
-N    \brief SlNetSock IPv4 address, Internet style
-N*/
-Ntypedef struct SlNetSock_AddrIn_t
-N{
-N    uint16_t           sin_family;       /**< Internet Protocol (AF_INET). */
-N    uint16_t           sin_port;         /**< Address port (16 bits).      */
-N    SlNetSock_InAddr_t sin_addr;         /**< Internet address (32 bits).  */
-N    int8_t             sin_zero[8];      /**< Not used.                    */
-N} SlNetSock_AddrIn_t;
-N
-N/*!
-N    \brief The SlNetSock_SdSet_t structure holds the sd array for SlNetSock_select function
-N*/
-Ntypedef struct SlNetSock_SdSet_t         /**< The select socket array manager */
-N{
-N    uint32_t sdSetBitmap[(SLNETSOCK_MAX_CONCURRENT_SOCKETS + (uint8_t)31)/(uint8_t)32]; /* Bitmap of SOCKET Descriptors */
-X    uint32_t sdSetBitmap[((32) + (uint8_t)31)/(uint8_t)32];  
-N} SlNetSock_SdSet_t;
-N
-N
-N/*!
-N    \brief The SlNetSock_TransceiverRxOverHead_t structure holds the data for Rx transceiver mode using a raw socket when using SlNetSock_recv function
-N*/
-Ntypedef struct SlNetSock_TransceiverRxOverHead_t
-N{
-N    uint8_t  rate;                       /**< Received Rate                                  */
-N    uint8_t  channel;                    /**< The received channel                           */
-N    int8_t   rssi;                       /**< The computed RSSI value in db of current frame */
-N    uint8_t  padding;                    /**< pad to align to 32 bits                        */
-N    uint32_t timestamp;                  /**< Timestamp in microseconds                      */
-N} SlNetSock_TransceiverRxOverHead_t;
-N
-N
-N/* SlNetSock modules include */
-N
-N#include "slnetif.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetif.h" 1
-N/*
-N * Copyright (c) 2017, Texas Instruments Incorporated
-N * All rights reserved.
-N *
-N * Redistribution and use in source and binary forms, with or without
-N * modification, are permitted provided that the following conditions
-N * are met:
-N *
-N * *  Redistributions of source code must retain the above copyright
-N *    notice, this list of conditions and the following disclaimer.
-N *
-N * *  Redistributions in binary form must reproduce the above copyright
-N *    notice, this list of conditions and the following disclaimer in the
-N *    documentation and/or other materials provided with the distribution.
-N *
-N * *  Neither the name of Texas Instruments Incorporated nor the names of
-N *    its contributors may be used to endorse or promote products derived
-N *    from this software without specific prior written permission.
-N *
-N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-N */
-N
-N/*****************************************************************************/
-N/* Include files                                                             */
-N/*****************************************************************************/
-N
-N#ifndef __SL_NET_IF_H__
-N#define __SL_NET_IF_H__
-N
-N
-N#ifdef    __cplusplus
-Sextern "C" {
-N#endif
-N
-N#include <stdint.h>
-N#include <stdbool.h>
-L 1 "/opt/ti/ccs-latest/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdbool.h" 1
-N/*
-N * Copyright (c) 2000 Jeroen Ruigrok van der Werven <asmodai@FreeBSD.org>
-N * All rights reserved.
-N *
-N * Copyright (c) 2014-2014 Texas Instruments Incorporated
-N *
-N * Redistribution and use in source and binary forms, with or without
-N * modification, are permitted provided that the following conditions
-N * are met:
-N * 1. Redistributions of source code must retain the above copyright
-N *    notice, this list of conditions and the following disclaimer.
-N * 2. Redistributions in binary form must reproduce the above copyright
-N *    notice, this list of conditions and the following disclaimer in the
-N *    documentation and/or other materials provided with the distribution.
-N *
-N * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-N * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-N * SUCH DAMAGE.
-N *
-N * $FreeBSD: release/10.0.0/include/stdbool.h 228878 2011-12-25 20:15:41Z ed $
-N */
-N
-N#ifndef __bool_true_false_are_defined
-N#define	__bool_true_false_are_defined	1
-N
-N#ifndef __cplusplus
-N
-N#define	false	0
-N#define	true	1
-N
-N#define	bool	_Bool
-N#if __TI_STRICT_ANSI_MODE__ && 199901L > __STDC_VERSION__
-X#if 0 && 199901L > 199409L
-Stypedef unsigned char _Bool;
-N#endif
-N
-N#endif /* !__cplusplus */
-N#endif /* __bool_true_false_are_defined */
-L 47 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetif.h" 2
-N
-N#include <ti/net/slnetsock.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetsock.h" 1
-N/*
-N * Copyright (c) 2017, Texas Instruments Incorporated
-N * All rights reserved.
-N *
-N * Redistribution and use in source and binary forms, with or without
-N * modification, are permitted provided that the following conditions
-N * are met:
-N *
-N * *  Redistributions of source code must retain the above copyright
-N *    notice, this list of conditions and the following disclaimer.
-N *
-N * *  Redistributions in binary form must reproduce the above copyright
-N *    notice, this list of conditions and the following disclaimer in the
-N *    documentation and/or other materials provided with the distribution.
-N *
-N * *  Neither the name of Texas Instruments Incorporated nor the names of
-N *    its contributors may be used to endorse or promote products derived
-N *    from this software without specific prior written permission.
-N *
-N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-N */
-N
-N /*!
-N
-N
-N  \page SlNetSock_overview SlNetSock
-N
-N  \section intro_sec Introduction
-N
-NSlNetSock provides a standard BSD API for TCP and UDP transport
-Nlayers, and a lower-level SlNetSock API for basic and extended
-Nusage. Supported use cases include:
-N
-N - Support of multi interface (WiFi NS, Ethernet NDK)
-N - Selecting which interfaces the host will use, one or more.
-N - Support of different types of sockets (TCP, TLS, UDP, RAW, RF, etc.)
-N - BSD and proprietary errors
-N
-N The SlNetSock API's lead to easier portability to microcontrollers,
-N without compromising the capabilities and robustness of the final
-N application.
-N
-N
-N \section modules_sec Module Names
-N TI's SlNetSock layer is divided into the following software modules:
-N     -# \ref SlNetSock  - Controls standard client/server sockets options and capabilities
-N     -# \ref SlNetIf    - Controls standard stack/interface options and capabilities
-N     -# \ref SlNetUtils - Provides sockets related commands and configuration
-N     -# \ref SlNetErr   - Provide BSD and proprietary errors
-N
-NIn addition, SlNetSock provides a standard BSD API, built atop the
-NSlNet* APIs.  The BSD headers are placed in ti/net/bsd directory,
-Nwhich users should place on their include path.
-N
-NAlso, there is a light
-N\subpage porting_guide "SL Interface Porting Guide"
-Nwith information available for adding SlNetSock support for other stacks.
-N
-N  \page porting_guide SL Interface Porting Guide
-N
-N \section Introduction
-N
-NThe generic SlNetSock layer sits between the application/service and
-Nthe interface stack.  This guide describes the details of adding a network stack into the SlNetSock environment.
-N
-NThe porting steps for adding new interface:
-N    -# Create slnetifxxx file for the new interface
-N    -# Select the capabilities set
-N    -# Adding the interface to your application/service
-N    -# Add the relevant functions to your application/service
-N    -# Test your code to validate the correctness of your porting
-N
-N  \subsection porting_step1   Step 1 - slnetifxxx.c and slnetifxxx.h file for your interface
-N
-N - Create slnetifxxx file (replace xxx with your interface/stack
-N   name).  Likely you will copy from an existing port.
-N
-N - Implement the needed API's.
-N
-NEach interface needs to provide a set of API's to work with the
-Ninterface.  Some are mandatory, others are optional (but recommended).
-N
-N - Mandatory API's:
-N  - \ref SlNetIf_Config_t.sockCreate            "sockCreate"
-N  - \ref SlNetIf_Config_t.sockClose             "sockClose"
-N  - \ref SlNetIf_Config_t.sockSelect            "sockSelect"
-N  - \ref SlNetIf_Config_t.sockSetOpt            "sockSetOpt"
-N  - \ref SlNetIf_Config_t.sockGetOpt            "sockGetOpt"
-N  - \ref SlNetIf_Config_t.sockRecvFrom          "sockRecvFrom"
-N  - \ref SlNetIf_Config_t.sockSendTo            "sockSendTo"
-N  - \ref SlNetIf_Config_t.ifGetIPAddr           "ifGetIPAddr"
-N  - \ref SlNetIf_Config_t.ifGetConnectionStatus "ifGetConnectionStatus"
-N
-N - The non-mandatory API's set:
-N  - \ref SlNetIf_Config_t.sockShutdown          "sockShutdown"
-N  - \ref SlNetIf_Config_t.sockAccept            "sockAccept"
-N  - \ref SlNetIf_Config_t.sockBind              "sockBind"
-N  - \ref SlNetIf_Config_t.sockListen            "sockListen"
-N  - \ref SlNetIf_Config_t.sockConnect           "sockConnect"
-N  - \ref SlNetIf_Config_t.sockGetPeerName       "sockGetPeerName"
-N  - \ref SlNetIf_Config_t.sockGetLocalName      "sockGetLocalName"
-N  - \ref SlNetIf_Config_t.sockRecv              "sockRecv"
-N  - \ref SlNetIf_Config_t.sockSend              "sockSend"
-N  - \ref SlNetIf_Config_t.sockstartSec          "sockstartSec"
-N  - \ref SlNetIf_Config_t.utilGetHostByName     "utilGetHostByName"
-N  - \ref SlNetIf_Config_t.ifLoadSecObj          "ifLoadSecOjb"
-N  - \ref SlNetIf_Config_t.ifCreateContext       "ifCreateContext"
-N
-N
-N  \note The list of API's and more data can be found in ::SlNetIf_Config_t structure in SlNetIf module \n \n
-N
-N \subsection    porting_step2   Step 2 - Select the capabilities set
-N
-N The capabilities prototype should be declared in your slnetifxxx.h and implemented in your slnetifxxx.c
-N
-N Each mandatory API's must be set, additional API's can be set or must
-N be set to NULL.
-N
-N An example config declaration for TI's SimpleLink CC31XX/CC32xx
-N
-N \code
-N SlNetIfConfig SlNetIfConfigWiFi =
-N {
-N    SlNetIfWifi_socket,              // Callback function sockCreate in slnetif module
-N    SlNetIfWifi_close,               // Callback function sockClose in slnetif module
-N    NULL,                            // Callback function sockShutdown in slnetif module
-N    SlNetIfWifi_accept,              // Callback function sockAccept in slnetif module
-N    SlNetIfWifi_bind,                // Callback function sockBind in slnetif module
-N    SlNetIfWifi_listen,              // Callback function sockListen in slnetif module
-N    SlNetIfWifi_connect,             // Callback function sockConnect in slnetif module
-N    NULL,                            // Callback function sockGetPeerName in slnetif module
-N    NULL,                            // Callback function sockGetLocalName in slnetif module
-N    SlNetIfWifi_select,              // Callback function sockSelect in slnetif module
-N    SlNetIfWifi_setSockOpt,          // Callback function sockSetOpt in slnetif module
-N    SlNetIfWifi_getSockOpt,          // Callback function sockGetOpt in slnetif module
-N    SlNetIfWifi_recv,                // Callback function sockRecv in slnetif module
-N    SlNetIfWifi_recvFrom,            // Callback function sockRecvFrom in slnetif module
-N    SlNetIfWifi_send,                // Callback function sockSend in slnetif module
-N    SlNetIfWifi_sendTo,              // Callback function sockSendTo in slnetif module
-N    SlNetIfWifi_sockstartSec,        // Callback function sockstartSec in slnetif module
-N    SlNetIfWifi_getHostByName,       // Callback function utilGetHostByName in slnetif module
-N    SlNetIfWifi_getIPAddr,           // Callback function ifGetIPAddr in slnetif module
-N    SlNetIfWifi_getConnectionStatus, // Callback function ifGetConnectionStatus in slnetif module
-N    SlNetIfWifi_loadSecObj,          // Callback function ifLoadSecObj in slnetif module
-N    NULL                             // Callback function ifCreateContext in slnetif module
-N };
-N \endcode
-N
-N In the example above the following API's are not supported by the interface,
-N and are set to NULL:
-N - sockShutdown
-N - sockGetPeerName
-N - sockGetLocalName
-N - utilGetHostByName
-N - ifCreateContext
-N
-N \subsection    porting_step3   Step 3 - Adding the interface to your application/service
-N
-N \b Include the new file in the board header file in the application.
-N
-N \subsection    porting_step4   Step 4 - Add the relevant functions to your application/service
-N
-N  After configuring the capabilities of the interface, Adding the interface to the SlNetSock
-N  is required.
-N
-N  Use ::SlNetIf_add in order to add the interface and set his ID, Name, function list and priority.
-N  Later on you need to use the BSD API's or SlNetSock API's for socket handling.
-N
-N \subsection    porting_step5   Step 5 - Test your code to validate the correctness of your porting
-N
-N After porting the layer into your setup, validate that your code work as expected
-N
-N*/
-N
-N/*****************************************************************************/
-N/* Include files                                                             */
-N/*****************************************************************************/
-N
-N#ifndef __SL_NET_SOCK_H__
-S#define __SL_NET_SOCK_H__
-S
-S
-S#ifdef    __cplusplus
-Sextern "C" {
-S#endif
-S
-S#include <stdint.h>
-S
-S/*!
-S    \defgroup SlNetSock SlNetSock group
-S
-S    \short Controls standard client/server sockets options and capabilities
-S
-S*/
-S/*!
-S
-S    \addtogroup SlNetSock
-S    @{
-S
-S*/
-S
-S/*****************************************************************************/
-S/* Macro declarations                                                        */
-S/*****************************************************************************/
-S
-S#define SLNETSOCK_MAX_CONCURRENT_SOCKETS                                    (32)  /**< Declares the maximum sockets that can be opened */
-S
-S/* Address families.  */
-S#define SLNETSOCK_AF_UNSPEC                                                 (0)   /**< Unspecified address family      */
-S#define SLNETSOCK_AF_INET                                                   (2)   /**< IPv4 socket (UDP, TCP, etc)     */
-S#define SLNETSOCK_AF_INET6                                                  (3)   /**< IPv6 socket (UDP, TCP, etc)     */
-S#define SLNETSOCK_AF_RF                                                     (6)   /**< Data include RF parameter, All layer by user (Wifi could be disconnected) */
-S#define SLNETSOCK_AF_PACKET                                                 (17)  /**< Network bypass                  */
-S
-S/* Protocol families, same as address families. */
-S#define SLNETSOCK_PF_UNSPEC                                                 SLNETSOCK_AF_UNSPEC
-S#define SLNETSOCK_PF_INET                                                   SLNETSOCK_AF_INET
-S#define SLNETSOCK_PF_INET6                                                  SLNETSOCK_AF_INET6
-S
-S/* Define argument types specifies the socket type.  */
-S#define SLNETSOCK_SOCK_STREAM                                               (1)   /**< TCP Socket                      */
-S#define SLNETSOCK_SOCK_DGRAM                                                (2)   /**< UDP Socket                      */
-S#define SLNETSOCK_SOCK_RAW                                                  (3)   /**< Raw socket                      */
-S#define SLNETSOCK_SOCK_RX_MTR                                               (4)   /**< RX Metrics socket               */
-S#define SLNETSOCK_SOCK_MAC_WITH_CCA                                         (5)
-S#define SLNETSOCK_SOCK_MAC_WITH_NO_CCA                                      (6)
-S#define SLNETSOCK_SOCK_BRIDGE                                               (7)
-S#define SLNETSOCK_SOCK_ROUTER                                               (8)
-S
-S/* Define some BSD protocol constants.  */
-S#define SLNETSOCK_PROTO_TCP                                                 (6)   /**< TCP Raw Socket                  */
-S#define SLNETSOCK_PROTO_UDP                                                 (17)  /**< UDP Raw Socket                  */
-S#define SLNETSOCK_PROTO_RAW                                                 (255) /**< Raw Socket                      */
-S#define SLNETSOCK_PROTO_SECURE                                              (100) /**< Secured Socket Layer (SSL,TLS)  */
-S
-S/* bind any addresses */
-S#define SLNETSOCK_INADDR_ANY                                                (0)
-S#define SLNETSOCK_IN6ADDR_ANY                                               (0)
-S
-S
-S/* socket options */
-S
-S/* possible values for the level parameter in slNetSock_setOpt / slNetSock_getOpt */
-S#define SLNETSOCK_LVL_SOCKET                                                (1)   /**< Define the socket option category. */
-S#define SLNETSOCK_LVL_IP                                                    (2)   /**< Define the IP option category.     */
-S#define SLNETSOCK_LVL_PHY                                                   (3)   /**< Define the PHY option category.    */
-S
-S/* possible values for the option parameter in slNetSock_setOpt / slNetSock_getOpt */
-S
-S/* socket level options (SLNETSOCK_LVL_SOCKET) */
-S#define SLNETSOCK_OPSOCK_RCV_BUF                                            (8)   /**< Setting TCP receive buffer size (window size) - This options takes SlNetSock_Winsize_t struct as parameter                 */
-S#define SLNETSOCK_OPSOCK_RCV_TIMEO                                          (20)  /**< Enable receive timeout - This options takes SlNetSock_Timeval_t struct as parameter                                        */
-S#define SLNETSOCK_OPSOCK_KEEPALIVE                                          (9)   /**< Connections are kept alive with periodic messages - This options takes SlNetSock_Keepalive_t struct as parameter           */
-S#define SLNETSOCK_OPSOCK_KEEPALIVE_TIME                                     (37)  /**< keepalive time out - This options takes <b>uint32_t</b> as parameter                                                       */
-S#define SLNETSOCK_OPSOCK_LINGER                                             (13)  /**< Socket lingers on close pending remaining send/receive packets - This options takes SlNetSock_linger_t struct as parameter */
-S#define SLNETSOCK_OPSOCK_NON_BLOCKING                                       (24)  /**< Enable/disable nonblocking mode - This options takes SlNetSock_Nonblocking_t struct as parameter                           */
-S#define SLNETSOCK_OPSOCK_NON_IP_BOUNDARY                                    (39)  /**< connectionless socket disable rx boundary - This options takes SlNetSock_NonIpBoundary_t struct as parameter               */
-S#define SLNETSOCK_OPSOCK_ERROR                                              (58)  /**< Socket level error code                                                                                                    */
-S#define SLNETSOCK_OPSOCK_SLNETSOCKSD                                        (59)  /**< Used by the BSD layer in order to retrieve the slnetsock sd                                                                */
-S
-S/* IP level options (SLNETSOCK_LVL_IP) */
-S#define SLNETSOCK_OPIP_MULTICAST_TTL                                        (61)  /**< Specify the TTL value to use for outgoing multicast packet. - This options takes <b>uint8_t</b> as parameter                                                      */
-S#define SLNETSOCK_OPIP_ADD_MEMBERSHIP                                       (65)  /**< Join IPv4 multicast membership - This options takes SlNetSock_IpMreq_t struct as parameter                                                                        */
-S#define SLNETSOCK_OPIP_DROP_MEMBERSHIP                                      (66)  /**< Leave IPv4 multicast membership - This options takes SlNetSock_IpMreq_t struct as parameter                                                                       */
-S#define SLNETSOCK_OPIP_HDRINCL                                              (67)  /**< Raw socket IPv4 header included - This options takes <b>uint32_t</b> as parameter                                                                                 */
-S#define SLNETSOCK_OPIP_RAW_RX_NO_HEADER                                     (68)  /**< Proprietary socket option that does not includeIPv4/IPv6 header (and extension headers) on received raw sockets - This options takes <b>uint32_t</b> as parameter */
-S#define SLNETSOCK_OPIP_RAW_IPV6_HDRINCL                                     (69)  /**< Transmitted buffer over IPv6 socket contains IPv6 header - This options takes <b>uint32_t</b> as parameter                                                        */
-S#define SLNETSOCK_OPIPV6_ADD_MEMBERSHIP                                     (70)  /**< Join IPv6 multicast membership - This options takes SlNetSock_IpV6Mreq_t struct as parameter                                                                      */
-S#define SLNETSOCK_OPIPV6_DROP_MEMBERSHIP                                    (71)  /**< Leave IPv6 multicast membership - This options takes SlNetSock_IpV6Mreq_t struct as parameter                                                                     */
-S#define SLNETSOCK_OPIPV6_MULTICAST_HOPS                                     (72)  /**< Specify the hops value to use for outgoing multicast packet.                                                                                                      */
-S
-S/* PHY level options (SLNETSOCK_LVL_PHY) */
-S#define SLNETSOCK_OPPHY_CHANNEL                                             (28)  /**< This option is available only when transceiver started - This options takes <b>uint32_t</b> as channel number parameter            */
-S#define SLNETSOCK_OPPHY_RATE                                                (100) /**< WLAN Transmit rate - This options takes <b>uint32_t</b> as parameter based on SlWlanRateIndex_e                                    */
-S#define SLNETSOCK_OPPHY_TX_POWER                                            (101) /**< TX Power level - This options takes <b>uint32_t</b> as parameter                                                                   */
-S#define SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX                                    (102) /**< Number of frames to transmit - This options takes <b>uint32_t</b> as parameter                                                     */
-S#define SLNETSOCK_OPPHY_PREAMBLE                                            (103) /**< Preamble for transmission - This options takes <b>uint32_t</b> as parameter                                                        */
-S#define SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD                                (104) /**< TX Inhibit Threshold (CCA) - This options takes <b>uint32_t</b> as parameter based on SlNetSockTxInhibitThreshold_e                */
-S#define SLNETSOCK_OPPHY_TX_TIMEOUT                                          (105) /**< TX timeout for Transceiver frames (lifetime) in miliseconds (max value is 100ms) - This options takes <b>uint32_t</b> as parameter */
-S#define SLNETSOCK_OPPHY_ALLOW_ACKS                                          (106) /**< Enable sending ACKs in transceiver mode - This options takes <b>uint32_t</b> as parameter                                          */
-S
-S/*!
-S    \brief The SlNetSockTxInhibitThreshold_e enumerations is used in SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD PHY level option
-S*/
-Stypedef enum
-S{
-S    SLNETSOCK_TX_INHIBIT_THRESHOLD_MIN     = 1,
-S    SLNETSOCK_TX_INHIBIT_THRESHOLD_LOW     = 2,
-S    SLNETSOCK_TX_INHIBIT_THRESHOLD_DEFAULT = 3,
-S    SLNETSOCK_TX_INHIBIT_THRESHOLD_MED     = 4,
-S    SLNETSOCK_TX_INHIBIT_THRESHOLD_HIGH    = 5,
-S    SLNETSOCK_TX_INHIBIT_THRESHOLD_MAX     = 6
-S} SlNetSockTxInhibitThreshold_e;
-S
-S/*!
-S    \brief  The SlNetSockSecAttrib_e enumerations are used to declare security
-S            attribute objects in SlNetSock_secAttribSet().
-S
-S    \sa     SlNetSock_secAttribSet()
-S*/
-Stypedef enum
-S{
-S     SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY               = 0,
-S     SLNETSOCK_SEC_ATTRIB_LOCAL_CERT                = 1,
-S     SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA              = 2,
-S     SLNETSOCK_SEC_ATTRIB_DH_KEY                    = 3,
-S     SLNETSOCK_SEC_ATTRIB_METHOD                    = 4,
-S     SLNETSOCK_SEC_ATTRIB_CIPHERS                   = 5,
-S     SLNETSOCK_SEC_ATTRIB_ALPN                      = 6,
-S     SLNETSOCK_SEC_ATTRIB_EXT_CLIENT_CHLNG_RESP     = 7,
-S     SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME               = 8,
-S
-S     /*!
-S            @c SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE is
-S            currently only supported on CC3x20 devices.
-S
-S            The certificate store is a file, provided by TI,
-S            containing a list of known and trusted root CAs by TI.
-S            For more information, see the CC3x20 documentation.
-S
-S            The certificate store is used only in client mode. Servers
-S            use a proprietary root CA to authenticate clients, and
-S            therefore cannot use the certificate store.
-S
-S            Using this attribute allows using root CA which isn't a
-S            part of the provided certificate store.
-S     */
-S
-S     SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE = 9
-S} SlNetSockSecAttrib_e;
-S
-S/* available values for SLNETSOCK_SEC_ATTRIB_METHOD */
-S#define SLNETSOCK_SEC_METHOD_SSLV3                                          (0)   /**< security metohd SSL v3                            */
-S#define SLNETSOCK_SEC_METHOD_TLSV1                                          (1)   /**< security metohd TLS v1                            */
-S#define SLNETSOCK_SEC_METHOD_TLSV1_1                                        (2)   /**< security metohd TLS v1_1                          */
-S#define SLNETSOCK_SEC_METHOD_TLSV1_2                                        (3)   /**< security metohd TLS v1_2                          */
-S#define SLNETSOCK_SEC_METHOD_SSLv3_TLSV1_2                                  (4)   /**< use highest possible version from SSLv3 - TLS 1.2 */
-S#define SLNETSOCK_SEC_METHOD_DLSV1                                          (5)   /**< security metohd DTL v1                            */
-S
-S/* available values for SLNETSOCK_SEC_ATTRIB_CIPHERS. The value is bitmap! */
-S#define SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_SHA                       (1 << 0)
-S#define SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_MD5                       (1 << 1)
-S#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_CBC_SHA                   (1 << 2)
-S#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_256_CBC_SHA               (1 << 3)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA             (1 << 4)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_RC4_128_SHA                 (1 << 5)
-S#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_128_CBC_SHA256                (1 << 6)
-S#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_CBC_SHA256                (1 << 7)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256          (1 << 8)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256        (1 << 9)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA           (1 << 10)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA           (1 << 11)
-S#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_128_GCM_SHA256                (1 << 12)
-S#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_GCM_SHA384                (1 << 13)
-S#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256            (1 << 14)
-S#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384            (1 << 15)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256          (1 << 16)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384          (1 << 17)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256        (1 << 18)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384        (1 << 19)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256  (1 << 20)
-S#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256    (1 << 21)
-S#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256      (1 << 22)
-S#define SLNETSOCK_SEC_CIPHER_FULL_LIST                                      (0xFFFFFFFF)
-S
-S/* available values for SLNETSOCK_SEC_ATTRIB_ALPN */
-S#define SLNETSOCK_SEC_ALPN_H1                                               (1 << 0)
-S#define SLNETSOCK_SEC_ALPN_H2                                               (1 << 1)
-S#define SLNETSOCK_SEC_ALPN_H2C                                              (1 << 2)
-S#define SLNETSOCK_SEC_ALPN_H2_14                                            (1 << 3)
-S#define SLNETSOCK_SEC_ALPN_H2_16                                            (1 << 4)
-S#define SLNETSOCK_SEC_ALPN_FULL_LIST                                        ((SLNETSOCK_SEC_ALPN_H2_16 << 1 ) - 1)
-S
-S/* available values for the flags of the SlNetSock_startSec function */
-S#define SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY                           (1 << 0) /**< Sends the command that will start the security session for a specific socket descriptor */
-S#define SLNETSOCK_SEC_BIND_CONTEXT_ONLY                                     (1 << 1) /**< Binds the security context to a specific socket descriptor */
-S#define SLNETSOCK_SEC_IS_SERVER                                             (1 << 2) /**< Used to define if the socket is client/server socket       */
-S
-S/* available values for the flags of the SlNetSock_create function */
-S
-S#define SLNETSOCK_CREATE_IF_STATE_ENABLE                                    (1 << 0) /**< Creation of the socket will be on enabled state      */
-S#define SLNETSOCK_CREATE_IF_STATUS_CONNECTED                                (1 << 1) /**< Creation of the socket will be on status connected   */
-S#define SLNETSOCK_CREATE_ALLOW_PARTIAL_MATCH                                (1 << 2) /**< Creation of the socket will be on the interface with
-S                                                                                        the highest priority if the other flags will fail    */
-S
-S/* Definitions for shutting down some or all parts of a full duplex connection */
-S#define SLNETSOCK_SHUT_RD                                                   (0) /**< Further receptions will be disallowed                   */
-S#define SLNETSOCK_SHUT_WR                                                   (1) /**< Further transmissions will be disallowed                */
-S#define SLNETSOCK_SHUT_RDWR                                                 (2) /**< Further receptions and transmissions will be disallowed */
-S
-S/* Length of address string representation  */
-S#define SLNETSOCK_INET6_ADDRSTRLEN                                          (40)
-S#define SLNETSOCK_INET_ADDRSTRLEN                                           (15)
-S
-S/* flags used in send/recv and friends.
-S *
-S * Note these flags must not exceed 24-bits.  The implementation will
-S * OR the 8-bits of security flags into the remaining high 8 bits of
-S * 32-bit flag variables.
-S */
-S#define SLNETSOCK_MSG_OOB         (0x0001)
-S#define SLNETSOCK_MSG_PEEK        (0x0002)
-S#define SLNETSOCK_MSG_WAITALL     (0x0004)
-S#define SLNETSOCK_MSG_DONTWAIT    (0x0008)
-S#define SLNETSOCK_MSG_DONTROUTE   (0x0010)
-S#define SLNETSOCK_MSG_NOSIGNAL    (0x0020)
-S
-S
-S/*****************************************************************************/
-S/* Structure/Enum declarations                                               */
-S/*****************************************************************************/
-S
-S/*!
-S    \brief Internet address
-S*/
-Stypedef struct SlNetSock_InAddr_t
-S{
-S#ifndef s_addr
-S    uint32_t s_addr;  /* Internet address 32 bits */
-S#else
-S/*!
-S    \brief Different representations for in addr for different hosts.
-S*/
-S    union S_un
-S    {
-S        uint32_t S_addr;
-S        struct
-S        {
-S            uint8_t s_b1,s_b2,s_b3,s_b4;
-S        } S_un_b;
-S        struct
-S        {
-S            uint16_t s_w1,s_w2;
-S        } S_un_w;
-S    } S_un;
-S#endif
-S} SlNetSock_InAddr_t;
-S
-S/*!
-S    \brief IpV6 or Ipv6 EUI64
-S*/
-Stypedef struct SlNetSock_In6Addr_t
-S{
-S    union
-S    {
-S        uint8_t  _S6_u8[16];
-S        uint16_t _S6_u16[8];
-S        uint32_t _S6_u32[4];
-S    } _S6_un;
-S} SlNetSock_In6Addr_t;
-S
-S/*!
-S    \brief The SlNetSock_Keepalive_t structure is used in #SLNETSOCK_OPSOCK_KEEPALIVE socket level option
-S*/
-Stypedef struct SlNetSock_Keepalive_t
-S{
-S    uint32_t keepaliveEnabled;      /**< 0 = disabled;1 = enabled; default = 1 */
-S} SlNetSock_Keepalive_t;
-S
-S/*!
-S    \brief The SlNetSock_NonIpBoundary_t structure is used in #SLNETSOCK_OPSOCK_NON_IP_BOUNDARY socket level option
-S*/
-Stypedef struct SlNetSock_NonIpBoundary_t
-S{
-S    int32_t nonIpBoundaryEnabled;   /**< 0 = keep IP boundary; 1 = don`t keep ip boundary; default = 0; */
-S} SlNetSock_NonIpBoundary_t;
-S
-S/*!
-S    \brief The SlNetSock_Winsize_t structure is used in #SLNETSOCK_OPSOCK_RCV_BUF socket level option
-S*/
-Stypedef struct SlNetSock_Winsize_t
-S{
-S    uint32_t winSize;               /**< receive window size for tcp sockets   */
-S} SlNetSock_Winsize_t;
-S
-S/*!
-S    \brief The SlNetSock_Nonblocking_t structure is used in #SLNETSOCK_OPSOCK_NON_BLOCKING socket level option
-S*/
-Stypedef struct SlNetSock_Nonblocking_t
-S{
-S    uint32_t nonBlockingEnabled;    /**< 0 = disabled, 1 = enabled, default = 1*/
-S} SlNetSock_Nonblocking_t;
-S
-S/*!
-S    \brief Secure socket attribute context
-S*/
-Stypedef struct SlNetSock_SecAttribNode_t
-S{
-S    SlNetSockSecAttrib_e              attribName;    /**< Security attribute name          */
-S    uint8_t                          *attribBuff;    /**< Security attribute buffer        */
-S    uint16_t                          attribBuffLen; /**< Security attribute buffer length */
-S    struct SlNetSock_SecAttribNode_t *next;
-S} SlNetSock_SecAttribNode_t;
-S
-S/*!
-S    \brief Secure socket attribute handler
-S*/
-Stypedef SlNetSock_SecAttribNode_t * SlNetSockSecAttrib_t;
-S
-S/*!
-S    \brief Secure ALPN structure
-S*/
-Stypedef struct SlNetSock_SecureALPN_t
-S{
-S    uint32_t secureALPN;
-S} SlNetSock_SecureALPN_t;
-S
-S/*!
-S    \brief Secure Mask structure
-S*/
-Stypedef struct SlNetSock_SecureMask_t
-S{
-S    uint32_t secureMask;
-S} SlNetSock_SecureMask_t;
-S
-S/*!
-S    \brief Secure Method structure
-S*/
-Stypedef struct SlNetSock_SecureMethod_t
-S{
-S    uint8_t secureMethod;
-S} SlNetSock_SecureMethod_t;
-S
-S/*!
-S    \brief The SlNetSock_IpMreq_t structure is used in #SLNETSOCK_OPIP_ADD_MEMBERSHIP and #SLNETSOCK_OPIP_DROP_MEMBERSHIP IP level option
-S*/
-Stypedef struct SlNetSock_IpMreq_t
-S{
-S    SlNetSock_InAddr_t imr_multiaddr;     /**< The IPv4 multicast address to join  */
-S    uint32_t           imr_interface;     /**< The interface to use for this group */
-S} SlNetSock_IpMreq_t;
-S
-S/*!
-S    \brief The SlNetSock_IpV6Mreq_t structure is used in #SLNETSOCK_OPIPV6_ADD_MEMBERSHIP and #SLNETSOCK_OPIPV6_DROP_MEMBERSHIP IP level option
-S*/
-Stypedef struct SlNetSock_IpV6Mreq_t
-S{
-S    SlNetSock_In6Addr_t ipv6mr_multiaddr; /**< IPv6 multicast address of group                       */
-S    uint32_t            ipv6mr_interface; /**< should be 0 to choose the default multicast interface */
-S} SlNetSock_IpV6Mreq_t;
-S
-S/*!
-S    \brief The SlNetSock_linger_t structure is used in #SLNETSOCK_OPSOCK_LINGER socket level option
-S*/
-Stypedef struct SlNetSock_linger_t
-S{
-S    uint32_t l_onoff;                    /**< 0 = disabled; 1 = enabled; default = 0; */
-S    uint32_t l_linger;                   /**< linger time in seconds; default = 0;    */
-S} SlNetSock_linger_t;
-S
-S/*!
-S    \brief The SlNetSockTime_t is used for setting/getting time in seconds
-S*/
-Stypedef int32_t SlNetSockTime_t;
-S/*!
-S    \brief The SlNetSockuseconds_t is used for setting/getting time in micro-seconds
-S*/
-Stypedef int32_t SlNetSockuseconds_t;
-S
-S/*!
-S    \brief The SlNetSock_Timeval_t structure is used in #SLNETSOCK_OPSOCK_RCV_TIMEO socket level option
-S*/
-Stypedef struct SlNetSock_Timeval_t
-S{
-S    SlNetSockTime_t      tv_sec;         /**< Seconds      */
-S    SlNetSockuseconds_t  tv_usec;        /**< Microseconds */
-S} SlNetSock_Timeval_t;
-S
-S/*!
-S    \brief The SlNetSocklen_t is used for declaring the socket length parameter
-S*/
-Stypedef uint16_t SlNetSocklen_t;
-S
-S/*!
-S    \brief IpV4 socket address
-S*/
-Stypedef struct SlNetSock_Addr_t
-S{
-S    uint16_t sa_family;                  /**< Address family (e.g. , AF_INET)        */
-S    uint8_t  sa_data[14];                /**< Protocol- specific address information */
-S} SlNetSock_Addr_t;
-S
-S/*!
-S    \brief SlNetSock IPv6 address, Internet style
-S*/
-Stypedef struct SlNetSock_AddrIn6_t
-S{
-S    uint16_t            sin6_family;     /**< SLNETSOCK_AF_INET6             */
-S    uint16_t            sin6_port;       /**< Transport layer port.          */
-S    uint32_t            sin6_flowinfo;   /**< IPv6 flow information.         */
-S    SlNetSock_In6Addr_t sin6_addr;       /**< IPv6 address.                  */
-S    uint32_t            sin6_scope_id;   /**< set of interfaces for a scope. */
-S} SlNetSock_AddrIn6_t;
-S
-S/*!
-S    \brief SlNetSock IPv4 address, Internet style
-S*/
-Stypedef struct SlNetSock_AddrIn_t
-S{
-S    uint16_t           sin_family;       /**< Internet Protocol (AF_INET). */
-S    uint16_t           sin_port;         /**< Address port (16 bits).      */
-S    SlNetSock_InAddr_t sin_addr;         /**< Internet address (32 bits).  */
-S    int8_t             sin_zero[8];      /**< Not used.                    */
-S} SlNetSock_AddrIn_t;
-S
-S/*!
-S    \brief The SlNetSock_SdSet_t structure holds the sd array for SlNetSock_select function
-S*/
-Stypedef struct SlNetSock_SdSet_t         /**< The select socket array manager */
-S{
-S    uint32_t sdSetBitmap[(SLNETSOCK_MAX_CONCURRENT_SOCKETS + (uint8_t)31)/(uint8_t)32]; /* Bitmap of SOCKET Descriptors */
-S} SlNetSock_SdSet_t;
-S
-S
-S/*!
-S    \brief The SlNetSock_TransceiverRxOverHead_t structure holds the data for Rx transceiver mode using a raw socket when using SlNetSock_recv function
-S*/
-Stypedef struct SlNetSock_TransceiverRxOverHead_t
-S{
-S    uint8_t  rate;                       /**< Received Rate                                  */
-S    uint8_t  channel;                    /**< The received channel                           */
-S    int8_t   rssi;                       /**< The computed RSSI value in db of current frame */
-S    uint8_t  padding;                    /**< pad to align to 32 bits                        */
-S    uint32_t timestamp;                  /**< Timestamp in microseconds                      */
-S} SlNetSock_TransceiverRxOverHead_t;
-S
-S
-S/* SlNetSock modules include */
-S
-S#include "slnetif.h"
-S#include "slnetutils.h"
-S#include "slneterr.h"
-S
-S
-S/*****************************************************************************/
-S/* Function prototypes                                                       */
-S/*****************************************************************************/
-S
-S/*!
-S
-S    \brief Initialize the SlNetSock module
-S
-S    \param[in] flags            Reserved
-S
-S    \return                     Zero on success, or negative error code on failure
-S*/
-Sint32_t SlNetSock_init(int32_t flags);
-S
-S/*!
-S
-S    \brief Create an endpoint for communication
-S
-S    SlNetSock_create() creates a new socket of a certain socket type,
-S    identified by an integer number, and allocates system resources to it.\n
-S    This function is called by the application layer to obtain a socket descriptor (handle).
-S
-S    \param[in] domain           Specifies the protocol family of the created socket.
-S                                For example:
-S                                   - #SLNETSOCK_AF_INET for network protocol IPv4
-S                                   - #SLNETSOCK_AF_INET6 for network protocol IPv6
-S                                   - #SLNETSOCK_AF_RF for starting transceiver mode.
-S                                        Notes:
-S                                        - sending and receiving any packet overriding 802.11 header
-S                                        - for optimized power consumption the socket will be started in TX
-S                                            only mode until receive command is activated
-S    \param[in] type             Specifies the socket type, which determines the semantics of communication over
-S                                the socket. The socket types supported by the system are implementation-dependent.
-S                                Possible socket types include:
-S                                   - #SLNETSOCK_SOCK_STREAM (reliable stream-oriented service or Stream Sockets)
-S                                   - #SLNETSOCK_SOCK_DGRAM  (datagram service or Datagram Sockets)
-S                                   - #SLNETSOCK_SOCK_RAW    (raw protocols atop the network layer)
-S                                   - when used with AF_RF:
-S                                      - #SLNETSOCK_SOCK_RX_MTR
-S                                      - #SLNETSOCK_SOCK_MAC_WITH_CCA
-S                                      - #SLNETSOCK_SOCK_MAC_WITH_NO_CCA
-S                                      - #SLNETSOCK_SOCK_BRIDGE
-S                                      - #SLNETSOCK_SOCK_ROUTER
-S    \param[in] protocol         Specifies a particular transport to be used with the socket.\n
-S                                The most common are
-S                                    - #SLNETSOCK_PROTO_TCP
-S                                    - #SLNETSOCK_PROTO_UDP
-S                                    - #SLNETSOCK_PROTO_RAW
-S                                    - #SLNETSOCK_PROTO_SECURE
-S    \param[in] ifBitmap         Specifies the interface(s) which the socket will be create on
-S                                according to the priority until one of them will return an answer.\n
-S                                Value 0 is used in order to choose automatic interfaces selection
-S                                according to the priority interface list.
-S                                Value can be combination of interfaces by OR'ing multiple interfaces bit identifiers
-S                                (SLNETIFC_IDENT_ defined in slnetif.h)
-S                                Note: interface identifier bit must be configured prior to this socket creation
-S                                using SlNetIf_add().
-S    \param[in] flags            Specifies flags.
-S                                   - #SLNETSOCK_CREATE_IF_STATE_ENABLE     - Creation of the socket will be on enabled state
-S                                   - #SLNETSOCK_CREATE_IF_STATUS_CONNECTED - Creation of the socket will be on status connected
-S                                   - #SLNETSOCK_CREATE_ALLOW_PARTIAL_MATCH - Creation of the socket will be on the interface with
-S                                                                            the highest priority if the other flags will fail
-S                                The value 0 may be used in order to run the default flags:
-S                                   - #SLNETSOCK_CREATE_IF_STATE_ENABLE
-S                                   - #SLNETSOCK_CREATE_IF_STATUS_CONNECTED
-S
-S    \return                     On success, socket descriptor (handle) that is used for consequent socket operations. \n
-S                                A successful return code should be a positive number\n
-S                                On error, a negative value will be returned specifying the error code.
-S                                   - #SLNETERR_BSD_EAFNOSUPPORT    - illegal domain parameter
-S                                   - #SLNETERR_BSD_EPROTOTYPE      - illegal type parameter
-S                                   - #SLNETERR_BSD_EACCES          - permission denied
-S                                   - #SLNETERR_BSD_ENSOCK          - exceeded maximal number of socket
-S                                   - #SLNETERR_BSD_ENOMEM          - memory allocation error
-S                                   - #SLNETERR_BSD_EINVAL          - error in socket configuration
-S                                   - #SLNETERR_BSD_EPROTONOSUPPORT - illegal protocol parameter
-S                                   - #SLNETERR_BSD_EOPNOTSUPP      - illegal combination of protocol and type parameters
-S
-S    \slnetsock_init_precondition
-S
-S    \remark     Not all platforms support all options.
-S
-S    \remark     A @c protocol value of zero can be used to select the default protocol from the selected @c domain and @c type.
-S
-S    \sa         SlNetSock_close()
-S*/
-Sint16_t SlNetSock_create(int16_t domain, int16_t type, int16_t protocol, uint32_t ifBitmap, int16_t flags);
-S
-S
-S/*!
-S    \brief Gracefully close socket
-S
-S    Release resources allocated to a socket.
-S
-S    \param[in] sd               Socket descriptor (handle), received in SlNetSock_create()
-S
-S    \return                     Zero on success, or negative error code on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \remark     In the case of TCP, the connection is terminated.
-S
-S    \sa                         SlNetSock_create()
-S*/
-Sint32_t SlNetSock_close(int16_t sd);
-S
-S
-S/*!
-S    \brief Shutting down parts of a full-duplex connection
-S
-S    Shuts down parts of a full-duplex connection according to how parameter.\n
-S
-S    \param[in] sd               Socket descriptor (handle), received in SlNetSock_create
-S    \param[in] how              Specifies which part of a full-duplex connection to shutdown. \n
-S                                The options are
-S                                    - #SLNETSOCK_SHUT_RD   - further receptions will be disallowed
-S                                    - #SLNETSOCK_SHUT_WR   - further transmissions will be disallowed
-S                                    - #SLNETSOCK_SHUT_RDWR - further receptions and transmissions will be disallowed
-S
-S    \return                     Zero on success, or negative error code on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \sa                         SlNetSock_create()
-S    \sa                         SlNetSock_connect()
-S    \sa                         SlNetSock_accept()
-S*/
-Sint32_t SlNetSock_shutdown(int16_t sd, int16_t how);
-S
-S
-S/*!
-S    \brief Accept a connection on a socket
-S
-S    The SlNetSock_accept function is used with connection-based socket types (#SLNETSOCK_SOCK_STREAM).
-S
-S    It extracts the first connection request on the queue of pending
-S    connections, creates a new connected socket, and returns a new file
-S    descriptor referring to that socket.
-S
-S    The newly created socket is not in the listening state. The
-S    original socket sd is unaffected by this call.
-S
-S    The argument sd is a socket that has been created with
-S    SlNetSock_create(), bound to a local address with
-S    SlNetSock_bind(), and is listening for connections after a
-S    SlNetSock_listen().
-S
-S    The argument \c addr is a pointer to a sockaddr structure. This
-S    structure is filled in with the address of the peer socket, as
-S    known to the communications layer.
-S
-S    The exact format of the address returned \c addr is determined by the socket's address family.
-S
-S    \c addrlen is a value-result argument: it should initially contain
-S    the size of the structure pointed to by addr, on return it will
-S    contain the actual length (in bytes) of the address returned.
-S
-S    \param[in]  sd              Socket descriptor (handle)
-S    \param[out] addr            The argument addr is a pointer
-S                                to a sockaddr structure. This
-S                                structure is filled in with the
-S                                address of the peer socket, as
-S                                known to the communications
-S                                layer. The exact format of the
-S                                address returned addr is
-S                                determined by the socket's
-S                                address\n
-S                                sockaddr:\n - code for the
-S                                address format.\n -
-S                                socket address, the length
-S                                depends on the code format
-S    \param[out] addrlen         The addrlen argument is a value-result
-S                                argument: it should initially contain the
-S                                size of the structure pointed to by addr
-S
-S    \return                     On success, a socket descriptor.\n
-S                                On a non-blocking accept a possible negative value is #SLNETERR_BSD_EAGAIN.\n
-S                                On failure, negative error code.\n
-S                                #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
-S
-S    \slnetsock_init_precondition
-S
-S    \sa                         SlNetSock_create()
-S    \sa                         SlNetSock_bind()
-S    \sa                         SlNetSock_listen()
-S*/
-Sint16_t SlNetSock_accept(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
-S
-S
-S/*!
-S    \brief Assign a name to a socket
-S
-S    This SlNetSock_bind function gives the socket the local address
-S    addr.  addr is addrlen bytes long.
-S
-S    Traditionally, this is called when a socket is created with
-S    socket, it exists in a name space (address family) but has no name
-S    assigned.
-S
-S    It is necessary to assign a local address before a #SLNETSOCK_SOCK_STREAM
-S    socket may receive connections.
-S
-S    \param[in] sd               Socket descriptor (handle)
-S    \param[in] addr             Specifies the destination
-S                                addrs\n sockaddr:\n - code for
-S                                the address format.\n - socket address,
-S                                the length depends on the code
-S                                format
-S    \param[in] addrlen          Contains the size of the structure pointed to by addr
-S
-S    \return                     Zero on success, or negative error code on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \sa                         SlNetSock_create()
-S    \sa                         SlNetSock_accept()
-S    \sa                         SlNetSock_listen()
-S*/
-Sint32_t SlNetSock_bind(int16_t sd, const SlNetSock_Addr_t *addr, int16_t addrlen);
-S
-S
-S/*!
-S    \brief Listen for connections on a socket
-S
-S    The willingness to accept incoming connections and a queue
-S    limit for incoming connections are specified with SlNetSock_listen(),
-S    and then the connections are accepted with SlNetSock_accept().
-S
-S    \param[in] sd               Socket descriptor (handle)
-S    \param[in] backlog          Specifies the listen queue depth.
-S
-S    \return                     Zero on success, or negative error code on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \remark     The SlNetSock_listen() call applies only to sockets of
-S                type #SLNETSOCK_SOCK_STREAM.
-S
-S    \remark     The \c backlog parameter defines the maximum length the queue of
-S                pending connections may grow to.
-S
-S    \sa                         SlNetSock_create()
-S    \sa                         SlNetSock_accept()
-S    \sa                         SlNetSock_bind()
-S*/
-Sint32_t SlNetSock_listen(int16_t sd, int16_t backlog);
-S
-S
-S/*!
-S    \brief Initiate a connection on a socket
-S
-S    Function connects the socket referred to by the socket
-S    descriptor sd, to the address specified by \c addr.
-S
-S    The format of the address in addr is determined by the address
-S    space of the socket.
-S
-S    If it is of type #SLNETSOCK_SOCK_DGRAM, this call specifies the
-S    peer with which the socket is to be associated; this address is
-S    that to which datagrams are to be sent, and the only address from
-S    which datagrams are to be received.
-S
-S    If the socket is of type #SLNETSOCK_SOCK_STREAM, this call
-S    attempts to make a connection to another socket.
-S
-S    The other socket is specified by address, which is an address in
-S    the communications space of the socket.
-S
-S    \param[in] sd               Socket descriptor (handle)
-S    \param[in] addr             Specifies the destination addr\n
-S                                sockaddr:\n - code for the
-S                                address format.\n -
-S                                socket address, the length
-S                                depends on the code format
-S    \param[in] addrlen          Contains the size of the structure pointed
-S                                to by addr
-S
-S    \return                     On success, a socket descriptor (handle).\n
-S                                On failure, negative value.\n
-S                                On a non-blocking connect a possible negative value is #SLNETERR_BSD_EALREADY.
-S                                #SLNETERR_POOL_IS_EMPTY may be returned in case there are no resources in the system
-S
-S    \slnetsock_init_precondition
-S
-S    \sa                         SlNetSock_create()
-S    \note
-S    \warning
-S*/
-Sint32_t SlNetSock_connect(int16_t sd, const SlNetSock_Addr_t *addr, SlNetSocklen_t addrlen);
-S
-S/*!
-S    \brief Return address info about the remote side of the connection
-S
-S    Returns a struct SlNetSock_AddrIn_t
-S    filled with information about the peer device that is connected
-S    on the other side of the socket descriptor.
-S
-S    \param[in]  sd              Socket descriptor (handle)
-S    \param[out] addr            returns the struct addr\n
-S                                SlNetSockAddrIn filled with information
-S                                about the peer device:\n - code for the
-S                                address format.\n -
-S                                socket address, the length
-S                                depends on the code format
-S    \param[out] addrlen         Contains the size of the structure pointed
-S                                to by addr
-S
-S    \return                     Zero on success, or negative error code on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \sa                         SlNetSock_accept()
-S    \sa                         SlNetSock_connect()
-S*/
-Sint32_t SlNetSock_getPeerName(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
-S
-S
-S/*!
-S    \brief Get local address info by socket descriptor
-S
-S    Returns the local address info of the socket descriptor.
-S
-S    \param[in]  sd              Socket descriptor (handle)
-S    \param[out] addr            The argument addr is a pointer
-S                                to a SlNetSock_Addr_t structure. This
-S                                structure is filled in with the
-S                                address of the peer socket, as
-S                                known to the communications
-S                                layer. The exact format of the
-S                                address returned addr is
-S                                determined by the socket's
-S                                address\n
-S                                SlNetSock_Addr_t:\n - code for the
-S                                address format.\n -
-S                                socket address, the length
-S                                depends on the code format
-S    \param[out] addrlen         The addrlen argument is a value-result
-S                                argument: it should initially contain the
-S                                size of the structure pointed to by addr
-S
-S    \return                     Zero on success, or negative on failure.
-S
-S    \slnetsock_init_precondition
-S
-S    \remark     If the provided buffer is too small the returned address
-S                will be truncated and \c addrlen will contain the
-S                actual size of the socket address.
-S
-S    \sa         SlNetSock_create()
-S    \sa         SlNetSock_bind()
-S*/
-Sint32_t SlNetSock_getSockName(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
-S
-S
-S/*!
-S    \brief Monitor socket activity
-S
-S    SlNetSock_select() allow a program to monitor multiple file descriptors,
-S    waiting until one or more of the file descriptors become
-S    "ready" for some class of I/O operation.
-S
-S    \param[in]     nsds        The highest-numbered file descriptor in any of the
-S                               three sets, plus 1.
-S    \param[in,out] readsds     Socket descriptors list for read monitoring and accept monitoring
-S    \param[in,out] writesds    Socket descriptors list for connect monitoring only, write monitoring is not supported
-S    \param[in,out] exceptsds   Socket descriptors list for exception monitoring, not supported.
-S    \param[in]     timeout     Is an upper bound on the amount of time elapsed
-S                               before SlNetSock_select() returns. Null or above 0xffff seconds means
-S                               infinity timeout. The minimum timeout is 10 milliseconds,
-S                               less than 10 milliseconds will be set automatically to 10 milliseconds.
-S                               Max microseconds supported is 0xfffc00.
-S                               In trigger mode the timeout fields must be set to zero.
-S
-S    \return                    On success, SlNetSock_select() returns the number of
-S                               file descriptors contained in the three returned
-S                               descriptor sets (that is, the total number of bits that
-S                               are set in readsds, writesds, exceptsds) which may be
-S                               zero if the timeout expires before anything interesting
-S                               happens.\n On error, a negative value is returned.
-S                               readsds - return the sockets on which Read request will
-S                               return without delay with valid data.\n
-S                               writesds - return the sockets on which Write request
-S                               will return without delay.\n
-S                               exceptsds - return the sockets closed recently. \n
-S                               #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
-S
-S    \slnetsock_init_precondition
-S
-S    \remark     If \c timeout is set to less than 10ms it will
-S                automatically set to 10ms to prevent overload of the
-S                system
-S
-S    \sa         SlNetSock_create()
-S*/
-Sint32_t SlNetSock_select(int16_t nsds, SlNetSock_SdSet_t *readsds, SlNetSock_SdSet_t *writesds, SlNetSock_SdSet_t *exceptsds, SlNetSock_Timeval_t *timeout);
-S
-S
-S/*!
-S    \brief SlNetSock_select's SlNetSock_SdSet_t SET function
-S
-S    Sets current socket descriptor on SlNetSock_SdSet_t container
-S*/
-Sint32_t SlNetSock_sdsSet(int16_t sd, SlNetSock_SdSet_t *sdset);
-S
-S
-S/*!
-S    \brief SlNetSock_select's SlNetSock_SdSet_t CLR function
-S
-S    Clears current socket descriptor on SlNetSock_SdSet_t container
-S*/
-Sint32_t SlNetSock_sdsClr(int16_t sd, SlNetSock_SdSet_t *sdset);
-S
-S
-S/*!
-S    \brief SlNetSock_select's SlNetSock_SdSet_t ZERO function
-S
-S    Clears all socket descriptors from SlNetSock_SdSet_t
-S*/
-Sint32_t SlNetSock_sdsClrAll(SlNetSock_SdSet_t *sdset);
-S
-S
-S/*!
-S    \brief SlNetSock_select's SlNetSock_SdSet_t ISSET function
-S
-S    Checks if current socket descriptor is set (true/false)
-S
-S    \return            Returns true if set, false if unset
-S
-S*/
-Sint32_t SlNetSock_sdsIsSet(int16_t sd, SlNetSock_SdSet_t *sdset);
-S
-S
-S/*!
-S    \brief Set socket options
-S
-S    SlNetSock_setOpt() manipulates the options associated with a socket.
-S
-S    Options may exist at multiple protocol levels; they are always
-S    present at the uppermost socket level.
-S
-S    When manipulating socket options the level at which the option resides
-S    and the name of the option must be specified.  To manipulate options at
-S    the socket level, level is specified as #SLNETSOCK_LVL_SOCKET.  To manipulate
-S    options at any other level the protocol number of the appropriate protocol
-S    controlling the option is supplied.  For example, to indicate that an
-S    option is to be interpreted by the TCP protocol, level should be set to
-S    the protocol number of TCP.
-S
-S    \c optval and \c optlen are used to access opt_values
-S    for SlNetSock_setOpt().  For SlNetSock_getOpt() they identify a
-S    buffer in which the value for the requested option(s) are to
-S    be returned.  For SlNetSock_getOpt(), \c optlen is a value-result
-S    parameter, initially containing the size of the buffer
-S    pointed to by option_value, and modified on return to
-S    indicate the actual size of the value returned.  If no option
-S    value is to be supplied or returned, \c optval may be \c NULL.
-S
-S    \param[in] sd               Socket descriptor (handle)
-S    \param[in] level            Defines the protocol level for this option
-S                                - #SLNETSOCK_LVL_SOCKET - Socket level configurations (L4, transport layer)
-S                                - #SLNETSOCK_LVL_IP - IP level configurations (L3, network layer)
-S                                - #SLNETSOCK_LVL_PHY - Link level configurations (L2, link layer)
-S    \param[in] optname          Defines the option name to interrogate
-S                                - #SLNETSOCK_LVL_SOCKET
-S                                  - #SLNETSOCK_OPSOCK_RCV_BUF\n
-S                                                 Sets tcp max recv window size.\n
-S                                                 This options takes SlNetSock_Winsize_t struct as parameter
-S                                  - #SLNETSOCK_OPSOCK_RCV_TIMEO\n
-S                                                 Sets the timeout value that specifies the maximum amount of time an input function waits until it completes.\n
-S                                                 Default: No timeout\n
-S                                                 This options takes SlNetSock_Timeval_t struct as parameter
-S                                  - #SLNETSOCK_OPSOCK_KEEPALIVE\n
-S                                                 Enable or Disable periodic keep alive.
-S                                                 Keeps TCP connections active by enabling the periodic transmission of messages \n
-S                                                 Timeout is 5 minutes.\n
-S                                                 Default: Enabled \n
-S                                                 This options takes SlNetSock_Keepalive_t struct as parameter
-S                                  - #SLNETSOCK_OPSOCK_KEEPALIVE_TIME\n
-S                                                 Set keep alive timeout.
-S                                                 Value is in seconds \n
-S                                                 Default: 5 minutes \n
-S                                  - #SLNETSOCK_OPSOCK_LINGER\n
-S                                                 Socket lingers on close pending remaining send/receive packets\n
-S                                  - #SLNETSOCK_OPSOCK_NON_BLOCKING\n
-S                                                 Sets socket to non-blocking operation Impacts: connect, accept, send, sendto, recv and recvfrom. \n
-S                                                 Default: Blocking.
-S                                                 This options takes SlNetSock_Nonblocking_t struct as parameter
-S                                  - #SLNETSOCK_OPSOCK_NON_IP_BOUNDARY\n
-S                                                 Enable or Disable rx ip boundary.
-S                                                 In connectionless socket (udp/raw), unread data is dropped (when SlNetSock_recvFrom() len parameter < data size), Enable this option in order to read the left data on the next SlNetSock_recvFrom() iteration\n
-S                                                 Default: Disabled, IP boundary kept\n
-S                                                 This options takes SlNetSock_NonIpBoundary_t struct as parameter
-S                                - #SLNETSOCK_LVL_IP
-S                                  - #SLNETSOCK_OPIP_MULTICAST_TTL\n
-S                                                 Set the time-to-live value of outgoing multicast packets for this socket. \n
-S                                                 This options takes <b>uint8_t</b> as parameter
-S                                  - #SLNETSOCK_OPIP_ADD_MEMBERSHIP \n
-S                                                 UDP socket, Join a multicast group. \n
-S                                                 This options takes SlNetSock_IpMreq_t struct as parameter
-S                                  - #SLNETSOCK_OPIP_DROP_MEMBERSHIP \n
-S                                                 UDP socket, Leave a multicast group \n
-S                                                 This options takes SlNetSock_IpMreq_t struct as parameter
-S                                  - #SLNETSOCK_OPIP_HDRINCL \n
-S                                                 RAW socket only, the IPv4 layer generates an IP header when sending a packet unless \n
-S                                                 the IP_HDRINCL socket option is enabled on the socket.    \n
-S                                                 When it is enabled, the packet must contain an IP header. \n
-S                                                 Default: disabled, IPv4 header generated by Network Stack \n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                  - #SLNETSOCK_OPIP_RAW_RX_NO_HEADER \n
-S                                                 Raw socket remove IP header from received data. \n
-S                                                 Default: data includes ip header \n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                  - #SLNETSOCK_OPIP_RAW_IPV6_HDRINCL (inactive) \n
-S                                                 RAW socket only, the IPv6 layer generates an IP header when sending a packet unless \n
-S                                                 the IP_HDRINCL socket option is enabled on the socket. When it is enabled, the packet must contain an IP header \n
-S                                                 Default: disabled, IPv4 header generated by Network Stack \n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                - #SLNETSOCK_LVL_PHY
-S                                  - #SLNETSOCK_OPPHY_CHANNEL \n
-S                                                 Sets channel in transceiver mode.
-S                                                 This options takes <b>uint32_t</b> as channel number parameter
-S                                  - #SLNETSOCK_OPPHY_RATE \n
-S                                                 RAW socket, set WLAN PHY transmit rate \n
-S                                                 The values are based on SlWlanRateIndex_e    \n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                  - #SLNETSOCK_OPPHY_TX_POWER \n
-S                                                 RAW socket, set WLAN PHY TX power \n
-S                                                 Valid rage is 1-15 \n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                  - #SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX \n
-S                                                 RAW socket, set number of frames to transmit in transceiver mode.
-S                                                 Default: 1 packet
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                  - #SLNETSOCK_OPPHY_PREAMBLE \n
-S                                                 RAW socket, set WLAN PHY preamble for Long/Short\n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                  - #SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD \n
-S                                                 RAW socket, set WLAN Tx - Set CCA threshold. \n
-S                                                 The values are based on SlNetSockTxInhibitThreshold_e \n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                  - #SLNETSOCK_OPPHY_TX_TIMEOUT \n
-S                                                 RAW socket, set WLAN Tx - changes the TX timeout (lifetime) of transceiver frames. \n
-S                                                 Value in Ms, maximum value is 10ms \n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S                                  - #SLNETSOCK_OPPHY_ALLOW_ACKS  \n
-S                                                 RAW socket, set WLAN Tx - Enable or Disable sending ACKs in transceiver mode \n
-S                                                 0 = disabled / 1 = enabled \n
-S                                                 This options takes <b>uint32_t</b> as parameter
-S
-S
-S    \param[in] optval           Specifies a value for the option
-S    \param[in] optlen           Specifies the length of the
-S        option value
-S
-S    \return                     Zero on success, or negative error code on failure
-S
-S    \par Persistent
-S                All params are <b>Non- Persistent</b>
-S
-S    \slnetsock_init_precondition
-S
-S    \par    Examples
-S
-S    - SLNETSOCK_OPSOCK_RCV_BUF:
-S    \code
-S           SlNetSock_Winsize_t size;
-S           size.winsize = 3000; // bytes
-S           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_RCV_BUF, (uint8_t *)&size, sizeof(size));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPSOCK_RCV_TIMEO:
-S    \code
-S        struct SlNetSock_Timeval_t timeVal;
-S        timeVal.tv_sec =  1; // Seconds
-S        timeVal.tv_usec = 0; // Microseconds. 10000 microseconds resolution
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_RCV_TIMEO, (uint8_t *)&timeVal, sizeof(timeVal)); // Enable receive timeout
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPSOCK_KEEPALIVE: //disable Keepalive
-S    \code
-S        SlNetSock_Keepalive_t enableOption;
-S        enableOption.keepaliveEnabled = 0;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_KEEPALIVE, (uint8_t *)&enableOption, sizeof(enableOption));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPSOCK_KEEPALIVE_TIME: //Set Keepalive timeout
-S    \code
-S        int16_t Status;
-S        uint32_t TimeOut = 120;
-S        SlNetSock_setOpt(Sd, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_KEEPALIVE_TIME, (uint8_t *)&TimeOut, sizeof(TimeOut));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPSOCK_NON_BLOCKING: //Enable or disable nonblocking mode
-S    \code
-S           SlNetSock_Nonblocking_t enableOption;
-S           enableOption.nonBlockingEnabled = 1;
-S           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_NON_BLOCKING, (uint8_t *)&enableOption, sizeof(enableOption));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPSOCK_NON_IP_BOUNDARY: //disable boundary
-S    \code
-S        SlNetSock_NonIpBoundary_t enableOption;
-S        enableOption.nonIpBoundaryEnabled = 1;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_NON_IP_BOUNDARY, (uint8_t *)&enableOption, sizeof(enableOption));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPSOCK_LINGER:
-S    \code
-S        SlNetSock_linger_t linger;
-S        linger.l_onoff = 1;
-S        linger.l_linger = 10;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_LINGER, &linger, sizeof(linger));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPIP_MULTICAST_TTL:
-S     \code
-S           uint8_t ttl = 20;
-S           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_MULTICAST_TTL, &ttl, sizeof(ttl));
-S     \endcode
-S     <br>
-S
-S    - SLNETSOCK_OPIP_ADD_MEMBERSHIP:
-S     \code
-S           SlNetSock_IpMreq_t mreq;
-S           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPIP_DROP_MEMBERSHIP:
-S    \code
-S        SlNetSock_IpMreq_t mreq;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPIP_RAW_RX_NO_HEADER:
-S    \code
-S        uint32_t header = 1;  // remove ip header
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_RAW_RX_NO_HEADER, &header, sizeof(header));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPIP_HDRINCL:
-S    \code
-S        uint32_t header = 1;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_HDRINCL, &header, sizeof(header));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPIP_RAW_IPV6_HDRINCL:
-S    \code
-S        uint32_t header = 1;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_RAW_IPV6_HDRINCL, &header, sizeof(header));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPPHY_CHANNEL:
-S    \code
-S        uint32_t newChannel = 6; // range is 1-13
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPPHY_CHANNEL, &newChannel, sizeof(newChannel));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPPHY_RATE:
-S    \code
-S        uint32_t rate = 6; // see wlan.h SlWlanRateIndex_e for values
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_RATE, &rate, sizeof(rate));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPPHY_TX_POWER:
-S    \code
-S        uint32_t txpower = 1; // valid range is 1-15
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_POWER, &txpower, sizeof(txpower));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX:
-S    \code
-S        uint32_t numframes = 1;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX, &numframes, sizeof(numframes));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPPHY_PREAMBLE:
-S    \code
-S        uint32_t preamble = 1;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_PREAMBLE, &preamble, sizeof(preamble));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD:
-S    \code
-S        uint32_t thrshld = SLNETSOCK_TX_INHIBIT_THRESHOLD_MED;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD , &thrshld, sizeof(thrshld));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPPHY_TX_TIMEOUT:
-S    \code
-S        uint32_t timeout = 50;
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_TIMEOUT  , &timeout, sizeof(timeout));
-S    \endcode
-S    <br>
-S
-S    - SLNETSOCK_OPPHY_ALLOW_ACKS:
-S    \code
-S        uint32_t acks = 1; // 0 = disabled / 1 = enabled
-S        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_ALLOW_ACKS, &acks, sizeof(acks));
-S    \endcode
-S
-S    \sa     slNetSock_create()
-S    \sa     SlNetSock_getOpt()
-S*/
-Sint32_t SlNetSock_setOpt(int16_t sd, int16_t level, int16_t optname, void *optval, SlNetSocklen_t optlen);
-S
-S
-S/*!
-S    \brief Get socket options
-S
-S    The SlNetSock_getOpt function gets the options associated with a socket.
-S    Options may exist at multiple protocol levels; they are always
-S    present at the uppermost socket level.
-S
-S    The parameters optval and optlen identify a
-S    buffer in which the value for the requested option(s) are to
-S    be returned.  \c optlen is a value-result
-S    parameter, initially containing the size of the buffer
-S    pointed to by option_value, and modified on return to
-S    indicate the actual size of the value returned.  If no option
-S    value is to be supplied or returned, \c optval may be \c NULL.
-S
-S
-S    \param[in]  sd              Socket descriptor (handle)
-S    \param[in]  level           Defines the protocol level for this option
-S    \param[in]  optname         defines the option name to interrogate
-S    \param[out] optval          Specifies a value for the option
-S    \param[out] optlen          Specifies the length of the
-S                                option value
-S
-S    \return                     Zero on success, or negative error code on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \sa     SlNetSock_create()
-S    \sa     SlNetSock_setOpt()
-S*/
-Sint32_t SlNetSock_getOpt(int16_t sd, int16_t level, int16_t optname, void *optval, SlNetSocklen_t *optlen);
-S
-S
-S/*!
-S    \brief Read data from TCP socket
-S
-S    The SlNetSock_recv function receives a message from a connection-mode socket
-S
-S    \param[in]  sd              Socket descriptor (handle)
-S    \param[out] buf             Points to the buffer where the
-S                                message should be stored.
-S    \param[in]  len             Specifies the length in bytes of
-S                                the buffer pointed to by the buffer argument.
-S                                Range: 1-16000 bytes
-S    \param[in]  flags           Specifies the type of message
-S                                reception. On this version, this parameter is not
-S                                supported.
-S
-S    \return                     Return the number of bytes received,
-S                                or a negative value if an error occurred.\n
-S                                Using a non-blocking recv a possible negative value is SLNETERR_BSD_EAGAIN.\n
-S                                SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
-S
-S    \slnetsock_init_precondition
-S
-S    \par    Examples
-S
-S    - Receiving data using TCP socket:
-S    \code
-S        SlNetSock_AddrIn_t  Addr;
-S        SlNetSock_AddrIn_t  LocalAddr;
-S        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
-S        int16_t SockID, newSockID;
-S        int16_t Status;
-S        int8_t Buf[RECV_BUF_LEN];
-S
-S        LocalAddr.sin_family = SLNETSOCK_AF_INET;
-S        LocalAddr.sin_port = SlNetSock_htons(5001);
-S        LocalAddr.sin_addr.s_addr = 0;
-S
-S        Addr.sin_family = SLNETSOCK_AF_INET;
-S        Addr.sin_port = SlNetSock_htons(5001);
-S        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
-S
-S        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, 0, 0, 0);
-S        Status = SlNetSock_bind(SockID, (SlNetSock_Addr_t *)&LocalAddr, AddrSize);
-S        Status = SlNetSock_listen(SockID, 0);
-S        newSockID = SlNetSock_accept(SockID, (SlNetSock_Addr_t*)&Addr, (SlNetSocklen_t*) &AddrSize);
-S        Status = SlNetSock_recv(newSockID, Buf, 1460, 0);
-S    \endcode
-S    <br>
-S
-S    - Rx transceiver mode using a raw socket:
-S    \code
-S        int8_t buffer[1536];
-S        int16_t sd;
-S        uint16_t size;
-S        SlNetSock_TransceiverRxOverHead_t *transHeader;
-S        sd = SlNetSock_create(SLNETSOCK_AF_RF, SLNETSOCK_SOCK_RAW, 11, 0, 0); // channel 11
-S        while(1)
-S        {
-S            size = SlNetSock_recv(sd,buffer,1536,0);
-S            transHeader = (SlNetSock_TransceiverRxOverHead_t *)buffer;
-S            printf("RSSI is %d frame type is 0x%x size %d\n",transHeader->rssi,buffer[sizeof(SlNetSock_TransceiverRxOverHead_t)],size);
-S        }
-S    \endcode
-S
-S    \sa     SlNetSock_create()
-S    \sa     SlNetSock_recvFrom()
-S*/
-Sint32_t SlNetSock_recv(int16_t sd, void *buf, uint32_t len, uint32_t flags);
-S
-S
-S/*!
-S    \brief Read data from socket
-S
-S    SlNetSock_recvFrom function receives a message from a connection-mode or
-S    connectionless-mode socket
-S
-S    \param[in]  sd              Socket descriptor (handle)
-S    \param[out] buf             Points to the buffer where the message should be stored.
-S    \param[in]  len             Specifies the length in bytes of the buffer pointed to by the buffer argument.
-S                                Range: 1-16000 bytes
-S    \param[in]  flags           Specifies the type of message
-S                                reception. On this version, this parameter is not
-S                                supported
-S    \param[in]  from            Pointer to an address structure
-S                                indicating the source
-S                                address.\n sockaddr:\n - code
-S                                for the address format.\n - socket address,
-S                                the length depends on the code
-S                                format
-S    \param[in]  fromlen         Source address structure
-S                                size. This parameter MUST be set to the size of the structure pointed to by addr.
-S
-S
-S    \return                     Return the number of bytes received,
-S                                or a negative value if an error occurred.\n
-S                                Using a non-blocking recv a possible negative value is #SLNETERR_BSD_EAGAIN.
-S                                #SLNETERR_RET_CODE_INVALID_INPUT will be returned if fromlen has incorrect length.\n
-S                                #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
-S
-S    \slnetsock_init_precondition
-S
-S    \par        Example
-S
-S    - Receiving data:
-S    \code
-S        SlNetSock_AddrIn_t  Addr;
-S        SlNetSock_AddrIn_t  LocalAddr;
-S        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
-S        int16_t SockID;
-S        int16_t Status;
-S        int8_t Buf[RECV_BUF_LEN];
-S
-S        LocalAddr.sin_family = SLNETSOCK_AF_INET;
-S        LocalAddr.sin_port = SlNetSock_htons(5001);
-S        LocalAddr.sin_addr.s_addr = 0;
-S
-S        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_DGRAM, 0, 0, 0);
-S        Status = SlNetSock_bind(SockID, (SlNetSock_Addr_t *)&LocalAddr, AddrSize);
-S        Status = SlNetSock_recvFrom(SockID, Buf, 1472, 0, (SlNetSock_Addr_t *)&Addr, (SlNetSocklen_t*)&AddrSize);
-S
-S    \endcode
-S
-S    \sa     SlNetSock_create()
-S    \sa     SlNetSock_recv()
-S*/
-Sint32_t SlNetSock_recvFrom(int16_t sd, void *buf, uint32_t len, uint32_t flags, SlNetSock_Addr_t *from, SlNetSocklen_t *fromlen);
-S
-S
-S/*!
-S    \brief Write data to TCP socket
-S
-S    Transmits a message to another socket.
-S    Returns immediately after sending data to device.
-S    In case of a RAW socket (transceiver mode), extra 4 bytes should be reserved at the end of the
-S    frame data buffer for WLAN FCS
-S
-S    \param[in] sd               Socket descriptor (handle)
-S    \param[in] buf              Points to a buffer containing
-S                                the message to be sent
-S    \param[in] len              Message size in bytes.
-S    \param[in] flags            Specifies the type of message
-S                                transmission. On this version, this parameter is not
-S                                supported for TCP.
-S
-S    \return                     Return the number of bytes sent,
-S                                or a negative value if an error occurred.
-S
-S    \slnetsock_init_precondition
-S
-S    \par        Example
-S
-S    - Sending data:
-S    \code
-S        SlNetSock_AddrIn_t  Addr;
-S        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
-S        int16_t SockID;
-S        int16_t Status;
-S        int8_t Buf[SEND_BUF_LEN];
-S
-S        Addr.sin_family = SLNETSOCK_AF_INET;
-S        Addr.sin_port = SlNetSock_htons(5001);
-S        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
-S
-S        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, 0, 0, 0);
-S        Status = SlNetSock_connect(SockID, (SlNetSock_Addr_t *)&Addr, AddrSize);
-S        Status = SlNetSock_send(SockID, Buf, 1460, 0 );
-S    \endcode
-S
-S    \sa     SlNetSock_create()
-S    \sa     SlNetSock_sendTo()
-S*/
-Sint32_t SlNetSock_send(int16_t sd, const void *buf, uint32_t len, uint32_t flags);
-S
-S
-S/*!
-S    \brief Write data to socket
-S
-S    The SlNetSock_sendTo function is used to transmit a message on a connectionless socket
-S    (connection less socket #SLNETSOCK_SOCK_DGRAM, #SLNETSOCK_SOCK_RAW).
-S
-S    Returns immediately after sending data to device.
-S
-S    \param[in] sd               Socket descriptor (handle)
-S    \param[in] buf              Points to a buffer containing
-S                                the message to be sent
-S    \param[in] len              message size in bytes.
-S    \param[in] flags            Specifies the type of message
-S                                transmission. On this version, this parameter is not
-S                                supported
-S    \param[in] to               Pointer to an address structure
-S                                indicating the destination
-S                                address.\n sockaddr:\n - code
-S                                for the address format.\n - socket address,
-S                                the length depends on the code
-S                                format
-S    \param[in] tolen            Destination address structure size
-S
-S    \return                     Return the number of bytes sent,
-S                                or a negative value if an error occurred.\n
-S
-S    \slnetsock_init_precondition
-S
-S    \par    Example
-S
-S    - Sending data:
-S    \code
-S        SlNetSock_AddrIn_t  Addr;
-S        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
-S        int16_t SockID;
-S        int16_t Status;
-S        int8_t Buf[SEND_BUF_LEN];
-S
-S        Addr.sin_family = SLNETSOCK_AF_INET;
-S        Addr.sin_port = SlNetSock_htons(5001);
-S        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
-S
-S        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_DGRAM, 0, 0, 0);
-S        Status = SlNetSock_sendTo(SockID, Buf, 1472, 0, (SlNetSock_Addr_t *)&Addr, AddrSize);
-S    \endcode
-S
-S    \sa     SlNetSock_create()
-S    \sa     SlNetSock_send()
-S*/
-Sint32_t SlNetSock_sendTo(int16_t sd, const void *buf, uint32_t len, uint32_t flags, const SlNetSock_Addr_t *to, SlNetSocklen_t tolen);
-S
-S
-S/*!
-S    \brief Get interface ID from socket descriptor (sd)
-S
-S    Retrieves the priority of the requested interface.
-S
-S    \param[in] sd         Specifies the socket descriptor which its
-S                          interface identifier needs to be retrieved.\n
-S
-S    \return               The interface identifier value of the
-S                          interface on success, or negative error code
-S                          on failure The values of the interface
-S                          identifier is defined with the prefix
-S                          SLNETIF_ID_ which defined in slnetif.h
-S
-S    \slnetsock_init_precondition
-S
-S    \par    Examples
-S
-S    \code
-S        int16_t InterfaceID;
-S        InterfaceID = SlNetSock_getIfID(SLNETIF_ID_1);
-S    \endcode
-S
-S    \sa         SlNetSock_create()
-S    \sa         SlNetIf_add()
-S    \sa         SlNetIf_getIDByName()
-S*/
-Sint32_t SlNetSock_getIfID(uint16_t sd);
-S
-S
-S/*!
-S    \brief Creates a security attributes object
-S
-S    Create a security attribute, which is required in order to start a secure session.
-S
-S    \remark     When the security attributes object is no longer needed, call
-S                SlNetSock_secAttribDelete() to destroy it.
-S
-S    \remark     A single security object can be used to initiate several secure
-S                sessions (provided they all have the same security attributes).
-S
-S    \slnetsock_init_precondition
-S
-S    \sa         SlNetSock_startSec()
-S    \sa         SlNetSock_secAttribDelete()
-S*/
-SSlNetSockSecAttrib_t *SlNetSock_secAttribCreate(void);
-S
-S
-S/*!
-S    \brief Deletes a security attributes object
-S
-S    \param[in] secAttrib        Secure attribute handle
-S
-S    \return                     Zero on success, or negative error code
-S                                on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \remark     \c secAttrib must be created using SlNetSock_secAttribCreate()
-S
-S    \sa         SlNetSock_secAttribCreate()
-S    \sa         SlNetSock_secAttribSet()
-S    \sa         SlNetSock_startSec()
-S*/
-Sint32_t SlNetSock_secAttribDelete(SlNetSockSecAttrib_t *secAttrib);
-S
-S
-S/*!
-S    \brief set a security attributes
-S
-S    The SlNetSock_secAttribSet function is used to set a security
-S    attribute of a security attributes object.
-S
-S    \param[in] secAttrib        Secure attribute handle
-S    \param[in] attribName       Define the actual attribute to set. Applicable values:
-S                                    - #SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY
-S                                    - #SLNETSOCK_SEC_ATTRIB_LOCAL_CERT
-S                                    - #SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA
-S                                    - #SLNETSOCK_SEC_ATTRIB_DH_KEY
-S                                    - #SLNETSOCK_SEC_ATTRIB_METHOD
-S                                    - #SLNETSOCK_SEC_ATTRIB_CIPHERS
-S                                    - #SLNETSOCK_SEC_ATTRIB_ALPN
-S                                    - #SLNETSOCK_SEC_ATTRIB_EXT_CLIENT_CHLNG_RESP
-S                                    - #SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME
-S                                    - #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE
-S    \param[in] val
-S    \param[in] len
-S
-S    \return                     Zero on success, or negative error code
-S                                on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \note   The @c SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE value
-S            is currently being evaluated, and may be removed in a
-S            future release.  It is currently only supported on CC3x20
-S            devices.  For more details, see
-S            #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE.
-S
-S    \sa         SlNetSock_secAttribCreate()
-S*/
-Sint32_t SlNetSock_secAttribSet(SlNetSockSecAttrib_t *secAttrib , SlNetSockSecAttrib_e attribName , void *val, uint16_t len);
-S
-S
-S/*!
-S    \brief Start a security session on an opened socket
-S
-S    \param[in] sd               Socket descriptor (handle)
-S    \param[in] secAttrib        Secure attribute handle
-S    \param[in] flags            Specifies flags. \n
-S                                The available flags are:
-S                                    - #SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY
-S                                    - #SLNETSOCK_SEC_BIND_CONTEXT_ONLY
-S                                    - #SLNETSOCK_SEC_IS_SERVER
-S
-S    \return                     Zero on success, or negative error code
-S                                on failure
-S
-S    \slnetsock_init_precondition
-S
-S    \remark     If \c secAttrib is \c NULL, the session will be started with
-S                default security settings.
-S
-S    \sa         SlNetSock_create()
-S    \sa         SlNetSock_secAttribCreate()
-S*/
-Sint32_t SlNetSock_startSec(int16_t sd, SlNetSockSecAttrib_t *secAttrib, uint8_t flags);
-S
-S
-S/*!
-S
-S Close the Doxygen group.
-S @}
-S
-S*/
-S
-S
-S#ifdef  __cplusplus
-S}
-S#endif /* __cplusplus */
-S
-N#endif /* __NET_SOCK_H__ */
-L 49 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetif.h" 2
-N
-N/*!
-N    \defgroup SlNetIf SlNetIf group
-N
-N    \short Controls standard stack/interface options and capabilities
-N
-N*/
-N/*!
-N
-N    \addtogroup SlNetIf
-N    @{
-N
-N*/
-N
-N/*****************************************************************************/
-N/* Macro declarations                                                        */
-N/*****************************************************************************/
-N
-N/* Interface ID bit pool to be used in interface add and in socket creation  */
-N#define SLNETIF_ID_1                (1 << 0) //can be used for wifi interface
-N#define SLNETIF_ID_2                (1 << 1) //can be used for eth interface
-N#define SLNETIF_ID_3                (1 << 2)
-N#define SLNETIF_ID_4                (1 << 3)
-N#define SLNETIF_ID_5                (1 << 4)
-N#define SLNETIF_ID_6                (1 << 5)
-N#define SLNETIF_ID_7                (1 << 6)
-N#define SLNETIF_ID_8                (1 << 7)
-N#define SLNETIF_ID_9                (1 << 8)
-N#define SLNETIF_ID_10               (1 << 9)
-N#define SLNETIF_ID_11               (1 << 10)
-N#define SLNETIF_ID_12               (1 << 11)
-N#define SLNETIF_ID_13               (1 << 12)
-N#define SLNETIF_ID_14               (1 << 13)
-N#define SLNETIF_ID_15               (1 << 14)
-N#define SLNETIF_ID_16               (1 << 15)
-N
-N/* Maximum interfaces                                                       */
-N#define SLNETIF_MAX_IF              (16)
-N
-N/* this macro returns 0 when only one bit is set and a number when it isn't */
-N#define ONLY_ONE_BIT_IS_SET(x)      (((x > 0) && ((x & (x - 1)) == 0))?true:false)
-N
-N
-N/* Interface connection status bit pool to be used in set interface connection status function */
-N
-N#define SLNETIF_STATUS_DISCONNECTED (0)
-N#define SLNETIF_STATUS_CONNECTED    (1)
-N
-N/*!
-N    \brief Interface state bit pool to be used in set interface state function
-N*/
-Ntypedef enum
-N{
-N    SLNETIF_STATE_DISABLE = 0,
-N    SLNETIF_STATE_ENABLE  = 1
-N} SlNetIfState_e;
-N
-N/*!
-N    \brief Address type enum to be used in get ip address function
-N*/
-Ntypedef enum
-N{
-N    SLNETIF_IPV4_ADDR        = 0,
-N    SLNETIF_IPV6_ADDR_LOCAL  = 1,
-N    SLNETIF_IPV6_ADDR_GLOBAL = 2
-N} SlNetIfAddressType_e;
-N
-N/* Address config return values that can be retrieved in get ip address function */
-N#define SLNETIF_ADDR_CFG_UNKNOWN   (0)
-N#define SLNETIF_ADDR_CFG_DHCP      (1)
-N#define SLNETIF_ADDR_CFG_DHCP_LLA  (2)
-N#define SLNETIF_ADDR_CFG_STATIC    (4)
-N#define SLNETIF_ADDR_CFG_STATELESS (5)
-N#define SLNETIF_ADDR_CFG_STATEFUL  (6)
-N
-N/* Security object types for load Sec Obj function */
-N#define SLNETIF_SEC_OBJ_TYPE_RSA_PRIVATE_KEY (1)
-N#define SLNETIF_SEC_OBJ_TYPE_CERTIFICATE     (2)
-N#define SLNETIF_SEC_OBJ_TYPE_DH_KEY          (3)
-N
-N
-N/* The 32bit queryBitmap structure - SlNetIf_queryIf function:
-N   Bit     0 : Interface state - Check if interface state set to enable
-N   Bit     1 : Interface connection status - Check if interface connection status is up
-N   Bit     2 : Force answer - Return last found netIf, if none of the existing interfaces answers  the query
-N   Bits 3-31 : Reserved
-N*/
-N#define SLNETIF_QUERY_IF_STATE_BIT               (1 << 0)
-N#define SLNETIF_QUERY_IF_CONNECTION_STATUS_BIT   (1 << 1)
-N#define SLNETIF_QUERY_IF_ALLOW_PARTIAL_MATCH_BIT (1 << 2)
-N
-N/*****************************************************************************/
-N/* Structure/Enum declarations                                               */
-N/*****************************************************************************/
-N
-N/*!
-N    \brief SlNetIf_Config_t structure contains all the function callbacks that are expected to be filled by the relevant network stack interface \n
-N           Each interface has different capabilities, so not all the API's must be supported therefore an API's can be defined as:
-N           - <b>Mandatory API's</b>     - must be supported by the interface in order to be part of SlNetSock layer
-N           - <b>Non-Mandatory API's</b> - can be supported, but not mandatory for basic SlNetSock proper operation
-N
-N    \note  Interface that is not supporting a non-mandatory API should set it to \b NULL in its function list
-N
-N    \sa SlNetIf_Config_t
-N*/
-Ntypedef struct SlNetIf_Config_t
-N{
-N    /* socket related API's */
-N    int16_t (*sockCreate)        (void *ifContext, int16_t domain, int16_t type, int16_t protocol, void **sdContext);                /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_create           */
-N    int32_t (*sockClose)         (int16_t sd, void *sdContext);                                                                      /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_close            */
-N    int32_t (*sockShutdown)      (int16_t sd, void *sdContext, int16_t how);                                                         /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_shutdown     */
-N    int16_t (*sockAccept)        (int16_t sd, void *sdContext, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen, uint8_t flags, void **acceptedSdContext);        /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_accept   */
-N    int32_t (*sockBind)          (int16_t sd, void *sdContext, const SlNetSock_Addr_t *addr, int16_t addrlen);                       /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_bind         */
-N    int32_t (*sockListen)        (int16_t sd, void *sdContext, int16_t backlog);                                                     /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_listen       */
-N    int32_t (*sockConnect)       (int16_t sd, void *sdContext, const SlNetSock_Addr_t *addr, SlNetSocklen_t addrlen, uint8_t flags); /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_connect      */
-N    int32_t (*sockGetPeerName)   (int16_t sd, void *sdContext, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);                     /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_getPeerName  */
-N    int32_t (*sockGetLocalName)  (int16_t sd, void *sdContext, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);                     /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_getSockName  */
-N    int32_t (*sockSelect)        (void *ifContext, int16_t nsds, SlNetSock_SdSet_t *readsds, SlNetSock_SdSet_t *writesds, SlNetSock_SdSet_t *exceptsds, SlNetSock_Timeval_t *timeout); /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_select  */
-N    int32_t (*sockSetOpt)        (int16_t sd, void *sdContext, int16_t level, int16_t optname, void *optval, SlNetSocklen_t optlen);                             /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_setOpt       */
-N    int32_t (*sockGetOpt)        (int16_t sd, void *sdContext, int16_t level, int16_t optname, void *optval, SlNetSocklen_t *optlen);                            /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_getOpt       */
-N    int32_t (*sockRecv)          (int16_t sd, void *sdContext, void *buf, uint32_t len, uint32_t flags);                                                         /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_recv     */
-N    int32_t (*sockRecvFrom)      (int16_t sd, void *sdContext, void *buf, uint32_t len, uint32_t flags, SlNetSock_Addr_t *from, SlNetSocklen_t *fromlen);        /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_recvFrom     */
-N    int32_t (*sockSend)          (int16_t sd, void *sdContext, const void *buf, uint32_t len, uint32_t flags);                                                   /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_send     */
-N    int32_t (*sockSendTo)        (int16_t sd, void *sdContext, const void *buf, uint32_t len, uint32_t flags, const SlNetSock_Addr_t *to, SlNetSocklen_t tolen); /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_sendTo       */
-N    int32_t (*sockstartSec)      (int16_t sd, void *sdContext, SlNetSockSecAttrib_t *secAttrib, uint8_t flags);                                                  /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_startSec */
-N
-N    /* util related API's */
-N    int32_t (*utilGetHostByName) (void *ifContext, char *name, const uint16_t nameLen, uint32_t *ipAddr, uint16_t *ipAddrLen, const uint8_t family);  /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetUtil_getHostByName */
-N
-N    /* if related API's */
-N    int32_t (*ifGetIPAddr)           (void *ifContext, SlNetIfAddressType_e addrType, uint16_t *addrConfig, uint32_t *ipAddr);                      /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetIf_getIPAddr           */
-N    int32_t (*ifGetConnectionStatus) (void *ifContext);                                                                                             /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetIf_getConnectionStatus */
-N    int32_t (*ifLoadSecObj)          (void *ifContext, uint16_t objType, char *objName, int16_t objNameLen, uint8_t *objBuff, int16_t objBuffLen);  /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetIf_loadSecObj      */
-N    int32_t (*ifCreateContext)       (uint16_t ifID, const char *ifName, void **ifContext);                                                         /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetIf_add             */
-N
-N} SlNetIf_Config_t;
-N
-N
-N/*!
-N    \brief The SlNetIf_t structure holds the configuration of the interface
-N           Its ID, name, flags and the configuration list - ::SlNetIf_Config_t.
-N*/
-Ntypedef struct SlNetIf_t
-N{
-N    uint32_t          ifID;
-N    char             *ifName;
-N    int32_t           flags;
-N    SlNetIf_Config_t *ifConf;
-N    void             *ifContext;
-N} SlNetIf_t;
-N
-N/*****************************************************************************/
-N/* Function prototypes                                                       */
-N/*****************************************************************************/
-N
-N/*!
-N
-N    \brief Initialize the SlNetIf module
-N
-N    \param[in] flags            For future usage,
-N                                The value 0 may be used in order to run the
-N                                default flags
-N
-N    \return                     Zero on success, or negative error code on failure
-N
-N*/
-Nint32_t SlNetIf_init(int32_t flags);
-N
-N/*!
-N    \brief Add a new SlNetIf-compatible interface to the system
-N
-N    The SlNetIf_add function allows the application to add specific interfaces
-N    with their priorities and function list.\n
-N    This function gives full control to the application on the interfaces.
-N
-N    \param[in] ifID            Specifies the interface which needs
-N                               to be added.\n
-N                               The values of the interface identifier
-N                               is defined with the prefix SLNETIF_ID_
-N                               which defined in slnetif.h
-N    \param[in] ifName          Specifies the name of the interface,
-N                               \b Note: Can be set to NULL, but when set to NULL
-N                                     cannot be used with SlNetIf_getIDByName
-N    \param[in] ifConf          Specifies the function list for the
-N                               interface
-N    \param[in] priority        Specifies the priority needs to be
-N                               set (In ascending order).
-N                               Note: maximum priority is 15
-N
-N    \return                    Zero on success, or negative error code on failure
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        uint8_t priority = 10;
-N        SlNetIf_add(SLNETIF_ID_1, "WiFi_Interface", &SlNetIfConfigWifi, priority);
-N    \endcode
-N    <br>
-N*/
-Nint32_t SlNetIf_add(uint16_t ifID, char *ifName, const SlNetIf_Config_t *ifConf, uint8_t priority);
-N
-N
-N/*!
-N    \brief Get interface configuration from interface ID
-N
-N    The SlNetIf_getIfByID function retrieves the configuration of the
-N    requested interface.
-N
-N    \param[in] ifID      Specifies the interface which its configuration
-N                         needs to be retrieved.\n
-N                         The values of the interface identifier is
-N                         defined with the prefix SLNETIF_ID_ which
-N                         defined in slnetif.h
-N
-N    \return              A pointer to the configuration of the
-N                         interface on success, or NULL on failure
-N
-N    \sa     SlNetIf_add()
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        SlNetIf_t *InterfaceName;
-N        InterfaceName = SlNetIf_getNameByID(SLNETIF_ID_1);
-N    \endcode
-N    <br>
-N*/
-NSlNetIf_t * SlNetIf_getIfByID(uint16_t ifID);
-N
-N
-N/*!
-N    \brief Get highest priority interface configuration using interface bitmap
-N
-N    The SlNetIf_getIfByID function retrieves highest priority interface
-N    configuration that can be found in the interface bitmap, or the highest
-N    exists when ifBitmap is zero.
-N
-N    \param[in,out] ifBitmap  Specifies the interface that needs to be checked
-N                             according to the queryBitmap and return the
-N                             interface with the highest priority.\n
-N                             The values of the interface Bitmap is a combination
-N                             of the interface identifiers defined with the prefix
-N                             SLNETIF_ID_ which defined in slnetif.h
-N                             Note: Zero is not a valid parameter, an error will
-N                             be returned
-N    \param[in]  queryBitmap  Specifies the additional criterias for the query
-N                             that will be use along the interface priority and
-N                             interface ID.\n
-N                             queryBitmap bits:
-N                                - #SLNETIF_QUERY_IF_STATE_BIT
-N                                - #SLNETIF_QUERY_IF_CONNECTION_STATUS_BIT
-N
-N    \return                  A pointer to the configuration of the
-N                             interface on success, or NULL on failure
-N
-N    \sa     SlNetIf_add()
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        SlNetIf_t *InterfaceName;
-N        InterfaceName = SlNetIf_queryIf(SLNETIF_ID_1 | SLNETIF_ID_2 | SLNETIF_ID_3, SLNETIF_QUERY_IF_STATE_BIT | SLNETIF_QUERY_IF_CONNECTION_STATUS_BIT);
-N    \endcode
-N    <br>
-N*/
-NSlNetIf_t * SlNetIf_queryIf(uint32_t ifBitmap, uint32_t queryBitmap);
-N
-N
-N/*!
-N    \brief Get interface Name from interface ID
-N
-N    The SlNetIf_getNameByID function retrieves the name of the requested
-N    interface.
-N
-N    \param[in] ifID      Specifies the interface which its name needs
-N                         to be retrieved.\n
-N                         The values of the interface identifier is
-N                         defined with the prefix SLNETIF_ID_ which
-N                         defined in slnetif.h
-N
-N    \return              A pointer to the name of the interface on
-N                         success, or NULL on failure
-N
-N    \sa     SlNetIf_add()
-N    \sa     SlNetIf_getIDByName()
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        char *InterfaceName;
-N        InterfaceName = SlNetIf_getNameByID(SLNETIF_ID_1);
-N    \endcode
-N    <br>
-N*/
-Nconst char * SlNetIf_getNameByID(uint16_t ifID);
-N
-N
-N/*!
-N    \brief Get interface ID from interface name
-N
-N    The SlNetIf_getIDByName function retrieves the interface identifier of the
-N    requested interface name.
-N
-N    \param[in] ifName    Specifies the interface which its interface
-N                         identifier needs to be retrieved.\n
-N
-N    \return              The interface identifier value of the interface
-N                         on success, or negative error code on failure
-N                         The values of the interface identifier is
-N                         defined with the prefix SLNETIF_ID_ which
-N                         defined in slnetif.h
-N
-N    \sa     SlNetIf_add()
-N    \sa     SlNetIf_getNameByID()
-N    \sa     SlNetSock_getIfID()
-N
-N    \note                - Input NULL as ifName will return error code.
-N                         - When using more than one interface with the same
-N                           name, the ID of the highest priority interface
-N                           will be returned
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        int16_t InterfaceID;
-N        InterfaceID = SlNetIf_getIDByName("WiFi_Interface");
-N    \endcode
-N    <br>
-N*/
-Nint32_t SlNetIf_getIDByName(char *ifName);
-N
-N
-N/*!
-N    \brief Get interface priority
-N
-N    The SlNetIf_getPriority function retrieves the priority of the
-N    interface.
-N
-N    \param[in] ifID      Specifies the interface which its priority
-N                         needs to be retrieved.\n
-N                         The values of the interface identifier is
-N                         defined with the prefix SLNETIF_ID_ which
-N                         defined in slnetif.h
-N
-N    \return              The priority value of the interface on success,
-N                         or negative error code on failure
-N
-N    \sa     SlNetIf_add()
-N    \sa     SlNetIf_setPriority()
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        int16_t Priority;
-N        Priority = SlNetIf_getPriority(SLNETIF_ID_1);
-N    \endcode
-N    <br>
-N*/
-Nint32_t SlNetIf_getPriority(uint16_t ifID);
-N
-N
-N/*!
-N    \brief Set interface priority
-N
-N    The SlNetIf_setPriority function sets new priority to the requested interface.
-N
-N    \param[in] ifID          Specifies the interface which its priority
-N                             needs to be changed.\n
-N                             The values of the interface identifier is
-N                             defined with the prefix SLNETIF_ID_ which
-N                             defined in slnetif.h
-N    \param[in] priority      Specifies the priority needs to be set.
-N                             (In ascending order)
-N                             Note: maximum priority is 15
-N
-N    \return                  Zero on success, or negative error code on
-N                             failure
-N
-N    \sa     SlNetIf_add()
-N    \sa     SlNetIf_getPriority()
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        uint8_t priority = 10;
-N        SlNetIf_setPriority(SLNETIF_ID_1, priority);
-N    \endcode
-N    <br>
-N*/
-Nint32_t SlNetIf_setPriority(uint16_t ifID, uint8_t priority);
-N
-N
-N/*!
-N    \brief Set interface state
-N
-N    Enable or disable the interface.
-N
-N    \param[in] ifID       Specifies the interface which its state
-N                          needs to be changed.\n
-N                          The values of the interface identifier is
-N                          defined with the prefix SLNETIF_ID_ which
-N                          defined in slnetif.h
-N    \param[in] ifState    Specifies the interface state.\n
-N                          The values of the interface state are defined
-N                          with the prefix SLNETIF_INTERFACE_ which
-N                          defined in slnetif.h
-N
-N    \return               Zero on success, or negative error code on
-N                          failure
-N
-N    \sa     SlNetIf_add()
-N    \sa     SlNetIf_getState()
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        SlNetIf_setState(SLNETIF_STATE_ENABLE);
-N    \endcode
-N    <br>
-N*/
-Nint32_t SlNetIf_setState(uint16_t ifID, SlNetIfState_e ifState);
-N
-N
-N/*!
-N    \brief Get interface state
-N
-N    Obtain the current state of the interface.
-N
-N    \param[in] ifID      Specifies the interface which its state needs
-N                         to be retrieved.\n
-N                         The values of the interface identifier is
-N                         defined with the prefix SLNETIF_ID_ which
-N                         defined in slnetif.h
-N
-N    \return              State of the interface on success, or negative
-N                         error code on failure
-N
-N    \sa     SlNetIf_add()
-N    \sa     SlNetIf_setState()
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        int16_t InterfaceState
-N        InterfaceState = SlNetIf_getState(SLNETIF_ID_1);
-N    \endcode
-N    <br>
-N*/
-Nint32_t SlNetIf_getState(uint16_t ifID);
-N
-N
-N/*!
-N    \brief Get interface connection status
-N
-N    Obtain the connection status of the interface.
-N
-N    \param[in] ifID      Specifies the interface which its connection
-N                         status needs to be retrieved.\n
-N                         The values of the interface identifier is
-N                         defined with the prefix SLNETIF_ID_ which
-N                         defined in slnetif.h
-N
-N    \return              Connection status of the interface on success,
-N                         or negative error code on failure
-N
-N    \sa     SlNetIf_add()
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        int16_t connection_status
-N        connection_status = SlNetIf_getConnectionStatus(SLNETIF_ID_1);
-N    \endcode
-N    <br>
-N*/
-Nint32_t SlNetIf_getConnectionStatus(uint16_t ifID);
-N
-N
-N/*!
-N    \brief Get IP Address of specific interface
-N
-N    The SlNetIf_getIPAddr function retrieve the IP address of a specific
-N    interface according to the Address Type, IPv4, IPv6 LOCAL
-N    or IPv6 GLOBAL.
-N
-N    \param[in]  ifID          Specifies the interface which its connection
-N                              state needs to be retrieved.\n
-N                              The values of the interface identifier is
-N                              defined with the prefix SLNETIF_ID_ which
-N                              defined in slnetif.h
-N    \param[in]  addrType      Address type:
-N                                          - #SLNETIF_IPV4_ADDR
-N                                          - #SLNETIF_IPV6_ADDR_LOCAL
-N                                          - #SLNETIF_IPV6_ADDR_GLOBAL
-N    \param[out] addrConfig    Address config:
-N                                          - #SLNETIF_ADDR_CFG_UNKNOWN
-N                                          - #SLNETIF_ADDR_CFG_DHCP
-N                                          - #SLNETIF_ADDR_CFG_DHCP_LLA
-N                                          - #SLNETIF_ADDR_CFG_STATIC
-N                                          - #SLNETIF_ADDR_CFG_STATELESS
-N                                          - #SLNETIF_ADDR_CFG_STATEFUL
-N    \param[out] ipAddr        IP Address according to the Address Type
-N
-N    \return                   Zero on success, or negative error code on failure
-N
-N    \sa     SlNetIfAddressType_e
-N
-N    \slnetif_not_threadsafe
-N
-N    \par    Examples
-N
-N    \code
-N        SlNetSock_In6Addr_t IPAdd;
-N        uint16_t addressConfig = 0;
-N        SlNetIf_getIPAddr(SLNETIF_ID_1 ,SLNETIF_IPV6_ADDR_LOCAL ,&addressConfig ,(uint8_t *)ipAddr);
-N    \endcode
-N    <br>
-N*/
-Nint32_t SlNetIf_getIPAddr(uint16_t ifID, SlNetIfAddressType_e addrType, uint16_t *addrConfig, uint32_t *ipAddr);
-N
-N
-N/*!
-N    \brief Load secured buffer to the network stack
-N
-N    The SlNetSock_secLoadObj function loads buffer/files into the inputted
-N    network stack for future usage of the socket SSL/TLS connection.
-N    This option is relevant for network stacks with file system and also for
-N    network stacks that lack file system that can store the secured files.
-N
-N    \param[in] objType          Specifies the security object type which
-N                                could be one of the following:\n
-N                                   - #SLNETIF_SEC_OBJ_TYPE_RSA_PRIVATE_KEY
-N                                   - #SLNETIF_SEC_OBJ_TYPE_CERTIFICATE
-N                                   - #SLNETIF_SEC_OBJ_TYPE_DH_KEY
-N    \param[in] objName          Specifies the name/input identifier of the
-N                                secured buffer loaded
-N                                for file systems - this can be the file name
-N                                for plain text buffer loading this can be the
-N                                name of the object
-N    \param[in] objNameLen       Specifies the buffer name length to be loaded.\n
-N    \param[in] objBuff          Specifies the pointer to the secured buffer to
-N                                be loaded.\n
-N    \param[in] objBuffLen       Specifies the buffer length to be loaded.\n
-N    \param[in] ifBitmap         Specifies the interfaces which the security
-N                                objects needs to be added to.\n
-N                                The values of the interface identifiers
-N                                is defined with the prefix SLNETIF_ID_
-N                                which defined in slnetif.h
-N
-N    \return                     On success, buffer type handler index to be
-N                                used when attaching the secured buffer to a
-N                                socket.\n
-N                                A successful return code should be a positive
-N                                number (int16)\n
-N                                On error, a negative value will be returned
-N                                specifying the error code.
-N                                - #SLNETERR_STATUS_ERROR - load operation failed
-N
-N    \sa                         SlNetSock_setOpt()
-N
-N    \slnetif_not_threadsafe
-N
-N*/
-Nint32_t SlNetIf_loadSecObj(uint16_t objType, char *objName, int16_t objNameLen, uint8_t *objBuff, int16_t objBuffLen, uint32_t ifBitmap);
-N
-N/*!
-N
-N Close the Doxygen group.
-N @}
-N
-N*/
-N
-N#ifdef  __cplusplus
-S}
-N#endif /* __cplusplus */
-N
-N#endif /* __SL_NET_IF_H__ */
-L 641 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetsock.h" 2
-N#include "slnetutils.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetutils.h" 1
-N/*
-N * Copyright (c) 2017, Texas Instruments Incorporated
-N * All rights reserved.
-N *
-N * Redistribution and use in source and binary forms, with or without
-N * modification, are permitted provided that the following conditions
-N * are met:
-N *
-N * *  Redistributions of source code must retain the above copyright
-N *    notice, this list of conditions and the following disclaimer.
-N *
-N * *  Redistributions in binary form must reproduce the above copyright
-N *    notice, this list of conditions and the following disclaimer in the
-N *    documentation and/or other materials provided with the distribution.
-N *
-N * *  Neither the name of Texas Instruments Incorporated nor the names of
-N *    its contributors may be used to endorse or promote products derived
-N *    from this software without specific prior written permission.
-N *
-N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-N */
-N
-N/*****************************************************************************/
-N/* Include files                                                             */
-N/*****************************************************************************/
-N
-N#ifndef __SL_NET_UTILS_H__
-N#define __SL_NET_UTILS_H__
-N
-N
-N#ifdef    __cplusplus
-Sextern "C" {
-N#endif
-N
-N#include "slnetsock.h"
-N
-N/*!
-N    \defgroup SlNetUtils SlNetUtils group
-N
-N    \short Sockets related commands and configuration
-N
-N*/
-N/*!
-N
-N    \addtogroup SlNetUtils
-N    @{
-N
-N*/
-N
-N/*****************************************************************************/
-N/* Structure/Enum declarations                                               */
-N/*****************************************************************************/
-N
-N/* Creating one address parameter from 4 separate address parameters */
-N#define SLNETUTIL_IPV4_VAL(add_3,add_2,add_1,add_0)                         ((((uint32_t)add_3 << 24) & 0xFF000000) | (((uint32_t)add_2 << 16) & 0xFF0000) | (((uint32_t)add_1 << 8) & 0xFF00) | ((uint32_t)add_0 & 0xFF) )
-N
-N/*****************************************************************************/
-N/* Function prototypes                                                       */
-N/*****************************************************************************/
-N
-N/*!
-N
-N    \brief Initialize the SlNetUtil module
-N
-N    \param[in] flags            Reserved
-N
-N    \return                     Zero on success, or negative error code on failure
-N*/
-Nint32_t SlNetUtil_init(int32_t flags);
-N
-N/*!
-N    \brief Get host IP by name\n
-N    Obtain the IP Address of machine on network, by machine name.
-N
-N    \param[in]     ifBitmap     Specifies the interfaces which the the host ip
-N                                needs to be retrieved from according tothe
-N                                priority until one of them will return an answer.\n
-N                                Value 0 is used in order to choose automatic
-N                                interfaces selection according to the priority
-N                                interface list.
-N                                Value can be combination of interfaces by OR'ing
-N                                multiple interfaces bit identifiers (SLNETIFC_IDENT_
-N                                defined in slnetif.h)
-N                                Note: interface identifier bit must be configured
-N                                prior to this socket creation using SlNetIf_add().
-N    \param[in]     name         Host name
-N    \param[in]     nameLen      Name length
-N    \param[out]    ipAddr       This parameter is filled in with an array of
-N                                IP addresses. In case that host name is not
-N                                resolved, ipAddrLen is zero.
-N    \param[in,out] ipAddrLen    Holds the size of the ipAddr array, when function
-N                                successful, the ipAddrLen parameter will be updated with
-N                                the number of the IP addresses found.
-N    \param[in]     family       Protocol family
-N
-N    \return                     The interface ID of the interface which run
-N                                successfully the function, or negative on failure.\n
-N                                #SLNETERR_POOL_IS_EMPTY may be return in case
-N                                there are no resources in the system\n
-N                                Possible DNS error codes:
-N                                - #SLNETERR_NET_APP_DNS_QUERY_NO_RESPONSE
-N                                - #SLNETERR_NET_APP_DNS_NO_SERVER
-N                                - #SLNETERR_NET_APP_DNS_QUERY_FAILED
-N                                - #SLNETERR_NET_APP_DNS_MALFORMED_PACKET
-N                                - #SLNETERR_NET_APP_DNS_MISMATCHED_RESPONSE
-N
-N    \slnetutil_init_precondition
-N
-N    \warning
-N            In case an IP address in a string format is set as input, without
-N            any prefix (e.g. "1.2.3.4") the device will not try to access the
-N            DNS and it will return the input address in the \c ipAddr field
-N    \par  Example
-N    - Getting IPv4 using get host by name:
-N    \code
-N    uint16_t DestIPListSize = 1;
-N    uint32_t DestIP[1];
-N    uint32_t ifID;
-N    int16_t  SockId;
-N    SlNetSock_AddrIn_t LocalAddr; //address of the server to connect to
-N    int32_t LocalAddrSize;
-N
-N    ifID = SlNetUtil_getHostByName(0, "www.google.com", strlen("www.google.com"), DestIP, &DestIPListSize, SLNETSOCK_PF_INET);
-N
-N    LocalAddr.sin_family = SLNETSOCK_AF_INET;
-N    LocalAddr.sin_addr.s_addr = SlNetUtil_htonl(DestIP[0]);
-N    LocalAddr.sin_port = SlNetUtil_htons(80);
-N    LocalAddrSize = sizeof(SlNetSock_AddrIn_t);
-N
-N    SockId = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, ifID, 0);
-N
-N    if (SockId >= 0)
-N    {
-N        status = SlNetSock_connect(SockId, (SlNetSock_Addr_t *) &LocalAddr, LocalAddrSize);
-N    }
-N    \endcode
-N*/
-Nint32_t SlNetUtil_getHostByName(uint32_t ifBitmap, char *name, const uint16_t nameLen, uint32_t *ipAddr, uint16_t *ipAddrLen, const uint8_t family);
-N
-N
-N/*!
-N    \brief Reorder the bytes of a 32-bit unsigned value
-N
-N    This function is used to reorder the bytes of a 32-bit unsigned value
-N    from host order to network order.
-N
-N    \param[in] val              Variable in host order
-N
-N    \return                     Return the variable in network order
-N
-N    \slnetutil_init_precondition
-N
-N    \sa         SlNetSock_bind()
-N    \sa         SlNetSock_connect()
-N    \sa         SlNetSock_recvFrom()
-N    \sa         SlNetSock_accept()
-N*/
-Nuint32_t SlNetUtil_htonl(uint32_t val);
-N
-N
-N/*!
-N    \brief Reorder the bytes of a 32-bit unsigned value
-N
-N    This function is used to reorder the bytes of a 32-bit unsigned
-N    value from network order to host order.
-N
-N    \param[in] val              Variable in network order
-N
-N    \return                     Return the variable in host order
-N
-N    \slnetutil_init_precondition
-N
-N    \sa         SlNetSock_bind()
-N    \sa         SlNetSock_connect()
-N    \sa         SlNetSock_recvFrom()
-N    \sa         SlNetSock_accept()
-N*/
-Nuint32_t SlNetUtil_ntohl(uint32_t val);
-N
-N
-N/*!
-N    \brief Reorder the bytes of a 16-bit unsigned value
-N
-N    This functions is used to reorder the bytes of a 16-bit unsigned
-N    value from host order to network order.
-N
-N    \param[in] val              Variable in host order
-N
-N    \return                     Return the variable in network order
-N
-N    \slnetutil_init_precondition
-N
-N    \sa         SlNetSock_bind()
-N    \sa         SlNetSock_connect()
-N    \sa         SlNetSock_recvFrom()
-N    \sa         SlNetSock_accept()
-N*/
-Nuint16_t SlNetUtil_htons(uint16_t val);
-N
-N
-N/*!
-N    \brief Reorder the bytes of a 16-bit unsigned value
-N
-N    This functions is used to reorder the bytes of a 16-bit unsigned value
-N    from network order to host order.
-N
-N    \param[in] val              Variable in network order
-N
-N    \return                     Return the variable in host order
-N
-N    \slnetutil_init_precondition
-N
-N    \sa         SlNetSock_bind()
-N    \sa         SlNetSock_connect()
-N    \sa         SlNetSock_recvFrom()
-N    \sa         SlNetSock_accept()
-N*/
-Nuint16_t SlNetUtil_ntohs(uint16_t val);
-N
-N
-N/*!
-N    \brief Converts IP address in binary representation to string representation
-N
-N    This functions is used to converts IP address in binary representation
-N    to IP address in string representation.
-N
-N    \param[in]  addrFamily     Specifies the address family of the created
-N                               socket
-N                               For example:
-N                                 - #SLNETSOCK_AF_INET for network address IPv4
-N                                 - #SLNETSOCK_AF_INET6 for network address IPv6
-N    \param[in]  binaryAddr     Pointer to an IP address structure indicating the
-N                               address in binary representation
-N    \param[out] strAddr        Pointer to the address string representation
-N                               for IPv4 or IPv6 according to the address
-N                               family
-N    \param[in]  strAddrLen     Specifies the length of the StrAddress_dst,
-N                               the maximum length of the address in string
-N                               representation for IPv4 or IPv6 according to
-N                               the address family
-N
-N    \return                    strAddr on success, or NULL on failure
-N
-N    \slnetutil_init_precondition
-N
-N    \par    Example
-N    - IPv4 demo of inet_ntop()
-N    \code
-N        SlNetSock_AddrIn_t sa;
-N        char str[SLNETSOCK_INET_ADDRSTRLEN];
-N
-N        // store this IP address in sa:
-N        SlNetSock_inet_pton(SLNETSOCK_AF_INET, "192.0.2.33", &(sa.sin_addr));
-N        // now get it back and print it
-N        SlNetSock_inet_ntop(SLNETSOCK_AF_INET, &(sa.sin_addr), str, SLNETSOCK_INET_ADDRSTRLEN);
-N    \endcode
-N*/
-Nconst char *SlNetUtil_inetNtop(int16_t addrFamily, const void *binaryAddr, char *strAddr, SlNetSocklen_t strAddrLen);
-N
-N
-N/*!
-N    \brief Converts IP address in string representation to binary representation
-N
-N    This functions is used to converts IP address in string representation
-N    to IP address in binary representation.
-N
-N    \param[in]  addrFamily     Specifies the address family of the created
-N                               socket
-N                               For example:
-N                                 - #SLNETSOCK_AF_INET for network address IPv4
-N                                 - #SLNETSOCK_AF_INET6 for network address IPv6
-N    \param[out] strAddr        Specifies the IP address in string representation
-N                               for IPv4 or IPv6 according to the address
-N                               family
-N    \param[in]  binaryAddr     Pointer to an address structure that will be
-N                               filled by the IP address in Binary representation
-N
-N    \return                    1 on success, -1 on failure, or 0 if the input
-N                               isn't a valid IP address
-N
-N    \slnetutil_init_precondition
-N
-N    \par    Example
-N    - IPv6 demo of inet_pton()
-N    \code
-N        SlNetSock_AddrIn6_t sa;
-N
-N        // store this IP address in sa:
-N        SlNetSock_inet_pton(SLNETSOCK_AF_INET6, "SLNETSOCK_AF_INET6", &(sa.sin6_addr));
-N    \endcode
-N*/
-Nint32_t SlNetUtil_inetPton(int16_t addrFamily, const char *strAddr, void *binaryAddr);
-N
-N/*!
-N
-N Close the Doxygen group.
-N @}
-N
-N*/
-N
-N
-N#ifdef  __cplusplus
-S}
-N#endif /* __cplusplus */
-N
-N#endif /* __SL_NET_UTILS_H__ */
-L 642 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetsock.h" 2
-N#include "slneterr.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/net/slneterr.h" 1
-N/*
-N * Copyright (c) 2017, Texas Instruments Incorporated
-N * All rights reserved.
-N *
-N * Redistribution and use in source and binary forms, with or without
-N * modification, are permitted provided that the following conditions
-N * are met:
-N *
-N * *  Redistributions of source code must retain the above copyright
-N *    notice, this list of conditions and the following disclaimer.
-N *
-N * *  Redistributions in binary form must reproduce the above copyright
-N *    notice, this list of conditions and the following disclaimer in the
-N *    documentation and/or other materials provided with the distribution.
-N *
-N * *  Neither the name of Texas Instruments Incorporated nor the names of
-N *    its contributors may be used to endorse or promote products derived
-N *    from this software without specific prior written permission.
-N *
-N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-N */
-N
-N
-N/*****************************************************************************/
-N/* Include files                                                             */
-N/*****************************************************************************/
-N
-N#ifndef __SL_NET_ERR_H__
-N#define __SL_NET_ERR_H__
-N
-N
-N#ifdef __cplusplus
-Sextern "C" {
-N#endif
-N
-N/*!
-N    \defgroup SlNetErr SlNetErr group
-N
-N    \short Provide BSD and proprietary errors
-N
-N*/
-N/*!
-N
-N    \addtogroup SlNetErr
-N    @{
-N
-N*/
-N
-N/*****************************************************************************/
-N/* Macro declarations                                                        */
-N/*****************************************************************************/
-N
-N#define SLNETERR_RET_CODE_OK                                            (0L)     /**< Success                                                                 */
-N
-N#define SLNETERR_GENERAL_DEVICE                                         (-6L)    /**< General device error                                                    */
-N
-N/* BSD SOCKET ERRORS CODES */
-N
-N#define SLNETERR_BSD_SOC_ERROR                                          (-1L)    /**< Failure                                                                 */
-N#define SLNETERR_BSD_ENXIO                                              (-6L)    /**< No such device or address                                               */
-N#define SLNETERR_BSD_INEXE                                              (-8L)    /**< socket command in execution                                             */
-N#define SLNETERR_BSD_EBADF                                              (-9L)    /**< Bad file number                                                         */
-N#define SLNETERR_BSD_ENSOCK                                             (-10L)   /**< The system limit on the total number of open socket, has been reached   */
-N#define SLNETERR_BSD_EAGAIN                                             (-11L)   /**< Try again                                                               */
-N#define SLNETERR_BSD_EWOULDBLOCK                                        SLNETERR_BSD_EAGAIN
-N#define SLNETERR_BSD_ENOMEM                                             (-12L)   /**< Out of memory                                                           */
-N#define SLNETERR_BSD_EACCES                                             (-13L)   /**< Permission denied                                                       */
-N#define SLNETERR_BSD_EFAULT                                             (-14L)   /**< Bad address                                                             */
-N#define SLNETERR_BSD_ECLOSE                                             (-15L)   /**< close socket operation failed to transmit all queued packets            */
-N#define SLNETERR_BSD_EALREADY_ENABLED                                   (-21L)   /**< Transceiver - Transceiver already ON. there could be only one           */
-N#define SLNETERR_BSD_EINVAL                                             (-22L)   /**< Invalid argument                                                        */
-N#define SLNETERR_BSD_EAUTO_CONNECT_OR_CONNECTING                        (-69L)   /**< Transceiver - During connection, connected or auto mode started         */
-N#define SLNETERR_BSD_CONNECTION_PENDING                                 (-72L)   /**< Transceiver - Device is connected, disconnect first to open transceiver */
-N#define SLNETERR_BSD_EUNSUPPORTED_ROLE                                  (-86L)   /**< Transceiver - Trying to start when WLAN role is AP or P2P GO            */
-N#define SLNETERR_BSD_ENOTSOCK                                           (-88L)   /**< Socket operation on non-socket                                          */
-N#define SLNETERR_BSD_EDESTADDRREQ                                       (-89L)   /**< Destination address required                                            */
-N#define SLNETERR_BSD_EMSGSIZE                                           (-90L)   /**< Message too long                                                        */
-N#define SLNETERR_BSD_EPROTOTYPE                                         (-91L)   /**< Protocol wrong type for socket                                          */
-N#define SLNETERR_BSD_ENOPROTOOPT                                        (-92L)   /**< Protocol not available                                                  */
-N#define SLNETERR_BSD_EPROTONOSUPPORT                                    (-93L)   /**< Protocol not supported                                                  */
-N#define SLNETERR_BSD_ESOCKTNOSUPPORT                                    (-94L)   /**< Socket type not supported                                               */
-N#define SLNETERR_BSD_EOPNOTSUPP                                         (-95L)   /**< Operation not supported on transport endpoint                           */
-N#define SLNETERR_BSD_EAFNOSUPPORT                                       (-97L)   /**< Address family not supported by protocol                                */
-N#define SLNETERR_BSD_EADDRINUSE                                         (-98L)   /**< Address already in use                                                  */
-N#define SLNETERR_BSD_EADDRNOTAVAIL                                      (-99L)   /**< Cannot assign requested address                                         */
-N#define SLNETERR_BSD_ENETUNREACH                                        (-101L)  /**< Network is unreachable                                                  */
-N#define SLNETERR_BSD_ECONNABORTED                                       (-103L)  /**< Software caused connection abort                                        */
-N#define SLNETERR_BSD_ECONNRESET                                         (-104L)  /**< Connection reset by peer                                                */
-N#define SLNETERR_BSD_ENOBUFS                                            (-105L)  /**< No buffer space available                                               */
-N#define SLNETERR_BSD_EOBUFF                                             SLNETERR_BSD_ENOBUFS
-N#define SLNETERR_BSD_EISCONN                                            (-106L)  /**< Transport endpoint is already connected                                 */
-N#define SLNETERR_BSD_ENOTCONN                                           (-107L)  /**< Transport endpoint is not connected                                     */
-N#define SLNETERR_BSD_ESHUTDOWN                                          (-108L)  /**< Cannot send after transport endpoint shutdown                           */
-N#define SLNETERR_BSD_ETIMEDOUT                                          (-110L)  /**< Connection timed out                                                    */
-N#define SLNETERR_BSD_ECONNREFUSED                                       (-111L)  /**< Connection refused                                                      */
-N#define SLNETERR_BSD_EHOSTDOWN                                          (-112L)  /**< Host is down                                                            */
-N#define SLNETERR_BSD_EHOSTUNREACH                                       (-113L)  /**< No route to host                                                        */
-N#define SLNETERR_BSD_EALREADY                                           (-114L)  /**< Non blocking connect in progress, try again                             */
-N
-N/* ssl tls security start with -300 offset */
-N#define SLNETERR_ESEC_CLOSE_NOTIFY                                      (-300L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_UNEXPECTED_MESSAGE                                (-310L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_BAD_RECORD_MAC                                    (-320L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_DECRYPTION_FAILED                                 (-321L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_RECORD_OVERFLOW                                   (-322L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_DECOMPRESSION_FAILURE                             (-330L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_HANDSHAKE_FAILURE                                 (-340L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_NO_CERTIFICATE                                    (-341L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_BAD_CERTIFICATE                                   (-342L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_UNSUPPORTED_CERTIFICATE                           (-343L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_ILLEGAL_PARAMETER                                 (-347L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_ACCESS_DENIED                                     (-349L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_DECODE_ERROR                                      (-350L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_DECRYPT_ERROR1                                    (-351L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_EXPORT_RESTRICTION                                (-360L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_PROTOCOL_VERSION                                  (-370L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_INSUFFICIENT_SECURITY                             (-371L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_INTERNAL_ERROR                                    (-380L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_USER_CANCELLED                                    (-390L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_NO_RENEGOTIATION                                  (-400L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_UNSUPPORTED_EXTENSION                             (-410L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_CERTIFICATE_UNOBTAINABLE                          (-411L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_UNRECOGNIZED_NAME                                 (-412L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_BAD_CERTIFICATE_STATUS_RESPONSE                   (-413L)  /**< ssl/tls alerts */
-N#define SLNETERR_ESEC_BAD_CERTIFICATE_HASH_VALUE                        (-414L)  /**< ssl/tls alerts */
-N
-N
-N/* proprietary secure */
-N#define SLNETERR_ESEC_GENERAL                                           (-450L)  /**< error secure level general error                                               */
-N#define SLNETERR_ESEC_DECRYPT                                           (-451L)  /**< error secure level, decrypt recv packet fail                                   */
-N#define SLNETERR_ESEC_CLOSED                                            (-452L)  /**< secure layrer is closed by other size , tcp is still connected                 */
-N#define SLNETERR_ESEC_SNO_VERIFY                                        (-453L)  /**< Connected without server verification                                          */
-N#define SLNETERR_ESEC_NO_CA_FILE                                        (-454L)  /**< error secure level CA file not found                                           */
-N#define SLNETERR_ESEC_MEMORY                                            (-455L)  /**< error secure level No memory  space available                                  */
-N#define SLNETERR_ESEC_BAD_CA_FILE                                       (-456L)  /**< error secure level bad CA file                                                 */
-N#define SLNETERR_ESEC_BAD_CERT_FILE                                     (-457L)  /**< error secure level bad Certificate file                                        */
-N#define SLNETERR_ESEC_BAD_PRIVATE_FILE                                  (-458L)  /**< error secure level bad private file                                            */
-N#define SLNETERR_ESEC_BAD_DH_FILE                                       (-459L)  /**< error secure level bad DH file                                                 */
-N#define SLNETERR_ESEC_T00_MANY_SSL_OPENED                               (-460L)  /**< MAX SSL Sockets are opened                                                     */
-N#define SLNETERR_ESEC_DATE_ERROR                                        (-461L)  /**< connected with certificate date verification error                             */
-N#define SLNETERR_ESEC_HAND_SHAKE_TIMED_OUT                              (-462L)  /**< connection timed out due to handshake time                                     */
-N#define SLNETERR_ESEC_TX_BUFFER_NOT_EMPTY                               (-463L)  /**< cannot start ssl connection while send buffer is full                          */
-N#define SLNETERR_ESEC_RX_BUFFER_NOT_EMPTY                               (-464L)  /**< cannot start ssl connection while recv buffer is full                          */
-N#define SLNETERR_ESEC_SSL_DURING_HAND_SHAKE                             (-465L)  /**< cannot use while in hanshaking                                                 */
-N#define SLNETERR_ESEC_NOT_ALLOWED_WHEN_LISTENING                        (-466L)  /**< the operation is not allowed when listening, do before listen                  */
-N#define SLNETERR_ESEC_CERTIFICATE_REVOKED                               (-467L)  /**< connected but on of the certificates in the chain is revoked                   */
-N#define SLNETERR_ESEC_UNKNOWN_ROOT_CA                                   (-468L)  /**< connected but the root CA used to validate the peer is unknown                 */
-N#define SLNETERR_ESEC_WRONG_PEER_CERT                                   (-469L)  /**< wrong peer cert (server cert) was received while trying to connect to server   */
-N#define SLNETERR_ESEC_TCP_DISCONNECTED_UNCOMPLETE_RECORD                (-470L)  /**< the other side disconnected the TCP layer and didn't send the whole ssl record */
-N#define SLNETERR_ESEC_HELLO_VERIFY_ERROR                                (-471L)  /**< Hello verification failed in DTLS                                              */
-N
-N#define SLNETERR_ESEC_BUFFER_E                                          (-632L)  /**< output buffer too small or input too large */
-N#define SLNETERR_ESEC_ALGO_ID_E                                         (-633L)  /**< setting algo id error                      */
-N#define SLNETERR_ESEC_PUBLIC_KEY_E                                      (-634L)  /**< setting public key error                   */
-N#define SLNETERR_ESEC_DATE_E                                            (-635L)  /**< setting date validity error                */
-N#define SLNETERR_ESEC_SUBJECT_E                                         (-636L)  /**< setting subject name error                 */
-N#define SLNETERR_ESEC_ISSUER_E                                          (-637L)  /**< setting issuer  name error                 */
-N#define SLNETERR_ESEC_CA_TRUE_E                                         (-638L)  /**< setting CA basic constraint true error     */
-N#define SLNETERR_ESEC_EXTENSIONS_E                                      (-639L)  /**< setting extensions error                   */
-N#define SLNETERR_ESEC_ASN_PARSE_E                                       (-640L)  /**< ASN parsing error, invalid input           */
-N#define SLNETERR_ESEC_ASN_VERSION_E                                     (-641L)  /**< ASN version error, invalid number          */
-N#define SLNETERR_ESEC_ASN_GETINT_E                                      (-642L)  /**< ASN get big int error, invalid data        */
-N#define SLNETERR_ESEC_ASN_RSA_KEY_E                                     (-643L)  /**< ASN key init error, invalid input          */
-N#define SLNETERR_ESEC_ASN_OBJECT_ID_E                                   (-644L)  /**< ASN object id error, invalid id            */
-N#define SLNETERR_ESEC_ASN_TAG_NULL_E                                    (-645L)  /**< ASN tag error, not null                    */
-N#define SLNETERR_ESEC_ASN_EXPECT_0_E                                    (-646L)  /**< ASN expect error, not zero                 */
-N#define SLNETERR_ESEC_ASN_BITSTR_E                                      (-647L)  /**< ASN bit string error, wrong id             */
-N#define SLNETERR_ESEC_ASN_UNKNOWN_OID_E                                 (-648L)  /**< ASN oid error, unknown sum id              */
-N#define SLNETERR_ESEC_ASN_DATE_SZ_E                                     (-649L)  /**< ASN date error, bad size                   */
-N#define SLNETERR_ESEC_ASN_BEFORE_DATE_E                                 (-650L)  /**< ASN date error, current date before        */
-N#define SLNETERR_ESEC_ASN_AFTER_DATE_E                                  (-651L)  /**< ASN date error, current date after         */
-N#define SLNETERR_ESEC_ASN_SIG_OID_E                                     (-652L)  /**< ASN signature error, mismatched oid        */
-N#define SLNETERR_ESEC_ASN_TIME_E                                        (-653L)  /**< ASN time error, unknown time type          */
-N#define SLNETERR_ESEC_ASN_INPUT_E                                       (-654L)  /**< ASN input error, not enough data           */
-N#define SLNETERR_ESEC_ASN_SIG_CONFIRM_E                                 (-655L)  /**< ASN sig error, confirm failure             */
-N#define SLNETERR_ESEC_ASN_SIG_HASH_E                                    (-656L)  /**< ASN sig error, unsupported hash type       */
-N#define SLNETERR_ESEC_ASN_SIG_KEY_E                                     (-657L)  /**< ASN sig error, unsupported key type        */
-N#define SLNETERR_ESEC_ASN_DH_KEY_E                                      (-658L)  /**< ASN key init error, invalid input          */
-N#define SLNETERR_ESEC_ASN_NTRU_KEY_E                                    (-659L)  /**< ASN ntru key decode error, invalid input   */
-N#define SLNETERR_ESEC_ASN_CRIT_EXT_E                                    (-660L)  /**< ASN unsupported critical extension         */
-N#define SLNETERR_ESEC_ECC_BAD_ARG_E                                     (-670L)  /**< ECC input argument of wrong type           */
-N#define SLNETERR_ESEC_ASN_ECC_KEY_E                                     (-671L)  /**< ASN ECC bad input                          */
-N#define SLNETERR_ESEC_ECC_CURVE_OID_E                                   (-672L)  /**< Unsupported ECC OID curve type             */
-N#define SLNETERR_ESEC_BAD_FUNC_ARG                                      (-673L)  /**< Bad function argument provided             */
-N#define SLNETERR_ESEC_NOT_COMPILED_IN                                   (-674L)  /**< Feature not compiled in                    */
-N#define SLNETERR_ESEC_UNICODE_SIZE_E                                    (-675L)  /**< Unicode password too big                   */
-N#define SLNETERR_ESEC_NO_PASSWORD                                       (-676L)  /**< no password provided by user               */
-N#define SLNETERR_ESEC_ALT_NAME_E                                        (-677L)  /**< alt name size problem, too big             */
-N#define SLNETERR_ESEC_ASN_NO_SIGNER_E                                   (-688L)  /**< ASN no signer to confirm failure           */
-N#define SLNETERR_ESEC_ASN_CRL_CONFIRM_E                                 (-689L)  /**< ASN CRL signature confirm failure          */
-N#define SLNETERR_ESEC_ASN_CRL_NO_SIGNER_E                               (-690L)  /**< ASN CRL no signer to confirm failure       */
-N#define SLNETERR_ESEC_ASN_OCSP_CONFIRM_E                                (-691L)  /**< ASN OCSP signature confirm failure         */
-N#define SLNETERR_ESEC_VERIFY_FINISHED_ERROR                             (-704L)  /**< verify problem on finished                 */
-N#define SLNETERR_ESEC_VERIFY_MAC_ERROR                                  (-705L)  /**< verify mac problem                         */
-N#define SLNETERR_ESEC_PARSE_ERROR                                       (-706L)  /**< parse error on header                      */
-N#define SLNETERR_ESEC_UNKNOWN_HANDSHAKE_TYPE                            (-707L)  /**< weird handshake type                       */
-N#define SLNETERR_ESEC_SOCKET_ERROR_E                                    (-708L)  /**< error state on socket                      */
-N#define SLNETERR_ESEC_SOCKET_NODATA                                     (-709L)  /**< expected data, not there                   */
-N#define SLNETERR_ESEC_INCOMPLETE_DATA                                   (-710L)  /**< don't have enough data to complete task    */
-N#define SLNETERR_ESEC_UNKNOWN_RECORD_TYPE                               (-711L)  /**< unknown type in record hdr                 */
-N#define SLNETERR_ESEC_INNER_DECRYPT_ERROR                               (-712L)  /**< error during decryption                    */
-N#define SLNETERR_ESEC_FATAL_ERROR                                       (-713L)  /**< recvd alert fatal error                    */
-N#define SLNETERR_ESEC_ENCRYPT_ERROR                                     (-714L)  /**< error during encryption                    */
-N#define SLNETERR_ESEC_FREAD_ERROR                                       (-715L)  /**< fread problem                              */
-N#define SLNETERR_ESEC_NO_PEER_KEY                                       (-716L)  /**< need peer's key                            */
-N#define SLNETERR_ESEC_NO_PRIVATE_KEY                                    (-717L)  /**< need the private key                       */
-N#define SLNETERR_ESEC_RSA_PRIVATE_ERROR                                 (-718L)  /**< error during rsa priv op                   */
-N#define SLNETERR_ESEC_NO_DH_PARAMS                                      (-719L)  /**< server missing DH params                   */
-N#define SLNETERR_ESEC_BUILD_MSG_ERROR                                   (-720L)  /**< build message failure                      */
-N#define SLNETERR_ESEC_BAD_HELLO                                         (-721L)  /**< client hello malformed                     */
-N#define SLNETERR_ESEC_DOMAIN_NAME_MISMATCH                              (-722L)  /**< peer subject name mismatch                 */
-N#define SLNETERR_ESEC_WANT_READ                                         (-723L)  /**< want read, call again                      */
-N#define SLNETERR_ESEC_NOT_READY_ERROR                                   (-724L)  /**< handshake layer not ready                  */
-N#define SLNETERR_ESEC_PMS_VERSION_ERROR                                 (-725L)  /**< pre m secret version error                 */
-N#define SLNETERR_ESEC_WANT_WRITE                                        (-727L)  /**< want write, call again                     */
-N#define SLNETERR_ESEC_BUFFER_ERROR                                      (-728L)  /**< malformed buffer input                     */
-N#define SLNETERR_ESEC_VERIFY_CERT_ERROR                                 (-729L)  /**< verify cert error                          */
-N#define SLNETERR_ESEC_VERIFY_SIGN_ERROR                                 (-730L)  /**< verify sign error                          */
-N#define SLNETERR_ESEC_LENGTH_ERROR                                      (-741L)  /**< record layer length error                  */
-N#define SLNETERR_ESEC_PEER_KEY_ERROR                                    (-742L)  /**< can't decode peer key                      */
-N#define SLNETERR_ESEC_ZERO_RETURN                                       (-743L)  /**< peer sent close notify                     */
-N#define SLNETERR_ESEC_SIDE_ERROR                                        (-744L)  /**< wrong client/server type                   */
-N#define SLNETERR_ESEC_NO_PEER_CERT                                      (-745L)  /**< peer didn't send key                       */
-N#define SLNETERR_ESEC_ECC_CURVETYPE_ERROR                               (-750L)  /**< Bad ECC Curve Type                         */
-N#define SLNETERR_ESEC_ECC_CURVE_ERROR                                   (-751L)  /**< Bad ECC Curve                              */
-N#define SLNETERR_ESEC_ECC_PEERKEY_ERROR                                 (-752L)  /**< Bad Peer ECC Key                           */
-N#define SLNETERR_ESEC_ECC_MAKEKEY_ERROR                                 (-753L)  /**< Bad Make ECC Key                           */
-N#define SLNETERR_ESEC_ECC_EXPORT_ERROR                                  (-754L)  /**< Bad ECC Export Key                         */
-N#define SLNETERR_ESEC_ECC_SHARED_ERROR                                  (-755L)  /**< Bad ECC Shared Secret                      */
-N#define SLNETERR_ESEC_NOT_CA_ERROR                                      (-757L)  /**< Not a CA cert error                        */
-N#define SLNETERR_ESEC_BAD_PATH_ERROR                                    (-758L)  /**< Bad path for opendir                       */
-N#define SLNETERR_ESEC_BAD_CERT_MANAGER_ERROR                            (-759L)  /**< Bad Cert Manager                           */
-N#define SLNETERR_ESEC_OCSP_CERT_REVOKED                                 (-760L)  /**< OCSP Certificate revoked                   */
-N#define SLNETERR_ESEC_CRL_CERT_REVOKED                                  (-761L)  /**< CRL Certificate revoked                    */
-N#define SLNETERR_ESEC_CRL_MISSING                                       (-762L)  /**< CRL Not loaded                             */
-N#define SLNETERR_ESEC_MONITOR_RUNNING_E                                 (-763L)  /**< CRL Monitor already running                */
-N#define SLNETERR_ESEC_THREAD_CREATE_E                                   (-764L)  /**< Thread Create Error                        */
-N#define SLNETERR_ESEC_OCSP_NEED_URL                                     (-765L)  /**< OCSP need an URL for lookup                */
-N#define SLNETERR_ESEC_OCSP_CERT_UNKNOWN                                 (-766L)  /**< OCSP responder doesn't know                */
-N#define SLNETERR_ESEC_OCSP_LOOKUP_FAIL                                  (-767L)  /**< OCSP lookup not successful                 */
-N#define SLNETERR_ESEC_MAX_CHAIN_ERROR                                   (-768L)  /**< max chain depth exceeded                   */
-N#define SLNETERR_ESEC_NO_PEER_VERIFY                                    (-778L)  /**< Need peer cert verify Error                */
-N#define SLNETERR_ESEC_UNSUPPORTED_SUITE                                 (-790L)  /**< unsupported cipher suite                   */
-N#define SLNETERR_ESEC_MATCH_SUITE_ERROR                                 (-791L)  /**< can't match cipher suite                   */
-N
-N
-N
-N/* WLAN ERRORS CODES*/
-N
-N#define SLNETERR_WLAN_KEY_ERROR                                         (-2049L)
-N#define SLNETERR_WLAN_INVALID_ROLE                                      (-2050L)
-N#define SLNETERR_WLAN_PREFERRED_NETWORKS_FILE_LOAD_FAILED               (-2051L)
-N#define SLNETERR_WLAN_CANNOT_CONFIG_SCAN_DURING_PROVISIONING            (-2052L)
-N#define SLNETERR_WLAN_INVALID_SECURITY_TYPE                             (-2054L)
-N#define SLNETERR_WLAN_PASSPHRASE_TOO_LONG                               (-2055L)
-N#define SLNETERR_WLAN_EAP_WRONG_METHOD                                  (-2057L)
-N#define SLNETERR_WLAN_PASSWORD_ERROR                                    (-2058L)
-N#define SLNETERR_WLAN_EAP_ANONYMOUS_LEN_ERROR                           (-2059L)
-N#define SLNETERR_WLAN_SSID_LEN_ERROR                                    (-2060L)
-N#define SLNETERR_WLAN_USER_ID_LEN_ERROR                                 (-2061L)
-N#define SLNETERR_WLAN_PREFERRED_NETWORK_LIST_FULL                       (-2062L)
-N#define SLNETERR_WLAN_PREFERRED_NETWORKS_FILE_WRITE_FAILED              (-2063L)
-N#define SLNETERR_WLAN_ILLEGAL_WEP_KEY_INDEX                             (-2064L)
-N#define SLNETERR_WLAN_INVALID_DWELL_TIME_VALUES                         (-2065L)
-N#define SLNETERR_WLAN_INVALID_POLICY_TYPE                               (-2066L)
-N#define SLNETERR_WLAN_PM_POLICY_INVALID_OPTION                          (-2067L)
-N#define SLNETERR_WLAN_PM_POLICY_INVALID_PARAMS                          (-2068L)
-N#define SLNETERR_WLAN_WIFI_NOT_CONNECTED                                (-2069L)
-N#define SLNETERR_WLAN_ILLEGAL_CHANNEL                                   (-2070L)
-N#define SLNETERR_WLAN_WIFI_ALREADY_DISCONNECTED                         (-2071L)
-N#define SLNETERR_WLAN_TRANSCEIVER_ENABLED                               (-2072L)
-N#define SLNETERR_WLAN_GET_NETWORK_LIST_EAGAIN                           (-2073L)
-N#define SLNETERR_WLAN_GET_PROFILE_INVALID_INDEX                         (-2074L)
-N#define SLNETERR_WLAN_FAST_CONN_DATA_INVALID                            (-2075L)
-N#define SLNETERR_WLAN_NO_FREE_PROFILE                                   (-2076L)
-N#define SLNETERR_WLAN_AP_SCAN_INTERVAL_TOO_LOW                          (-2077L)
-N#define SLNETERR_WLAN_SCAN_POLICY_INVALID_PARAMS                        (-2078L)
-N
-N#define SLNETERR_RXFL_OK                                                (0L)     /**< O.K                                                                                     */
-N#define SLNETERR_RXFL_RANGE_COMPARE_PARAMS_ARE_INVALID                  (-2079L)
-N#define SLNETERR_RXFL_RXFL_INVALID_PATTERN_LENGTH                       (-2080L) /**< requested length for L1/L4 payload matching must not exceed 16 bytes                    */
-N#define SLNETERR_RXFL_ACTION_USER_EVENT_ID_TOO_BIG                      (-2081L) /**< user action id for host event must not exceed SLNETERR_WLAN_RX_FILTER_MAX_USER_EVENT_ID */
-N#define SLNETERR_RXFL_OFFSET_TOO_BIG                                    (-2082L) /**< requested offset for L1/L4 payload matching must not exceed 1535 bytes                  */
-N#define SLNETERR_RXFL_STAT_UNSUPPORTED                                  (-2083L) /**< get rx filters statistics not supported                                                 */
-N#define SLNETERR_RXFL_INVALID_FILTER_ARG_UPDATE                         (-2084L) /**< invalid filter args request                                                             */
-N#define SLNETERR_RXFL_INVALID_SYSTEM_STATE_TRIGGER_FOR_FILTER_TYPE      (-2085L) /**< system state not supported for this filter type                                         */
-N#define SLNETERR_RXFL_INVALID_FUNC_ID_FOR_FILTER_TYPE                   (-2086L) /**< function id not supported for this filter type                                          */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_DO_NOT_EXIST_3                   (-2087L) /**< filter parent doesn't exist                                                             */
-N#define SLNETERR_RXFL_OUTPUT_OR_INPUT_BUFFER_LENGTH_TOO_SMALL           (-2088L) /**< ! The output buffer length is smaller than required for that operation                  */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_SOFTWARE_FILTER_NOT_FIT          (-2089L) /**< Node filter can't be child of software filter and vice_versa                            */
-N#define SLNETERR_RXFL_DEPENDENCY_IS_NOT_PERSISTENT                      (-2090L) /**< Dependency filter is not persistent                                                     */
-N#define SLNETERR_RXFL_RXFL_ALLOCATION_PROBLEM                           (-2091L)
-N#define SLNETERR_RXFL_SYSTEM_STATE_NOT_SUPPORTED_FOR_THIS_FILTER        (-2092L) /**< System state is not supported                                                           */
-N#define SLNETERR_RXFL_TRIGGER_USE_REG5_TO_REG8                          (-2093L) /**< Only counters 5 - 8 are allowed, for Tigger                                             */
-N#define SLNETERR_RXFL_TRIGGER_USE_REG1_TO_REG4                          (-2094L) /**< Only counters 1 - 4 are allowed, for trigger                                            */
-N#define SLNETERR_RXFL_ACTION_USE_REG5_TO_REG8                           (-2095L) /**< Only counters 5 - 8 are allowed, for action                                             */
-N#define SLNETERR_RXFL_ACTION_USE_REG1_TO_REG4                           (-2096L) /**< Only counters 1 - 4 are allowed, for action                                             */
-N#define SLNETERR_RXFL_FIELD_SUPPORT_ONLY_EQUAL_AND_NOTEQUAL             (-2097L) /**< Rule compare function Id is out of range                                                */
-N#define SLNETERR_RXFL_WRONG_MULTICAST_BROADCAST_ADDRESS                 (-2098L) /**< The address should be of type mutlicast or broadcast                                    */
-N#define SLNETERR_RXFL_THE_FILTER_IS_NOT_OF_HEADER_TYPE                  (-2099L) /**< The filter should be of header type                                                     */
-N#define SLNETERR_RXFL_WRONG_COMPARE_FUNC_FOR_BROADCAST_ADDRESS          (-2100L) /**< The compare funcion is not suitable for broadcast address                               */
-N#define SLNETERR_RXFL_WRONG_MULTICAST_ADDRESS                           (-2101L) /**< The address should be of muticast type                                                  */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_IS_NOT_PERSISTENT                (-2102L) /**< The dependency filter is not persistent                                                 */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_IS_NOT_ENABLED                   (-2103L) /**< The dependency filter is not enabled                                                    */
-N#define SLNETERR_RXFL_FILTER_HAS_CHILDS                                 (-2104L) /**< The filter has childs and can't be removed                                              */
-N#define SLNETERR_RXFL_CHILD_IS_ENABLED                                  (-2105L) /**< Can't disable filter while the child is enabled                                         */
-N#define SLNETERR_RXFL_DEPENDENCY_IS_DISABLED                            (-2106L) /**< Can't enable filetr in case its depndency filter is disabled                            */
-N#define SLNETERR_RXFL_MAC_SEND_MATCHDB_FAILED                           (-2107L)
-N#define SLNETERR_RXFL_MAC_SEND_ARG_DB_FAILED                            (-2108L)
-N#define SLNETERR_RXFL_MAC_SEND_NODEDB_FAILED                            (-2109L)
-N#define SLNETERR_RXFL_MAC_OPERTATION_RESUME_FAILED                      (-2110L)
-N#define SLNETERR_RXFL_MAC_OPERTATION_HALT_FAILED                        (-2111L)
-N#define SLNETERR_RXFL_NUMBER_OF_CONNECTION_POINTS_EXCEEDED              (-2112L) /**< Number of connection points exceeded                                                    */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_DEPENDENCY_ACTION_IS_DROP        (-2113L) /**< The dependent filter has Drop action, thus the filter can't be created                  */
-N#define SLNETERR_RXFL_FILTER_DO_NOT_EXISTS                              (-2114L) /**< The filter doesn't exists                                                               */
-N#define SLNETERR_RXFL_DEPEDENCY_NOT_ON_THE_SAME_LAYER                   (-2115L) /**< The filter and its dependency must be on the same layer                                 */
-N#define SLNETERR_RXFL_NUMBER_OF_ARGS_EXCEEDED                           (-2116L) /**< Number of arguments excceded                                                            */
-N#define SLNETERR_RXFL_ACTION_NO_REG_NUMBER                              (-2117L) /**< Action require counter number                                                           */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_LAYER_DO_NOT_FIT                 (-2118L) /**< the filter and its dependency should be from the same layer                             */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_SYSTEM_STATE_DO_NOT_FIT          (-2119L) /**< The filter and its dependency system state don't fit                                    */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_DO_NOT_EXIST_2                   (-2120L) /**< The parent filter don't exist                                                           */
-N#define SLNETERR_RXFL_DEPENDENT_FILTER_DO_NOT_EXIST_1                   (-2121L) /**< The parent filter is null                                                               */
-N#define SLNETERR_RXFL_RULE_HEADER_ACTION_TYPE_NOT_SUPPORTED             (-2122L) /**< The action type is not supported                                                        */
-N#define SLNETERR_RXFL_RULE_HEADER_TRIGGER_COMPARE_FUNC_OUT_OF_RANGE     (-2123L) /**< The Trigger comparision function is out of range                                        */
-N#define SLNETERR_RXFL_RULE_HEADER_TRIGGER_OUT_OF_RANGE                  (-2124L) /**< The Trigger is out of range                                                             */
-N#define SLNETERR_RXFL_RULE_HEADER_COMPARE_FUNC_OUT_OF_RANGE             (-2125L) /**< The rule compare function is out of range                                               */
-N#define SLNETERR_RXFL_FRAME_TYPE_NOT_SUPPORTED                          (-2126L) /**< ASCII frame type string is illegal                                                      */
-N#define SLNETERR_RXFL_RULE_FIELD_ID_NOT_SUPPORTED                       (-2127L) /**< Rule field ID is out of range                                                           */
-N#define SLNETERR_RXFL_RULE_HEADER_FIELD_ID_ASCII_NOT_SUPPORTED          (-2128L) /**< This ASCII field ID is not supported                                                    */
-N#define SLNETERR_RXFL_RULE_HEADER_NOT_SUPPORTED                         (-2129L) /**< The header rule is not supported on current release                                     */
-N#define SLNETERR_RXFL_RULE_HEADER_OUT_OF_RANGE                          (-2130L) /**< The header rule is out of range                                                         */
-N#define SLNETERR_RXFL_RULE_HEADER_COMBINATION_OPERATOR_OUT_OF_RANGE     (-2131L) /**< Combination function Id is out of ramge                                                 */
-N#define SLNETERR_RXFL_RULE_HEADER_FIELD_ID_OUT_OF_RANGE                 (-2132L) /**< rule field Id is out of range                                                           */
-N#define SLNETERR_RXFL_UPDATE_NOT_SUPPORTED                              (-2133L) /**< Update not supported                                                                    */
-N#define SLNETERR_RXFL_NO_FILTER_DATABASE_ALLOCATE                       (-2134L)
-N#define SLNETERR_RXFL_ALLOCATION_FOR_GLOBALS_STRUCTURE_FAILED           (-2135L)
-N#define SLNETERR_RXFL_ALLOCATION_FOR_DB_NODE_FAILED                     (-2136L)
-N#define SLNETERR_RXFL_READ_FILE_FILTER_ID_ILLEGAL                       (-2137L)
-N#define SLNETERR_RXFL_READ_FILE_NUMBER_OF_FILTER_FAILED                 (-2138L)
-N#define SLNETERR_RXFL_READ_FILE_FAILED                                  (-2139L)
-N#define SLNETERR_RXFL_NO_FILTERS_ARE_DEFINED                            (-2140L) /**< No filters are defined in the system                                                    */
-N#define SLNETERR_RXFL_NUMBER_OF_FILTER_EXCEEDED                         (-2141L) /**< Number of max filters excceded                                                          */
-N#define SLNETERR_RXFL_BAD_FILE_MODE                                     (-2142L)
-N#define SLNETERR_RXFL_FAILED_READ_NVFILE                                (-2143L)
-N#define SLNETERR_RXFL_FAILED_INIT_STORAGE                               (-2144L)
-N#define SLNETERR_RXFL_CONTINUE_WRITE_MUST_BE_MOD_4                      (-2145L)
-N#define SLNETERR_RXFL_FAILED_LOAD_FILE                                  (-2146L)
-N#define SLNETERR_RXFL_INVALID_HANDLE                                    (-2147L)
-N#define SLNETERR_RXFL_FAILED_TO_WRITE                                   (-2148L)
-N#define SLNETERR_RXFL_OFFSET_OUT_OF_RANGE                               (-2149L)
-N#define SLNETERR_RXFL_ALLOC                                             (-2150L)
-N#define SLNETERR_RXFL_READ_DATA_LENGTH                                  (-2151L)
-N#define SLNETERR_RXFL_INVALID_FILE_ID                                   (-2152L)
-N#define SLNETERR_RXFL_FILE_FILTERS_NOT_EXISTS                           (-2153L)
-N#define SLNETERR_RXFL_FILE_ALREADY_IN_USE                               (-2154L)
-N#define SLNETERR_RXFL_INVALID_ARGS                                      (-2155L)
-N#define SLNETERR_RXFL_FAILED_TO_CREATE_FILE                             (-2156L)
-N#define SLNETERR_RXFL_FS_ALREADY_LOADED                                 (-2157L)
-N#define SLNETERR_RXFL_UNKNOWN                                           (-2158L)
-N#define SLNETERR_RXFL_FAILED_TO_CREATE_LOCK_OBJ                         (-2159L)
-N#define SLNETERR_RXFL_DEVICE_NOT_LOADED                                 (-2160L)
-N#define SLNETERR_RXFL_INVALID_MAGIC_NUM                                 (-2161L)
-N#define SLNETERR_RXFL_FAILED_TO_READ                                    (-2162L)
-N#define SLNETERR_RXFL_NOT_SUPPORTED                                     (-2163L)
-N#define SLNETERR_WLAN_INVALID_COUNTRY_CODE                              (-2164L)
-N#define SLNETERR_WLAN_NVMEM_ACCESS_FAILED                               (-2165L)
-N#define SLNETERR_WLAN_OLD_FILE_VERSION                                  (-2166L)
-N#define SLNETERR_WLAN_TX_POWER_OUT_OF_RANGE                             (-2167L)
-N#define SLNETERR_WLAN_INVALID_AP_PASSWORD_LENGTH                        (-2168L)
-N#define SLNETERR_WLAN_PROVISIONING_ABORT_PROVISIONING_ALREADY_STARTED   (-2169L)
-N#define SLNETERR_WLAN_PROVISIONING_ABORT_HTTP_SERVER_DISABLED           (-2170L)
-N#define SLNETERR_WLAN_PROVISIONING_ABORT_PROFILE_LIST_FULL              (-2171L)
-N#define SLNETERR_WLAN_PROVISIONING_ABORT_INVALID_PARAM                  (-2172L)
-N#define SLNETERR_WLAN_PROVISIONING_ABORT_GENERAL_ERROR                  (-2173L)
-N#define SLNETERR_WLAN_MULTICAST_EXCEED_MAX_ADDR                         (-2174L)
-N#define SLNETERR_WLAN_MULTICAST_INVAL_ADDR                              (-2175L)
-N#define SLNETERR_WLAN_AP_SCAN_INTERVAL_TOO_SHORT                        (-2176L)
-N#define SLNETERR_WLAN_PROVISIONING_CMD_NOT_EXPECTED                     (-2177L)
-N
-N
-N#define SLNETERR_WLAN_AP_ACCESS_LIST_NO_ADDRESS_TO_DELETE               (-2178L) /**< List is empty, no address to delete                 */
-N#define SLNETERR_WLAN_AP_ACCESS_LIST_FULL                               (-2179L) /**< access list is full                                 */
-N#define SLNETERR_WLAN_AP_ACCESS_LIST_DISABLED                           (-2180L) /**< access list is disabled                             */
-N#define SLNETERR_WLAN_AP_ACCESS_LIST_MODE_NOT_SUPPORTED                 (-2181L) /**< Trying to switch to unsupported mode                */
-N#define SLNETERR_WLAN_AP_STA_NOT_FOUND                                  (-2182L) /**< trying to disconnect station which is not connected */
-N
-N
-N
-N/* DEVICE ERRORS CODES*/
-N#define SLNETERR_SUPPLICANT_ERROR                                       (-4097L)
-N#define SLNETERR_HOSTAPD_INIT_FAIL                                      (-4098L)
-N#define SLNETERR_HOSTAPD_INIT_IF_FAIL                                   (-4099L)
-N#define SLNETERR_WLAN_DRV_INIT_FAIL                                     (-4100L)
-N#define SLNETERR_MDNS_ENABLE_FAIL                                       (-4103L) /**< mDNS enable failed                                                                                            */
-N#define SLNETERR_ROLE_STA_ERR                                           (-4107L) /**< Failure to load MAC/PHY in STA role                                                                           */
-N#define SLNETERR_ROLE_AP_ERR                                            (-4108L) /**< Failure to load MAC/PHY in AP role                                                                            */
-N#define SLNETERR_ROLE_P2P_ERR                                           (-4109L) /**< Failure to load MAC/PHY in P2P role                                                                           */
-N#define SLNETERR_CALIB_FAIL                                             (-4110L) /**< Failure of calibration                                                                                        */
-N#define SLNETERR_RESTORE_IMAGE_COMPLETE                                 (-4113L) /**< Return to factory image completed, perform reset                                                              */
-N#define SLNETERR_UNKNOWN_ERR                                            (-4114L)
-N#define SLNETERR_GENERAL_ERR                                            (-4115L) /**< General error during init                                                                                     */
-N#define SLNETERR_WRONG_ROLE                                             (-4116L)
-N#define SLNETERR_INCOMPLETE_PROGRAMMING                                 (-4117L) /**< Error during programming, Program new image should be invoked (see sl_FsProgram)                              */
-N
-N
-N#define SLNETERR_PENDING_TXRX_STOP_TIMEOUT_EXP                          (-4118L) /**< Timeout expired before completing all TX/RX                                                                   */
-N#define SLNETERR_PENDING_TXRX_NO_TIMEOUT                                (-4119L) /**< No Timeout , still have pending  TX/RX                                                                        */
-N#define SLNETERR_INVALID_PERSISTENT_CONFIGURATION                       (-4120L) /**< persistency configuration can only be set to 0 (disabled) or 1 (enabled)                                      */
-N
-N
-N
-N/* NETAPP ERRORS CODES*/
-N#define SLNETERR_MDNS_CREATE_FAIL                                       (-6145L) /**< mDNS create failed                                   */
-N#define SLNETERR_DEVICE_NAME_LEN_ERR                                    (-6146L) /**< Set Dev name error codes                             */
-N#define SLNETERR_DEVICE_NAME_INVALID                                    (-6147L) /**< Set Dev name error codes                             */
-N#define SLNETERR_DOMAIN_NAME_LEN_ERR                                    (-6148L) /**< Set domain name error codes                          */
-N#define SLNETERR_DOMAIN_NAME_INVALID                                    (-6149L) /**< Set domain name error codes                          */
-N#define SLNETERR_NET_APP_DNS_QUERY_NO_RESPONSE                          (-6150L) /**< DNS query failed, no response                        */
-N#define SLNETERR_NET_APP_DNS_ERROR                                      (-6151L) /**< DNS internal error                                   */
-N#define SLNETERR_NET_APP_DNS_NO_SERVER                                  (-6152L) /**< No DNS server was specified                          */
-N#define SLNETERR_NET_APP_DNS_TIMEOUTR                                   (-6153L) /**< mDNS parameters error                                */
-N#define SLNETERR_NET_APP_DNS_QUERY_FAILED                               (-6154L) /**< DNS query failed; no DNS server sent an 'answer'     */
-N#define SLNETERR_NET_APP_DNS_BAD_ADDRESS_ERROR                          (-6155L) /**< Improperly formatted IPv4 or IPv6 address            */
-N#define SLNETERR_NET_APP_DNS_SIZE_ERROR                                 (-6156L) /**< DNS destination size is too small                    */
-N#define SLNETERR_NET_APP_DNS_MALFORMED_PACKET                           (-6157L) /**< Improperly formed or corrupted DNS packet received   */
-N#define SLNETERR_NET_APP_DNS_BAD_ID_ERROR                               (-6158L) /**< DNS packet from server does not match query ID       */
-N#define SLNETERR_NET_APP_DNS_PARAM_ERROR                                (-6159L) /**< Invalid params                                       */
-N#define SLNETERR_NET_APP_DNS_SERVER_NOT_FOUND                           (-6160L) /**< Server not found in Client list of DNS servers       */
-N#define SLNETERR_NET_APP_DNS_PACKET_CREATE_ERROR                        (-6161L) /**< Error creating DNS packet                            */
-N#define SLNETERR_NET_APP_DNS_EMPTY_DNS_SERVER_LIST                      (-6162L) /**< DNS Client's list of DNS servers is empty            */
-N#define SLNETERR_NET_APP_DNS_SERVER_AUTH_ERROR                          (-6163L) /**< Server not able to authenticate answer/authority data*/
-N#define SLNETERR_NET_APP_DNS_ZERO_GATEWAY_IP_ADDRESS                    (-6164L) /**< DNS Client IP instance has a zero gateway IP address */
-N#define SLNETERR_NET_APP_DNS_MISMATCHED_RESPONSE                        (-6165L) /**< Server response type does not match the query request*/
-N#define SLNETERR_NET_APP_DNS_DUPLICATE_ENTRY                            (-6166L) /**< Duplicate entry exists in DNS server table           */
-N#define SLNETERR_NET_APP_DNS_RETRY_A_QUERY                              (-6167L) /**< SOA status returned; web site only exists as IPv4    */
-N#define SLNETERR_NET_APP_DNS_INVALID_ADDRESS_TYPE                       (-6168L) /**< IP address type (e.g. IPv6L) not supported           */
-N#define SLNETERR_NET_APP_DNS_IPV6_NOT_SUPPORTED                         (-6169L) /**< IPv6 disabled                                        */
-N#define SLNETERR_NET_APP_DNS_NEED_MORE_RECORD_BUFFER                    (-6170L) /**< The buffer size is not enough.                       */
-N#define SLNETERR_NET_APP_MDNS_ERROR                                     (-6171L) /**< MDNS internal error.                                 */
-N#define SLNETERR_NET_APP_MDNS_PARAM_ERROR                               (-6172L) /**< MDNS parameters error.                               */
-N#define SLNETERR_NET_APP_MDNS_CACHE_ERROR                               (-6173L) /**< The Cache size is not enough.                        */
-N#define SLNETERR_NET_APP_MDNS_UNSUPPORTED_TYPE                          (-6174L) /**< The unsupported resource record type.                */
-N#define SLNETERR_NET_APP_MDNS_DATA_SIZE_ERROR                           (-6175L) /**< The data size is too big.                            */
-N#define SLNETERR_NET_APP_MDNS_AUTH_ERROR                                (-6176L) /**< Attempting to parse too large a data.                */
-N#define SLNETERR_NET_APP_MDNS_PACKET_ERROR                              (-6177L) /**< The packet can not add the resource record.          */
-N#define SLNETERR_NET_APP_MDNS_DEST_ADDRESS_ERROR                        (-6178L) /**< The destination address error.                       */
-N#define SLNETERR_NET_APP_MDNS_UDP_PORT_ERROR                            (-6179L) /**< The udp port error.                                  */
-N#define SLNETERR_NET_APP_MDNS_NOT_LOCAL_LINK                            (-6180L) /**< The message that not originate from the local link.  */
-N#define SLNETERR_NET_APP_MDNS_EXCEED_MAX_LABEL                          (-6181L) /**< The data exceed the max laber size.                  */
-N#define SLNETERR_NET_APP_MDNS_EXIST_UNIQUE_RR                           (-6182L) /**< At least one Unqiue record in the cache.             */
-N#define SLNETERR_NET_APP_MDNS_EXIST_ANSWER                              (-6183L) /**< At least one answer record in the cache.             */
-N#define SLNETERR_NET_APP_MDNS_EXIST_SAME_QUERY                          (-6184L) /**< Exist the same query.                                */
-N#define SLNETERR_NET_APP_MDNS_DUPLICATE_SERVICE                         (-6185L) /**< Duplicate service.                                   */
-N#define SLNETERR_NET_APP_MDNS_NO_ANSWER                                 (-6186L) /**< No response for one-shot query.                      */
-N#define SLNETERR_NET_APP_MDNS_NO_KNOWN_ANSWER                           (-6187L) /**< No known answer for query.                           */
-N#define SLNETERR_NET_APP_MDNS_NAME_MISMATCH                             (-6188L) /**< The name mismatch.                                   */
-N#define SLNETERR_NET_APP_MDNS_NOT_STARTED                               (-6189L) /**< MDNS does not start.                                 */
-N#define SLNETERR_NET_APP_MDNS_HOST_NAME_ERROR                           (-6190L) /**< MDNS host name error.                                */
-N#define SLNETERR_NET_APP_MDNS_NO_MORE_ENTRIES                           (-6191L) /**< No more entries be found.                            */
-N#define SLNETERR_NET_APP_MDNS_SERVICE_TYPE_MISMATCH                     (-6192L) /**< The service type mismatch                            */
-N#define SLNETERR_NET_APP_MDNS_LOOKUP_INDEX_ERROR                        (-6193L) /**< Index is bigger than number of services.             */
-N#define SLNETERR_NET_APP_MDNS_MAX_SERVICES_ERROR                        (-6194L)
-N#define SLNETERR_NET_APP_MDNS_IDENTICAL_SERVICES_ERROR                  (-6195L)
-N#define SLNETERR_NET_APP_MDNS_EXISTED_SERVICE_ERROR                     (-6196L)
-N#define SLNETERR_NET_APP_MDNS_ERROR_SERVICE_NAME_ERROR                  (-6197L)
-N#define SLNETERR_NET_APP_MDNS_RX_PACKET_ALLOCATION_ERROR                (-6198L)
-N#define SLNETERR_NET_APP_MDNS_BUFFER_SIZE_ERROR                         (-6199L)
-N#define SLNETERR_NET_APP_MDNS_NET_APP_SET_ERROR                         (-6200L)
-N#define SLNETERR_NET_APP_MDNS_GET_SERVICE_LIST_FLAG_ERROR               (-6201L)
-N#define SLNETERR_NET_APP_MDNS_MDNS_NO_CONFIGURATION_ERROR               (-6202L)
-N#define SLNETERR_NET_APP_MDNS_STATUS_ERROR                              (-6203L)
-N#define SLNETERR_NET_APP_ENOBUFS                                        (-6204L)
-N#define SLNETERR_NET_APP_DNS_IPV6_REQ_BUT_IPV6_DISABLED                 (-6205L) /**< trying to issue ipv6 DNS request but ipv6 is disabled                          */
-N#define SLNETERR_NET_APP_DNS_INVALID_FAMILY_TYPE                        (-6206L) /**< Family type is not ipv4 and not ipv6                                           */
-N#define SLNETERR_NET_APP_DNS_REQ_TOO_BIG                                (-6207L) /**< DNS request size is too big                                                    */
-N#define SLNETERR_NET_APP_DNS_ALLOC_ERROR                                (-6208L) /**< Allocation error                                                               */
-N#define SLNETERR_NET_APP_DNS_EXECUTION_ERROR                            (-6209L) /**< Execution error                                                                */
-N#define SLNETERR_NET_APP_P2P_ROLE_IS_NOT_CONFIGURED                     (-6210L) /**< role p2p is not configured yet, should be CL or GO in order to execute command */
-N#define SLNETERR_NET_APP_INCORECT_ROLE_FOR_APP                          (-6211L) /**< incorrect role for specific application                                        */
-N#define SLNETERR_NET_APP_INCORECT_APP_MASK                              (-6212L) /**< mask does not match any app                                                    */
-N#define SLNETERR_NET_APP_MDNS_ALREADY_STARTED                           (-6213L) /**< mdns application already started                                               */
-N#define SLNETERR_NET_APP_HTTP_SERVER_ALREADY_STARTED                    (-6214L) /**< http server application already started                                        */
-N
-N#define SLNETERR_NET_APP_HTTP_GENERAL_ERROR                             (-6216L) /**< New error - Http handle request failed                                         */
-N#define SLNETERR_NET_APP_HTTP_INVALID_TIMEOUT                           (-6217L) /**< New error - Http timeout invalid argument                                      */
-N#define SLNETERR_NET_APP_INVALID_URN_LENGTH                             (-6218L) /**< invalid URN length                                                             */
-N#define SLNETERR_NET_APP_RX_BUFFER_LENGTH                               (-6219L) /**< size of the requested services is smaller than size of the user buffer */
-N
-N
-N
-N/*< NETCFG ERRORS CODES*/
-N#define SLNETERR_STATIC_ADDR_SUBNET_ERROR                               (-8193L)
-N#define SLNETERR_INCORRECT_IPV6_STATIC_LOCAL_ADDR                       (-8194L) /**< Ipv6 Local address perfix is wrong */
-N#define SLNETERR_INCORRECT_IPV6_STATIC_GLOBAL_ADDR                      (-8195L) /**< Ipv6 Global address perfix is wrong */
-N#define SLNETERR_IPV6_LOCAL_ADDR_SHOULD_BE_SET_FIRST                    (-8195L) /**< Attempt to set ipv6 global address before ipv6 local address is set */
-N
-N
-N
-N/* NETUTIL ERRORS CODES */
-N#define SLNETERR_NETUTIL_CRYPTO_GENERAL                                 (-12289L)
-N#define SLNETERR_NETUTIL_CRYPTO_INVALID_INDEX                           (-12290L)
-N#define SLNETERR_NETUTIL_CRYPTO_INVALID_PARAM                           (-12291L)
-N#define SLNETERR_NETUTIL_CRYPTO_MEM_ALLOC                               (-12292L)
-N#define SLNETERR_NETUTIL_CRYPTO_INVALID_DB_VER                          (-12293L)
-N#define SLNETERR_NETUTIL_CRYPTO_UNSUPPORTED_OPTION                      (-12294L)
-N#define SLNETERR_NETUTIL_CRYPTO_BUFFER_TOO_SMALL                        (-12295L)
-N#define SLNETERR_NETUTIL_CRYPTO_EMPTY_DB_ENTRY                          (-12296L)
-N#define SLNETERR_NETUTIL_CRYPTO_NON_TEMPORARY_KEY                       (-12297L)
-N#define SLNETERR_NETUTIL_CRYPTO_DB_ENTRY_NOT_FREE                       (-12298L)
-N#define SLNETERR_NETUTIL_CRYPTO_CORRUPTED_DB_FILE                       (-12299L)
-N
-N
-N
-N/* GENERAL ERRORS CODES*/
-N#define SLNETERR_INVALID_OPCODE                                         (-14337L)
-N#define SLNETERR_INVALID_PARAM                                          (-14338L)
-N#define SLNETERR_STATUS_ERROR                                           (-14341L)
-N#define SLNETERR_NVMEM_ACCESS_FAILED                                    (-14342L)
-N#define SLNETERR_NOT_ALLOWED_NWP_LOCKED                                 (-14343L) /**< Device is locked, Return to Factory Image or Program new image should be invoked (see sl_FsCtl, sl_FsProgram) */
-N
-N/* SECURITY ERRORS CODE */
-N#define SLNETERR_LOADING_CERTIFICATE_STORE                              (-28673L)
-N
-N/* Device is Locked! Return to Factory Image or Program new
-N   image should be invoked (see sl_FsCtl, sl_FsProgram) */
-N#define SLNETERR_DEVICE_LOCKED_SECURITY_ALERT                           (-28674L)
-N
-N
-N
-N/* INTERNAL HOST ERRORS CODES*/
-N
-N/* Receive this error in case there are no resources to issue the command
-N   If possible, increase the number of MAX_CONCURRENT_ACTIONS (result in memory increase)
-N   If not, try again later */
-N#define SLNETERR_POOL_IS_EMPTY                                          (-2000L)
-N
-N/* Receive this error in case a given length for RX buffer was too small.
-N   Receive payload was bigger than the given buffer size. Therefore, payload is cut according to receive size
-N   Recommend to increase buffer size */
-N#define SLNETERR_ESMALLBUF                                              (-2001L)
-N
-N/* Receive this error in case zero length is supplied to a "get" API
-N   Recommend to supply length according to requested information (view options defines for helpL) */
-N#define SLNETERR_EZEROLEN                                               (-2002L)
-N
-N/* User supplied invalid parameter */
-N#define SLNETERR_INVALPARAM                                             (-2003L)
-N
-N/* Failed to open interface  */
-N#define SLNETERR_BAD_INTERFACE                                          (-2004L)
-N
-N/* API has been aborted due to an error detected by host driver */
-N#define SLNETERR_API_ABORTED                                            (-2005L)
-N
-N/* Parameters are invalid */
-N#define SLNETERR_RET_CODE_INVALID_INPUT                                 (-2006L)
-N
-N/* Driver internal error */
-N#define SLNETERR_RET_CODE_SELF_ERROR                                    (-2007L)
-N
-N/* NWP internal error */
-N#define SLNETERR_RET_CODE_NWP_IF_ERROR                                  (-2008L)
-N
-N/* malloc error */
-N#define SLNETERR_RET_CODE_MALLOC_ERROR                                  (-2009L)
-N
-N/* protocol error */
-N#define SLNETERR_RET_CODE_PROTOCOL_ERROR                                (-2010L)
-N
-N/* API has been aborted, command is not allowed in device lock state */
-N#define SLNETERR_RET_CODE_DEV_LOCKED                                    (-2011L)
-N
-N/* SlNetSock_Start cannot be invoked twice */
-N#define SLNETERR_RET_CODE_DEV_ALREADY_STARTED                           (-2012L)
-N
-N/* SL Net API is in progress */
-N#define SLNETERR_RET_CODE_API_COMMAND_IN_PROGRESS                       (-2013L)
-N
-N/* Provisioning is in progress -  */
-N#define SLNETERR_RET_CODE_PROVISIONING_IN_PROGRESS                      (-2014L)
-N
-N/* Wrong ping parameters - ping cannot be called with the following parameters:
-N1. infinite ping packet
-N2. report only when finished
-N3. no callback supplied  */
-N#define SLNETERR_RET_CODE_NET_APP_PING_INVALID_PARAMS                   (-2015L)
-N
-N
-N/* SlNetSock select already in progress.
-N   this error will be returned if app will try to call
-N   SlNetSock_select blocking when there is already select trigger in progress */
-N#define SLNETERR_RET_CODE_SOCKET_SELECT_IN_PROGRESS_ERROR               (-2016L)
-N
-N#define SLNETERR_RET_CODE_STOP_IN_PROGRESS                              (-2017L)
-N
-N
-N/* The device has not been started yet */
-N#define SLNETERR_RET_CODE_DEV_NOT_STARTED                               (-2018L)
-N
-N/* The event link was not found in the list */
-N#define SLNETERR_RET_CODE_EVENT_LINK_NOT_FOUND                          (-2019L)
-N
-N/* Function couldn't find any free space/location */
-N#define SLNETERR_RET_CODE_NO_FREE_SPACE                                 (-2020L)
-N
-N/* Function couldn't execute correctly */
-N#define SLNETERR_RET_CODE_FUNCTION_FAILED                               (-2021L)
-N
-N/* Mutex creation failed */
-N#define SLNETERR_RET_CODE_MUTEX_CREATION_FAILED                         (-2022L)
-N
-N/* Function couldn't find the requested resource */
-N#define SLNETERR_RET_CODE_COULDNT_FIND_RESOURCE                         (-2023L)
-N
-N/* Interface doesn't support the non mandatory function */
-N#define SLNETERR_RET_CODE_DOESNT_SUPPORT_NON_MANDATORY_FXN              (-2024L)
-N
-N/* Socket creation in progress */
-N#define SLNETERR_RET_CODE_SOCKET_CREATION_IN_PROGRESS                   (-2025L)
-N
-N/* Unsupported scenario, option or feature */
-N#define SLNETERR_RET_CODE_UNSUPPORTED                                   (-2026L)
-N
-N
-N/* sock related API's from SlNetIf_Config_t failed */
-N#define SLNETSOCK_ERR_SOCKCREATE_FAILED                                 (-3000L)
-N#define SLNETSOCK_ERR_SOCKCLOSE_FAILED                                  (-3001L)
-N#define SLNETSOCK_ERR_SOCKSELECT_FAILED                                 (-3002L)
-N#define SLNETSOCK_ERR_SOCKSETOPT_FAILED                                 (-3003L)
-N#define SLNETSOCK_ERR_SOCKGETOPT_FAILED                                 (-3004L)
-N#define SLNETSOCK_ERR_SOCKRECVFROM_FAILED                               (-3005L)
-N#define SLNETSOCK_ERR_SOCKSENDTO_FAILED                                 (-3006L)
-N#define SLNETSOCK_ERR_SOCKSHUTDOWN_FAILED                               (-3007L)
-N#define SLNETSOCK_ERR_SOCKACCEPT_FAILED                                 (-3008L)
-N#define SLNETSOCK_ERR_SOCKBIND_FAILED                                   (-3009L)
-N#define SLNETSOCK_ERR_SOCKLISTEN_FAILED                                 (-3000L)
-N#define SLNETSOCK_ERR_SOCKCONNECT_FAILED                                (-3001L)
-N#define SLNETSOCK_ERR_SOCKGETPEERNAME_FAILED                            (-3002L)
-N#define SLNETSOCK_ERR_SOCKGETLOCALNAME_FAILED                           (-3003L)
-N#define SLNETSOCK_ERR_SOCKRECV_FAILED                                   (-3004L)
-N#define SLNETSOCK_ERR_SOCKSEND_FAILED                                   (-3005L)
-N#define SLNETSOCK_ERR_SOCKSTARTSEC_FAILED                               (-3006L)
-N
-N/* util related API's from SlNetIf_Config_t failed */
-N#define SLNETUTIL_ERR_UTILGETHOSTBYNAME_FAILED                          (-3100L)
-N
-N/* if related API's from SlNetIf_Config_t failed */
-N#define SLNETIF_ERR_IFLOADSECOBJ_FAILED                                 (-3200L)
-N#define SLNETIF_ERR_IFGETIPADDR_FAILED                                  (-3201L)
-N#define SLNETIF_ERR_IFGETCONNECTIONSTATUS_FAILED                        (-3202L)
-N#define SLNETIF_ERR_IFCREATECONTEXT_FAILED                              (-3203L)
-N
-N/*!
-N
-N Close the Doxygen group.
-N @}
-N
-N*/
-N
-N#ifdef  __cplusplus
-S}
-N#endif /*  __cplusplus */
-N
-N#endif  /*  __SL_NET_ERR_H__ */
-L 643 "/vagrant/Q4_04/sdk_root/source/ti/net/slnetsock.h" 2
-N
-N
-N/*****************************************************************************/
-N/* Function prototypes                                                       */
-N/*****************************************************************************/
-N
-N/*!
-N
-N    \brief Initialize the SlNetSock module
-N
-N    \param[in] flags            Reserved
-N
-N    \return                     Zero on success, or negative error code on failure
-N*/
-Nint32_t SlNetSock_init(int32_t flags);
-N
-N/*!
-N
-N    \brief Create an endpoint for communication
-N
-N    SlNetSock_create() creates a new socket of a certain socket type,
-N    identified by an integer number, and allocates system resources to it.\n
-N    This function is called by the application layer to obtain a socket descriptor (handle).
-N
-N    \param[in] domain           Specifies the protocol family of the created socket.
-N                                For example:
-N                                   - #SLNETSOCK_AF_INET for network protocol IPv4
-N                                   - #SLNETSOCK_AF_INET6 for network protocol IPv6
-N                                   - #SLNETSOCK_AF_RF for starting transceiver mode.
-N                                        Notes:
-N                                        - sending and receiving any packet overriding 802.11 header
-N                                        - for optimized power consumption the socket will be started in TX
-N                                            only mode until receive command is activated
-N    \param[in] type             Specifies the socket type, which determines the semantics of communication over
-N                                the socket. The socket types supported by the system are implementation-dependent.
-N                                Possible socket types include:
-N                                   - #SLNETSOCK_SOCK_STREAM (reliable stream-oriented service or Stream Sockets)
-N                                   - #SLNETSOCK_SOCK_DGRAM  (datagram service or Datagram Sockets)
-N                                   - #SLNETSOCK_SOCK_RAW    (raw protocols atop the network layer)
-N                                   - when used with AF_RF:
-N                                      - #SLNETSOCK_SOCK_RX_MTR
-N                                      - #SLNETSOCK_SOCK_MAC_WITH_CCA
-N                                      - #SLNETSOCK_SOCK_MAC_WITH_NO_CCA
-N                                      - #SLNETSOCK_SOCK_BRIDGE
-N                                      - #SLNETSOCK_SOCK_ROUTER
-N    \param[in] protocol         Specifies a particular transport to be used with the socket.\n
-N                                The most common are
-N                                    - #SLNETSOCK_PROTO_TCP
-N                                    - #SLNETSOCK_PROTO_UDP
-N                                    - #SLNETSOCK_PROTO_RAW
-N                                    - #SLNETSOCK_PROTO_SECURE
-N    \param[in] ifBitmap         Specifies the interface(s) which the socket will be create on
-N                                according to the priority until one of them will return an answer.\n
-N                                Value 0 is used in order to choose automatic interfaces selection
-N                                according to the priority interface list.
-N                                Value can be combination of interfaces by OR'ing multiple interfaces bit identifiers
-N                                (SLNETIFC_IDENT_ defined in slnetif.h)
-N                                Note: interface identifier bit must be configured prior to this socket creation
-N                                using SlNetIf_add().
-N    \param[in] flags            Specifies flags.
-N                                   - #SLNETSOCK_CREATE_IF_STATE_ENABLE     - Creation of the socket will be on enabled state
-N                                   - #SLNETSOCK_CREATE_IF_STATUS_CONNECTED - Creation of the socket will be on status connected
-N                                   - #SLNETSOCK_CREATE_ALLOW_PARTIAL_MATCH - Creation of the socket will be on the interface with
-N                                                                            the highest priority if the other flags will fail
-N                                The value 0 may be used in order to run the default flags:
-N                                   - #SLNETSOCK_CREATE_IF_STATE_ENABLE
-N                                   - #SLNETSOCK_CREATE_IF_STATUS_CONNECTED
-N
-N    \return                     On success, socket descriptor (handle) that is used for consequent socket operations. \n
-N                                A successful return code should be a positive number\n
-N                                On error, a negative value will be returned specifying the error code.
-N                                   - #SLNETERR_BSD_EAFNOSUPPORT    - illegal domain parameter
-N                                   - #SLNETERR_BSD_EPROTOTYPE      - illegal type parameter
-N                                   - #SLNETERR_BSD_EACCES          - permission denied
-N                                   - #SLNETERR_BSD_ENSOCK          - exceeded maximal number of socket
-N                                   - #SLNETERR_BSD_ENOMEM          - memory allocation error
-N                                   - #SLNETERR_BSD_EINVAL          - error in socket configuration
-N                                   - #SLNETERR_BSD_EPROTONOSUPPORT - illegal protocol parameter
-N                                   - #SLNETERR_BSD_EOPNOTSUPP      - illegal combination of protocol and type parameters
-N
-N    \slnetsock_init_precondition
-N
-N    \remark     Not all platforms support all options.
-N
-N    \remark     A @c protocol value of zero can be used to select the default protocol from the selected @c domain and @c type.
-N
-N    \sa         SlNetSock_close()
-N*/
-Nint16_t SlNetSock_create(int16_t domain, int16_t type, int16_t protocol, uint32_t ifBitmap, int16_t flags);
-N
-N
-N/*!
-N    \brief Gracefully close socket
-N
-N    Release resources allocated to a socket.
-N
-N    \param[in] sd               Socket descriptor (handle), received in SlNetSock_create()
-N
-N    \return                     Zero on success, or negative error code on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \remark     In the case of TCP, the connection is terminated.
-N
-N    \sa                         SlNetSock_create()
-N*/
-Nint32_t SlNetSock_close(int16_t sd);
-N
-N
-N/*!
-N    \brief Shutting down parts of a full-duplex connection
-N
-N    Shuts down parts of a full-duplex connection according to how parameter.\n
-N
-N    \param[in] sd               Socket descriptor (handle), received in SlNetSock_create
-N    \param[in] how              Specifies which part of a full-duplex connection to shutdown. \n
-N                                The options are
-N                                    - #SLNETSOCK_SHUT_RD   - further receptions will be disallowed
-N                                    - #SLNETSOCK_SHUT_WR   - further transmissions will be disallowed
-N                                    - #SLNETSOCK_SHUT_RDWR - further receptions and transmissions will be disallowed
-N
-N    \return                     Zero on success, or negative error code on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \sa                         SlNetSock_create()
-N    \sa                         SlNetSock_connect()
-N    \sa                         SlNetSock_accept()
-N*/
-Nint32_t SlNetSock_shutdown(int16_t sd, int16_t how);
-N
-N
-N/*!
-N    \brief Accept a connection on a socket
-N
-N    The SlNetSock_accept function is used with connection-based socket types (#SLNETSOCK_SOCK_STREAM).
-N
-N    It extracts the first connection request on the queue of pending
-N    connections, creates a new connected socket, and returns a new file
-N    descriptor referring to that socket.
-N
-N    The newly created socket is not in the listening state. The
-N    original socket sd is unaffected by this call.
-N
-N    The argument sd is a socket that has been created with
-N    SlNetSock_create(), bound to a local address with
-N    SlNetSock_bind(), and is listening for connections after a
-N    SlNetSock_listen().
-N
-N    The argument \c addr is a pointer to a sockaddr structure. This
-N    structure is filled in with the address of the peer socket, as
-N    known to the communications layer.
-N
-N    The exact format of the address returned \c addr is determined by the socket's address family.
-N
-N    \c addrlen is a value-result argument: it should initially contain
-N    the size of the structure pointed to by addr, on return it will
-N    contain the actual length (in bytes) of the address returned.
-N
-N    \param[in]  sd              Socket descriptor (handle)
-N    \param[out] addr            The argument addr is a pointer
-N                                to a sockaddr structure. This
-N                                structure is filled in with the
-N                                address of the peer socket, as
-N                                known to the communications
-N                                layer. The exact format of the
-N                                address returned addr is
-N                                determined by the socket's
-N                                address\n
-N                                sockaddr:\n - code for the
-N                                address format.\n -
-N                                socket address, the length
-N                                depends on the code format
-N    \param[out] addrlen         The addrlen argument is a value-result
-N                                argument: it should initially contain the
-N                                size of the structure pointed to by addr
-N
-N    \return                     On success, a socket descriptor.\n
-N                                On a non-blocking accept a possible negative value is #SLNETERR_BSD_EAGAIN.\n
-N                                On failure, negative error code.\n
-N                                #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
-N
-N    \slnetsock_init_precondition
-N
-N    \sa                         SlNetSock_create()
-N    \sa                         SlNetSock_bind()
-N    \sa                         SlNetSock_listen()
-N*/
-Nint16_t SlNetSock_accept(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
-N
-N
-N/*!
-N    \brief Assign a name to a socket
-N
-N    This SlNetSock_bind function gives the socket the local address
-N    addr.  addr is addrlen bytes long.
-N
-N    Traditionally, this is called when a socket is created with
-N    socket, it exists in a name space (address family) but has no name
-N    assigned.
-N
-N    It is necessary to assign a local address before a #SLNETSOCK_SOCK_STREAM
-N    socket may receive connections.
-N
-N    \param[in] sd               Socket descriptor (handle)
-N    \param[in] addr             Specifies the destination
-N                                addrs\n sockaddr:\n - code for
-N                                the address format.\n - socket address,
-N                                the length depends on the code
-N                                format
-N    \param[in] addrlen          Contains the size of the structure pointed to by addr
-N
-N    \return                     Zero on success, or negative error code on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \sa                         SlNetSock_create()
-N    \sa                         SlNetSock_accept()
-N    \sa                         SlNetSock_listen()
-N*/
-Nint32_t SlNetSock_bind(int16_t sd, const SlNetSock_Addr_t *addr, int16_t addrlen);
-N
-N
-N/*!
-N    \brief Listen for connections on a socket
-N
-N    The willingness to accept incoming connections and a queue
-N    limit for incoming connections are specified with SlNetSock_listen(),
-N    and then the connections are accepted with SlNetSock_accept().
-N
-N    \param[in] sd               Socket descriptor (handle)
-N    \param[in] backlog          Specifies the listen queue depth.
-N
-N    \return                     Zero on success, or negative error code on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \remark     The SlNetSock_listen() call applies only to sockets of
-N                type #SLNETSOCK_SOCK_STREAM.
-N
-N    \remark     The \c backlog parameter defines the maximum length the queue of
-N                pending connections may grow to.
-N
-N    \sa                         SlNetSock_create()
-N    \sa                         SlNetSock_accept()
-N    \sa                         SlNetSock_bind()
-N*/
-Nint32_t SlNetSock_listen(int16_t sd, int16_t backlog);
-N
-N
-N/*!
-N    \brief Initiate a connection on a socket
-N
-N    Function connects the socket referred to by the socket
-N    descriptor sd, to the address specified by \c addr.
-N
-N    The format of the address in addr is determined by the address
-N    space of the socket.
-N
-N    If it is of type #SLNETSOCK_SOCK_DGRAM, this call specifies the
-N    peer with which the socket is to be associated; this address is
-N    that to which datagrams are to be sent, and the only address from
-N    which datagrams are to be received.
-N
-N    If the socket is of type #SLNETSOCK_SOCK_STREAM, this call
-N    attempts to make a connection to another socket.
-N
-N    The other socket is specified by address, which is an address in
-N    the communications space of the socket.
-N
-N    \param[in] sd               Socket descriptor (handle)
-N    \param[in] addr             Specifies the destination addr\n
-N                                sockaddr:\n - code for the
-N                                address format.\n -
-N                                socket address, the length
-N                                depends on the code format
-N    \param[in] addrlen          Contains the size of the structure pointed
-N                                to by addr
-N
-N    \return                     On success, a socket descriptor (handle).\n
-N                                On failure, negative value.\n
-N                                On a non-blocking connect a possible negative value is #SLNETERR_BSD_EALREADY.
-N                                #SLNETERR_POOL_IS_EMPTY may be returned in case there are no resources in the system
-N
-N    \slnetsock_init_precondition
-N
-N    \sa                         SlNetSock_create()
-N    \note
-N    \warning
-N*/
-Nint32_t SlNetSock_connect(int16_t sd, const SlNetSock_Addr_t *addr, SlNetSocklen_t addrlen);
-N
-N/*!
-N    \brief Return address info about the remote side of the connection
-N
-N    Returns a struct SlNetSock_AddrIn_t
-N    filled with information about the peer device that is connected
-N    on the other side of the socket descriptor.
-N
-N    \param[in]  sd              Socket descriptor (handle)
-N    \param[out] addr            returns the struct addr\n
-N                                SlNetSockAddrIn filled with information
-N                                about the peer device:\n - code for the
-N                                address format.\n -
-N                                socket address, the length
-N                                depends on the code format
-N    \param[out] addrlen         Contains the size of the structure pointed
-N                                to by addr
-N
-N    \return                     Zero on success, or negative error code on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \sa                         SlNetSock_accept()
-N    \sa                         SlNetSock_connect()
-N*/
-Nint32_t SlNetSock_getPeerName(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
-N
-N
-N/*!
-N    \brief Get local address info by socket descriptor
-N
-N    Returns the local address info of the socket descriptor.
-N
-N    \param[in]  sd              Socket descriptor (handle)
-N    \param[out] addr            The argument addr is a pointer
-N                                to a SlNetSock_Addr_t structure. This
-N                                structure is filled in with the
-N                                address of the peer socket, as
-N                                known to the communications
-N                                layer. The exact format of the
-N                                address returned addr is
-N                                determined by the socket's
-N                                address\n
-N                                SlNetSock_Addr_t:\n - code for the
-N                                address format.\n -
-N                                socket address, the length
-N                                depends on the code format
-N    \param[out] addrlen         The addrlen argument is a value-result
-N                                argument: it should initially contain the
-N                                size of the structure pointed to by addr
-N
-N    \return                     Zero on success, or negative on failure.
-N
-N    \slnetsock_init_precondition
-N
-N    \remark     If the provided buffer is too small the returned address
-N                will be truncated and \c addrlen will contain the
-N                actual size of the socket address.
-N
-N    \sa         SlNetSock_create()
-N    \sa         SlNetSock_bind()
-N*/
-Nint32_t SlNetSock_getSockName(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
-N
-N
-N/*!
-N    \brief Monitor socket activity
-N
-N    SlNetSock_select() allow a program to monitor multiple file descriptors,
-N    waiting until one or more of the file descriptors become
-N    "ready" for some class of I/O operation.
-N
-N    \param[in]     nsds        The highest-numbered file descriptor in any of the
-N                               three sets, plus 1.
-N    \param[in,out] readsds     Socket descriptors list for read monitoring and accept monitoring
-N    \param[in,out] writesds    Socket descriptors list for connect monitoring only, write monitoring is not supported
-N    \param[in,out] exceptsds   Socket descriptors list for exception monitoring, not supported.
-N    \param[in]     timeout     Is an upper bound on the amount of time elapsed
-N                               before SlNetSock_select() returns. Null or above 0xffff seconds means
-N                               infinity timeout. The minimum timeout is 10 milliseconds,
-N                               less than 10 milliseconds will be set automatically to 10 milliseconds.
-N                               Max microseconds supported is 0xfffc00.
-N                               In trigger mode the timeout fields must be set to zero.
-N
-N    \return                    On success, SlNetSock_select() returns the number of
-N                               file descriptors contained in the three returned
-N                               descriptor sets (that is, the total number of bits that
-N                               are set in readsds, writesds, exceptsds) which may be
-N                               zero if the timeout expires before anything interesting
-N                               happens.\n On error, a negative value is returned.
-N                               readsds - return the sockets on which Read request will
-N                               return without delay with valid data.\n
-N                               writesds - return the sockets on which Write request
-N                               will return without delay.\n
-N                               exceptsds - return the sockets closed recently. \n
-N                               #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
-N
-N    \slnetsock_init_precondition
-N
-N    \remark     If \c timeout is set to less than 10ms it will
-N                automatically set to 10ms to prevent overload of the
-N                system
-N
-N    \sa         SlNetSock_create()
-N*/
-Nint32_t SlNetSock_select(int16_t nsds, SlNetSock_SdSet_t *readsds, SlNetSock_SdSet_t *writesds, SlNetSock_SdSet_t *exceptsds, SlNetSock_Timeval_t *timeout);
-N
-N
-N/*!
-N    \brief SlNetSock_select's SlNetSock_SdSet_t SET function
-N
-N    Sets current socket descriptor on SlNetSock_SdSet_t container
-N*/
-Nint32_t SlNetSock_sdsSet(int16_t sd, SlNetSock_SdSet_t *sdset);
-N
-N
-N/*!
-N    \brief SlNetSock_select's SlNetSock_SdSet_t CLR function
-N
-N    Clears current socket descriptor on SlNetSock_SdSet_t container
-N*/
-Nint32_t SlNetSock_sdsClr(int16_t sd, SlNetSock_SdSet_t *sdset);
-N
-N
-N/*!
-N    \brief SlNetSock_select's SlNetSock_SdSet_t ZERO function
-N
-N    Clears all socket descriptors from SlNetSock_SdSet_t
-N*/
-Nint32_t SlNetSock_sdsClrAll(SlNetSock_SdSet_t *sdset);
-N
-N
-N/*!
-N    \brief SlNetSock_select's SlNetSock_SdSet_t ISSET function
-N
-N    Checks if current socket descriptor is set (true/false)
-N
-N    \return            Returns true if set, false if unset
-N
-N*/
-Nint32_t SlNetSock_sdsIsSet(int16_t sd, SlNetSock_SdSet_t *sdset);
-N
-N
-N/*!
-N    \brief Set socket options
-N
-N    SlNetSock_setOpt() manipulates the options associated with a socket.
-N
-N    Options may exist at multiple protocol levels; they are always
-N    present at the uppermost socket level.
-N
-N    When manipulating socket options the level at which the option resides
-N    and the name of the option must be specified.  To manipulate options at
-N    the socket level, level is specified as #SLNETSOCK_LVL_SOCKET.  To manipulate
-N    options at any other level the protocol number of the appropriate protocol
-N    controlling the option is supplied.  For example, to indicate that an
-N    option is to be interpreted by the TCP protocol, level should be set to
-N    the protocol number of TCP.
-N
-N    \c optval and \c optlen are used to access opt_values
-N    for SlNetSock_setOpt().  For SlNetSock_getOpt() they identify a
-N    buffer in which the value for the requested option(s) are to
-N    be returned.  For SlNetSock_getOpt(), \c optlen is a value-result
-N    parameter, initially containing the size of the buffer
-N    pointed to by option_value, and modified on return to
-N    indicate the actual size of the value returned.  If no option
-N    value is to be supplied or returned, \c optval may be \c NULL.
-N
-N    \param[in] sd               Socket descriptor (handle)
-N    \param[in] level            Defines the protocol level for this option
-N                                - #SLNETSOCK_LVL_SOCKET - Socket level configurations (L4, transport layer)
-N                                - #SLNETSOCK_LVL_IP - IP level configurations (L3, network layer)
-N                                - #SLNETSOCK_LVL_PHY - Link level configurations (L2, link layer)
-N    \param[in] optname          Defines the option name to interrogate
-N                                - #SLNETSOCK_LVL_SOCKET
-N                                  - #SLNETSOCK_OPSOCK_RCV_BUF\n
-N                                                 Sets tcp max recv window size.\n
-N                                                 This options takes SlNetSock_Winsize_t struct as parameter
-N                                  - #SLNETSOCK_OPSOCK_RCV_TIMEO\n
-N                                                 Sets the timeout value that specifies the maximum amount of time an input function waits until it completes.\n
-N                                                 Default: No timeout\n
-N                                                 This options takes SlNetSock_Timeval_t struct as parameter
-N                                  - #SLNETSOCK_OPSOCK_KEEPALIVE\n
-N                                                 Enable or Disable periodic keep alive.
-N                                                 Keeps TCP connections active by enabling the periodic transmission of messages \n
-N                                                 Timeout is 5 minutes.\n
-N                                                 Default: Enabled \n
-N                                                 This options takes SlNetSock_Keepalive_t struct as parameter
-N                                  - #SLNETSOCK_OPSOCK_KEEPALIVE_TIME\n
-N                                                 Set keep alive timeout.
-N                                                 Value is in seconds \n
-N                                                 Default: 5 minutes \n
-N                                  - #SLNETSOCK_OPSOCK_LINGER\n
-N                                                 Socket lingers on close pending remaining send/receive packets\n
-N                                  - #SLNETSOCK_OPSOCK_NON_BLOCKING\n
-N                                                 Sets socket to non-blocking operation Impacts: connect, accept, send, sendto, recv and recvfrom. \n
-N                                                 Default: Blocking.
-N                                                 This options takes SlNetSock_Nonblocking_t struct as parameter
-N                                  - #SLNETSOCK_OPSOCK_NON_IP_BOUNDARY\n
-N                                                 Enable or Disable rx ip boundary.
-N                                                 In connectionless socket (udp/raw), unread data is dropped (when SlNetSock_recvFrom() len parameter < data size), Enable this option in order to read the left data on the next SlNetSock_recvFrom() iteration\n
-N                                                 Default: Disabled, IP boundary kept\n
-N                                                 This options takes SlNetSock_NonIpBoundary_t struct as parameter
-N                                - #SLNETSOCK_LVL_IP
-N                                  - #SLNETSOCK_OPIP_MULTICAST_TTL\n
-N                                                 Set the time-to-live value of outgoing multicast packets for this socket. \n
-N                                                 This options takes <b>uint8_t</b> as parameter
-N                                  - #SLNETSOCK_OPIP_ADD_MEMBERSHIP \n
-N                                                 UDP socket, Join a multicast group. \n
-N                                                 This options takes SlNetSock_IpMreq_t struct as parameter
-N                                  - #SLNETSOCK_OPIP_DROP_MEMBERSHIP \n
-N                                                 UDP socket, Leave a multicast group \n
-N                                                 This options takes SlNetSock_IpMreq_t struct as parameter
-N                                  - #SLNETSOCK_OPIP_HDRINCL \n
-N                                                 RAW socket only, the IPv4 layer generates an IP header when sending a packet unless \n
-N                                                 the IP_HDRINCL socket option is enabled on the socket.    \n
-N                                                 When it is enabled, the packet must contain an IP header. \n
-N                                                 Default: disabled, IPv4 header generated by Network Stack \n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                  - #SLNETSOCK_OPIP_RAW_RX_NO_HEADER \n
-N                                                 Raw socket remove IP header from received data. \n
-N                                                 Default: data includes ip header \n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                  - #SLNETSOCK_OPIP_RAW_IPV6_HDRINCL (inactive) \n
-N                                                 RAW socket only, the IPv6 layer generates an IP header when sending a packet unless \n
-N                                                 the IP_HDRINCL socket option is enabled on the socket. When it is enabled, the packet must contain an IP header \n
-N                                                 Default: disabled, IPv4 header generated by Network Stack \n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                - #SLNETSOCK_LVL_PHY
-N                                  - #SLNETSOCK_OPPHY_CHANNEL \n
-N                                                 Sets channel in transceiver mode.
-N                                                 This options takes <b>uint32_t</b> as channel number parameter
-N                                  - #SLNETSOCK_OPPHY_RATE \n
-N                                                 RAW socket, set WLAN PHY transmit rate \n
-N                                                 The values are based on SlWlanRateIndex_e    \n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                  - #SLNETSOCK_OPPHY_TX_POWER \n
-N                                                 RAW socket, set WLAN PHY TX power \n
-N                                                 Valid rage is 1-15 \n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                  - #SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX \n
-N                                                 RAW socket, set number of frames to transmit in transceiver mode.
-N                                                 Default: 1 packet
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                  - #SLNETSOCK_OPPHY_PREAMBLE \n
-N                                                 RAW socket, set WLAN PHY preamble for Long/Short\n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                  - #SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD \n
-N                                                 RAW socket, set WLAN Tx - Set CCA threshold. \n
-N                                                 The values are based on SlNetSockTxInhibitThreshold_e \n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                  - #SLNETSOCK_OPPHY_TX_TIMEOUT \n
-N                                                 RAW socket, set WLAN Tx - changes the TX timeout (lifetime) of transceiver frames. \n
-N                                                 Value in Ms, maximum value is 10ms \n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N                                  - #SLNETSOCK_OPPHY_ALLOW_ACKS  \n
-N                                                 RAW socket, set WLAN Tx - Enable or Disable sending ACKs in transceiver mode \n
-N                                                 0 = disabled / 1 = enabled \n
-N                                                 This options takes <b>uint32_t</b> as parameter
-N
-N
-N    \param[in] optval           Specifies a value for the option
-N    \param[in] optlen           Specifies the length of the
-N        option value
-N
-N    \return                     Zero on success, or negative error code on failure
-N
-N    \par Persistent
-N                All params are <b>Non- Persistent</b>
-N
-N    \slnetsock_init_precondition
-N
-N    \par    Examples
-N
-N    - SLNETSOCK_OPSOCK_RCV_BUF:
-N    \code
-N           SlNetSock_Winsize_t size;
-N           size.winsize = 3000; // bytes
-N           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_RCV_BUF, (uint8_t *)&size, sizeof(size));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPSOCK_RCV_TIMEO:
-N    \code
-N        struct SlNetSock_Timeval_t timeVal;
-N        timeVal.tv_sec =  1; // Seconds
-N        timeVal.tv_usec = 0; // Microseconds. 10000 microseconds resolution
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_RCV_TIMEO, (uint8_t *)&timeVal, sizeof(timeVal)); // Enable receive timeout
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPSOCK_KEEPALIVE: //disable Keepalive
-N    \code
-N        SlNetSock_Keepalive_t enableOption;
-N        enableOption.keepaliveEnabled = 0;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_KEEPALIVE, (uint8_t *)&enableOption, sizeof(enableOption));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPSOCK_KEEPALIVE_TIME: //Set Keepalive timeout
-N    \code
-N        int16_t Status;
-N        uint32_t TimeOut = 120;
-N        SlNetSock_setOpt(Sd, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_KEEPALIVE_TIME, (uint8_t *)&TimeOut, sizeof(TimeOut));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPSOCK_NON_BLOCKING: //Enable or disable nonblocking mode
-N    \code
-N           SlNetSock_Nonblocking_t enableOption;
-N           enableOption.nonBlockingEnabled = 1;
-N           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_NON_BLOCKING, (uint8_t *)&enableOption, sizeof(enableOption));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPSOCK_NON_IP_BOUNDARY: //disable boundary
-N    \code
-N        SlNetSock_NonIpBoundary_t enableOption;
-N        enableOption.nonIpBoundaryEnabled = 1;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_NON_IP_BOUNDARY, (uint8_t *)&enableOption, sizeof(enableOption));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPSOCK_LINGER:
-N    \code
-N        SlNetSock_linger_t linger;
-N        linger.l_onoff = 1;
-N        linger.l_linger = 10;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_LINGER, &linger, sizeof(linger));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPIP_MULTICAST_TTL:
-N     \code
-N           uint8_t ttl = 20;
-N           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_MULTICAST_TTL, &ttl, sizeof(ttl));
-N     \endcode
-N     <br>
-N
-N    - SLNETSOCK_OPIP_ADD_MEMBERSHIP:
-N     \code
-N           SlNetSock_IpMreq_t mreq;
-N           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPIP_DROP_MEMBERSHIP:
-N    \code
-N        SlNetSock_IpMreq_t mreq;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPIP_RAW_RX_NO_HEADER:
-N    \code
-N        uint32_t header = 1;  // remove ip header
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_RAW_RX_NO_HEADER, &header, sizeof(header));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPIP_HDRINCL:
-N    \code
-N        uint32_t header = 1;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_HDRINCL, &header, sizeof(header));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPIP_RAW_IPV6_HDRINCL:
-N    \code
-N        uint32_t header = 1;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_RAW_IPV6_HDRINCL, &header, sizeof(header));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPPHY_CHANNEL:
-N    \code
-N        uint32_t newChannel = 6; // range is 1-13
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPPHY_CHANNEL, &newChannel, sizeof(newChannel));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPPHY_RATE:
-N    \code
-N        uint32_t rate = 6; // see wlan.h SlWlanRateIndex_e for values
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_RATE, &rate, sizeof(rate));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPPHY_TX_POWER:
-N    \code
-N        uint32_t txpower = 1; // valid range is 1-15
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_POWER, &txpower, sizeof(txpower));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX:
-N    \code
-N        uint32_t numframes = 1;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX, &numframes, sizeof(numframes));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPPHY_PREAMBLE:
-N    \code
-N        uint32_t preamble = 1;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_PREAMBLE, &preamble, sizeof(preamble));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD:
-N    \code
-N        uint32_t thrshld = SLNETSOCK_TX_INHIBIT_THRESHOLD_MED;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD , &thrshld, sizeof(thrshld));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPPHY_TX_TIMEOUT:
-N    \code
-N        uint32_t timeout = 50;
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_TIMEOUT  , &timeout, sizeof(timeout));
-N    \endcode
-N    <br>
-N
-N    - SLNETSOCK_OPPHY_ALLOW_ACKS:
-N    \code
-N        uint32_t acks = 1; // 0 = disabled / 1 = enabled
-N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_ALLOW_ACKS, &acks, sizeof(acks));
-N    \endcode
-N
-N    \sa     slNetSock_create()
-N    \sa     SlNetSock_getOpt()
-N*/
-Nint32_t SlNetSock_setOpt(int16_t sd, int16_t level, int16_t optname, void *optval, SlNetSocklen_t optlen);
-N
-N
-N/*!
-N    \brief Get socket options
-N
-N    The SlNetSock_getOpt function gets the options associated with a socket.
-N    Options may exist at multiple protocol levels; they are always
-N    present at the uppermost socket level.
-N
-N    The parameters optval and optlen identify a
-N    buffer in which the value for the requested option(s) are to
-N    be returned.  \c optlen is a value-result
-N    parameter, initially containing the size of the buffer
-N    pointed to by option_value, and modified on return to
-N    indicate the actual size of the value returned.  If no option
-N    value is to be supplied or returned, \c optval may be \c NULL.
-N
-N
-N    \param[in]  sd              Socket descriptor (handle)
-N    \param[in]  level           Defines the protocol level for this option
-N    \param[in]  optname         defines the option name to interrogate
-N    \param[out] optval          Specifies a value for the option
-N    \param[out] optlen          Specifies the length of the
-N                                option value
-N
-N    \return                     Zero on success, or negative error code on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \sa     SlNetSock_create()
-N    \sa     SlNetSock_setOpt()
-N*/
-Nint32_t SlNetSock_getOpt(int16_t sd, int16_t level, int16_t optname, void *optval, SlNetSocklen_t *optlen);
-N
-N
-N/*!
-N    \brief Read data from TCP socket
-N
-N    The SlNetSock_recv function receives a message from a connection-mode socket
-N
-N    \param[in]  sd              Socket descriptor (handle)
-N    \param[out] buf             Points to the buffer where the
-N                                message should be stored.
-N    \param[in]  len             Specifies the length in bytes of
-N                                the buffer pointed to by the buffer argument.
-N                                Range: 1-16000 bytes
-N    \param[in]  flags           Specifies the type of message
-N                                reception. On this version, this parameter is not
-N                                supported.
-N
-N    \return                     Return the number of bytes received,
-N                                or a negative value if an error occurred.\n
-N                                Using a non-blocking recv a possible negative value is SLNETERR_BSD_EAGAIN.\n
-N                                SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
-N
-N    \slnetsock_init_precondition
-N
-N    \par    Examples
-N
-N    - Receiving data using TCP socket:
-N    \code
-N        SlNetSock_AddrIn_t  Addr;
-N        SlNetSock_AddrIn_t  LocalAddr;
-N        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
-N        int16_t SockID, newSockID;
-N        int16_t Status;
-N        int8_t Buf[RECV_BUF_LEN];
-N
-N        LocalAddr.sin_family = SLNETSOCK_AF_INET;
-N        LocalAddr.sin_port = SlNetSock_htons(5001);
-N        LocalAddr.sin_addr.s_addr = 0;
-N
-N        Addr.sin_family = SLNETSOCK_AF_INET;
-N        Addr.sin_port = SlNetSock_htons(5001);
-N        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
-N
-N        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, 0, 0, 0);
-N        Status = SlNetSock_bind(SockID, (SlNetSock_Addr_t *)&LocalAddr, AddrSize);
-N        Status = SlNetSock_listen(SockID, 0);
-N        newSockID = SlNetSock_accept(SockID, (SlNetSock_Addr_t*)&Addr, (SlNetSocklen_t*) &AddrSize);
-N        Status = SlNetSock_recv(newSockID, Buf, 1460, 0);
-N    \endcode
-N    <br>
-N
-N    - Rx transceiver mode using a raw socket:
-N    \code
-N        int8_t buffer[1536];
-N        int16_t sd;
-N        uint16_t size;
-N        SlNetSock_TransceiverRxOverHead_t *transHeader;
-N        sd = SlNetSock_create(SLNETSOCK_AF_RF, SLNETSOCK_SOCK_RAW, 11, 0, 0); // channel 11
-N        while(1)
-N        {
-N            size = SlNetSock_recv(sd,buffer,1536,0);
-N            transHeader = (SlNetSock_TransceiverRxOverHead_t *)buffer;
-N            printf("RSSI is %d frame type is 0x%x size %d\n",transHeader->rssi,buffer[sizeof(SlNetSock_TransceiverRxOverHead_t)],size);
-N        }
-N    \endcode
-N
-N    \sa     SlNetSock_create()
-N    \sa     SlNetSock_recvFrom()
-N*/
-Nint32_t SlNetSock_recv(int16_t sd, void *buf, uint32_t len, uint32_t flags);
-N
-N
-N/*!
-N    \brief Read data from socket
-N
-N    SlNetSock_recvFrom function receives a message from a connection-mode or
-N    connectionless-mode socket
-N
-N    \param[in]  sd              Socket descriptor (handle)
-N    \param[out] buf             Points to the buffer where the message should be stored.
-N    \param[in]  len             Specifies the length in bytes of the buffer pointed to by the buffer argument.
-N                                Range: 1-16000 bytes
-N    \param[in]  flags           Specifies the type of message
-N                                reception. On this version, this parameter is not
-N                                supported
-N    \param[in]  from            Pointer to an address structure
-N                                indicating the source
-N                                address.\n sockaddr:\n - code
-N                                for the address format.\n - socket address,
-N                                the length depends on the code
-N                                format
-N    \param[in]  fromlen         Source address structure
-N                                size. This parameter MUST be set to the size of the structure pointed to by addr.
-N
-N
-N    \return                     Return the number of bytes received,
-N                                or a negative value if an error occurred.\n
-N                                Using a non-blocking recv a possible negative value is #SLNETERR_BSD_EAGAIN.
-N                                #SLNETERR_RET_CODE_INVALID_INPUT will be returned if fromlen has incorrect length.\n
-N                                #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
-N
-N    \slnetsock_init_precondition
-N
-N    \par        Example
-N
-N    - Receiving data:
-N    \code
-N        SlNetSock_AddrIn_t  Addr;
-N        SlNetSock_AddrIn_t  LocalAddr;
-N        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
-N        int16_t SockID;
-N        int16_t Status;
-N        int8_t Buf[RECV_BUF_LEN];
-N
-N        LocalAddr.sin_family = SLNETSOCK_AF_INET;
-N        LocalAddr.sin_port = SlNetSock_htons(5001);
-N        LocalAddr.sin_addr.s_addr = 0;
-N
-N        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_DGRAM, 0, 0, 0);
-N        Status = SlNetSock_bind(SockID, (SlNetSock_Addr_t *)&LocalAddr, AddrSize);
-N        Status = SlNetSock_recvFrom(SockID, Buf, 1472, 0, (SlNetSock_Addr_t *)&Addr, (SlNetSocklen_t*)&AddrSize);
-N
-N    \endcode
-N
-N    \sa     SlNetSock_create()
-N    \sa     SlNetSock_recv()
-N*/
-Nint32_t SlNetSock_recvFrom(int16_t sd, void *buf, uint32_t len, uint32_t flags, SlNetSock_Addr_t *from, SlNetSocklen_t *fromlen);
-N
-N
-N/*!
-N    \brief Write data to TCP socket
-N
-N    Transmits a message to another socket.
-N    Returns immediately after sending data to device.
-N    In case of a RAW socket (transceiver mode), extra 4 bytes should be reserved at the end of the
-N    frame data buffer for WLAN FCS
-N
-N    \param[in] sd               Socket descriptor (handle)
-N    \param[in] buf              Points to a buffer containing
-N                                the message to be sent
-N    \param[in] len              Message size in bytes.
-N    \param[in] flags            Specifies the type of message
-N                                transmission. On this version, this parameter is not
-N                                supported for TCP.
-N
-N    \return                     Return the number of bytes sent,
-N                                or a negative value if an error occurred.
-N
-N    \slnetsock_init_precondition
-N
-N    \par        Example
-N
-N    - Sending data:
-N    \code
-N        SlNetSock_AddrIn_t  Addr;
-N        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
-N        int16_t SockID;
-N        int16_t Status;
-N        int8_t Buf[SEND_BUF_LEN];
-N
-N        Addr.sin_family = SLNETSOCK_AF_INET;
-N        Addr.sin_port = SlNetSock_htons(5001);
-N        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
-N
-N        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, 0, 0, 0);
-N        Status = SlNetSock_connect(SockID, (SlNetSock_Addr_t *)&Addr, AddrSize);
-N        Status = SlNetSock_send(SockID, Buf, 1460, 0 );
-N    \endcode
-N
-N    \sa     SlNetSock_create()
-N    \sa     SlNetSock_sendTo()
-N*/
-Nint32_t SlNetSock_send(int16_t sd, const void *buf, uint32_t len, uint32_t flags);
-N
-N
-N/*!
-N    \brief Write data to socket
-N
-N    The SlNetSock_sendTo function is used to transmit a message on a connectionless socket
-N    (connection less socket #SLNETSOCK_SOCK_DGRAM, #SLNETSOCK_SOCK_RAW).
-N
-N    Returns immediately after sending data to device.
-N
-N    \param[in] sd               Socket descriptor (handle)
-N    \param[in] buf              Points to a buffer containing
-N                                the message to be sent
-N    \param[in] len              message size in bytes.
-N    \param[in] flags            Specifies the type of message
-N                                transmission. On this version, this parameter is not
-N                                supported
-N    \param[in] to               Pointer to an address structure
-N                                indicating the destination
-N                                address.\n sockaddr:\n - code
-N                                for the address format.\n - socket address,
-N                                the length depends on the code
-N                                format
-N    \param[in] tolen            Destination address structure size
-N
-N    \return                     Return the number of bytes sent,
-N                                or a negative value if an error occurred.\n
-N
-N    \slnetsock_init_precondition
-N
-N    \par    Example
-N
-N    - Sending data:
-N    \code
-N        SlNetSock_AddrIn_t  Addr;
-N        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
-N        int16_t SockID;
-N        int16_t Status;
-N        int8_t Buf[SEND_BUF_LEN];
-N
-N        Addr.sin_family = SLNETSOCK_AF_INET;
-N        Addr.sin_port = SlNetSock_htons(5001);
-N        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
-N
-N        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_DGRAM, 0, 0, 0);
-N        Status = SlNetSock_sendTo(SockID, Buf, 1472, 0, (SlNetSock_Addr_t *)&Addr, AddrSize);
-N    \endcode
-N
-N    \sa     SlNetSock_create()
-N    \sa     SlNetSock_send()
-N*/
-Nint32_t SlNetSock_sendTo(int16_t sd, const void *buf, uint32_t len, uint32_t flags, const SlNetSock_Addr_t *to, SlNetSocklen_t tolen);
-N
-N
-N/*!
-N    \brief Get interface ID from socket descriptor (sd)
-N
-N    Retrieves the priority of the requested interface.
-N
-N    \param[in] sd         Specifies the socket descriptor which its
-N                          interface identifier needs to be retrieved.\n
-N
-N    \return               The interface identifier value of the
-N                          interface on success, or negative error code
-N                          on failure The values of the interface
-N                          identifier is defined with the prefix
-N                          SLNETIF_ID_ which defined in slnetif.h
-N
-N    \slnetsock_init_precondition
-N
-N    \par    Examples
-N
-N    \code
-N        int16_t InterfaceID;
-N        InterfaceID = SlNetSock_getIfID(SLNETIF_ID_1);
-N    \endcode
-N
-N    \sa         SlNetSock_create()
-N    \sa         SlNetIf_add()
-N    \sa         SlNetIf_getIDByName()
-N*/
-Nint32_t SlNetSock_getIfID(uint16_t sd);
-N
-N
-N/*!
-N    \brief Creates a security attributes object
-N
-N    Create a security attribute, which is required in order to start a secure session.
-N
-N    \remark     When the security attributes object is no longer needed, call
-N                SlNetSock_secAttribDelete() to destroy it.
-N
-N    \remark     A single security object can be used to initiate several secure
-N                sessions (provided they all have the same security attributes).
-N
-N    \slnetsock_init_precondition
-N
-N    \sa         SlNetSock_startSec()
-N    \sa         SlNetSock_secAttribDelete()
-N*/
-NSlNetSockSecAttrib_t *SlNetSock_secAttribCreate(void);
-N
-N
-N/*!
-N    \brief Deletes a security attributes object
-N
-N    \param[in] secAttrib        Secure attribute handle
-N
-N    \return                     Zero on success, or negative error code
-N                                on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \remark     \c secAttrib must be created using SlNetSock_secAttribCreate()
-N
-N    \sa         SlNetSock_secAttribCreate()
-N    \sa         SlNetSock_secAttribSet()
-N    \sa         SlNetSock_startSec()
-N*/
-Nint32_t SlNetSock_secAttribDelete(SlNetSockSecAttrib_t *secAttrib);
-N
-N
-N/*!
-N    \brief set a security attributes
-N
-N    The SlNetSock_secAttribSet function is used to set a security
-N    attribute of a security attributes object.
-N
-N    \param[in] secAttrib        Secure attribute handle
-N    \param[in] attribName       Define the actual attribute to set. Applicable values:
-N                                    - #SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY
-N                                    - #SLNETSOCK_SEC_ATTRIB_LOCAL_CERT
-N                                    - #SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA
-N                                    - #SLNETSOCK_SEC_ATTRIB_DH_KEY
-N                                    - #SLNETSOCK_SEC_ATTRIB_METHOD
-N                                    - #SLNETSOCK_SEC_ATTRIB_CIPHERS
-N                                    - #SLNETSOCK_SEC_ATTRIB_ALPN
-N                                    - #SLNETSOCK_SEC_ATTRIB_EXT_CLIENT_CHLNG_RESP
-N                                    - #SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME
-N                                    - #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE
-N    \param[in] val
-N    \param[in] len
-N
-N    \return                     Zero on success, or negative error code
-N                                on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \note   The @c SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE value
-N            is currently being evaluated, and may be removed in a
-N            future release.  It is currently only supported on CC3x20
-N            devices.  For more details, see
-N            #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE.
-N
-N    \sa         SlNetSock_secAttribCreate()
-N*/
-Nint32_t SlNetSock_secAttribSet(SlNetSockSecAttrib_t *secAttrib , SlNetSockSecAttrib_e attribName , void *val, uint16_t len);
-N
-N
-N/*!
-N    \brief Start a security session on an opened socket
-N
-N    \param[in] sd               Socket descriptor (handle)
-N    \param[in] secAttrib        Secure attribute handle
-N    \param[in] flags            Specifies flags. \n
-N                                The available flags are:
-N                                    - #SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY
-N                                    - #SLNETSOCK_SEC_BIND_CONTEXT_ONLY
-N                                    - #SLNETSOCK_SEC_IS_SERVER
-N
-N    \return                     Zero on success, or negative error code
-N                                on failure
-N
-N    \slnetsock_init_precondition
-N
-N    \remark     If \c secAttrib is \c NULL, the session will be started with
-N                default security settings.
-N
-N    \sa         SlNetSock_create()
-N    \sa         SlNetSock_secAttribCreate()
-N*/
-Nint32_t SlNetSock_startSec(int16_t sd, SlNetSockSecAttrib_t *secAttrib, uint8_t flags);
-N
-N
-N/*!
-N
-N Close the Doxygen group.
-N @}
-N
-N*/
-N
-N
-N#ifdef  __cplusplus
-S}
-N#endif /* __cplusplus */
-N
-N#endif /* __NET_SOCK_H__ */
-L 38 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 2
 N#include <ti/drivers/net/wifi/simplelink.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 1
 N/*
 N * simplelink.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -5633,7 +188,7 @@ N The first step is to create a <b><i>user.h</i></b> file that will include your
 N adjustments. \n
 N The file should be located in the porting directory (the porting directory is in the same level as the source directory)\n
 N It is recommended to use the empty template provided as part of this driver or
-N file of other platform such as MSP432 or CC3220, from one of the wide range
+N file of other platform such as MSP432 or CC32xx, from one of the wide range
 N of example applications provided by Texas Instruments.
 N
 N \subsection    porting_step2   Step 2 - Select the capabilities set required for your application
@@ -5653,7 +208,7 @@ N     -# SL_FULL     -   Provide access to all SimpleLink functionalities
 N
 N \subsection    porting_step3   Step 3 - Bind the device enable/disable output line
 N
-N The CC3120 has two external hardware lines that can be used to enable/disable the device.
+N The CC31xx has two external hardware lines that can be used to enable/disable the device.
 N - <b>nReset</b>
 N - <b>nHib</b> - provides mechanism to enter the device into the least current consumption mode. In
 N this mode the RTC value is kept.
@@ -5672,7 +227,7 @@ N - <b>sl_DeviceEnablePreamble</b>
 N
 N \subsection    porting_step4   Step 4 - Writing your interface communication driver
 N
-N The SimpleLink CC3120 has two standard communication interfaces
+N The SimpleLink CC31xx has two standard communication interfaces
 N    - SPI
 N    - UART
 N
@@ -5779,7 +334,7 @@ N#define _volatile volatile
 N#define _const    const
 N
 N#include <ti/drivers/net/wifi/porting/user.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/porting/user.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/user.h" 1
 N/*
 N * user.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -5829,11 +384,11 @@ N#endif
 N
 N  
 N#include <string.h>
-L 1 "/opt/ti/ccs-latest/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/string.h" 1
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/string.h" 1
 N/*****************************************************************************/
-N/* string.h   v16.9.6                                                        */
+N/* string.h                                                                  */
 N/*                                                                           */
-N/* Copyright (c) 1993-2017 Texas Instruments Incorporated                    */
+N/* Copyright (c) 1993 Texas Instruments Incorporated                         */
 N/* http://www.ti.com/                                                        */
 N/*                                                                           */
 N/*  Redistribution and  use in source  and binary forms, with  or without    */
@@ -5867,9 +422,15 @@ N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
 N/*                                                                           */
 N/*****************************************************************************/
 N
-N#ifndef _STRING
-N#define _STRING
+N#ifndef _STRING_H_
+N#define _STRING_H_
 N
+N#if defined(__TMS320C2000__)
+X#if 0L
+S#if defined(__TMS320C28XX_CLA__)
+S#error "Header file <string.h> not supported by CLA compiler"
+S#endif
+N#endif
 N
 N#pragma diag_push
 N#pragma CHECK_MISRA("-6.3") /* standard types required for standard headers */
@@ -5878,30 +439,130 @@ N#pragma CHECK_MISRA("-20.1") /* standard headers must define standard names */
 N#pragma CHECK_MISRA("-20.2") /* standard headers must define standard names */
 N
 N#ifdef __cplusplus
-S/*---------------------------------------------------------------------------*/
-S/* <cstring> IS RECOMMENDED OVER <string.h>.  <string.h> IS PROVIDED FOR     */
-S/* COMPATIBILITY WITH C AND THIS USAGE IS DEPRECATED IN C++                  */
-S/*---------------------------------------------------------------------------*/
-Sextern "C" namespace std
-S{
+Sextern "C" {
 N#endif /* __cplusplus */
 N 
 N#ifndef NULL
 N#define NULL 0
 N#endif
 N
-N#ifndef _SIZE_T
-N#define _SIZE_T
+N#ifndef _SIZE_T_DECLARED
+N#define _SIZE_T_DECLARED
 Ntypedef __SIZE_T_TYPE__ size_t;
 Xtypedef unsigned size_t;
 N#endif
 N
-N#include <linkage.h>
-L 1 "/opt/ti/ccs-latest/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/linkage.h" 1
+N#include <_ti_config.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/_ti_config.h" 1
 N/*****************************************************************************/
-N/* linkage.h   v16.9.6                                                       */
+N/* _ti_config.h                                                              */
 N/*                                                                           */
-N/* Copyright (c) 1998-2017 Texas Instruments Incorporated                    */
+N/* Copyright (c) 2017 Texas Instruments Incorporated                         */
+N/* http://www.ti.com/                                                        */
+N/*                                                                           */
+N/*  Redistribution and  use in source  and binary forms, with  or without    */
+N/*  modification,  are permitted provided  that the  following conditions    */
+N/*  are met:                                                                 */
+N/*                                                                           */
+N/*     Redistributions  of source  code must  retain the  above copyright    */
+N/*     notice, this list of conditions and the following disclaimer.         */
+N/*                                                                           */
+N/*     Redistributions in binary form  must reproduce the above copyright    */
+N/*     notice, this  list of conditions  and the following  disclaimer in    */
+N/*     the  documentation  and/or   other  materials  provided  with  the    */
+N/*     distribution.                                                         */
+N/*                                                                           */
+N/*     Neither the  name of Texas Instruments Incorporated  nor the names    */
+N/*     of its  contributors may  be used to  endorse or  promote products    */
+N/*     derived  from   this  software  without   specific  prior  written    */
+N/*     permission.                                                           */
+N/*                                                                           */
+N/*  THIS SOFTWARE  IS PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS    */
+N/*  "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT    */
+N/*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    */
+N/*  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT    */
+N/*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    */
+N/*  SPECIAL,  EXEMPLARY,  OR CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT    */
+N/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    */
+N/*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY    */
+N/*  THEORY OF  LIABILITY, WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT    */
+N/*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE    */
+N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
+N/*                                                                           */
+N/*****************************************************************************/
+N
+N#ifndef __TI_CONFIG_H
+N#define __TI_CONFIG_H
+N
+N#pragma diag_push
+N#pragma CHECK_MISRA("-19.4")
+N#pragma CHECK_MISRA("-19.1")
+N
+N/* Common definitions */
+N
+N#if defined(__STDC_VERSION__)
+X#if 1L
+N/* C */
+N# if (__STDC_VERSION__ >= 201112L)
+X# if (199409L >= 201112L)
+S /* C11 */
+S#  define _TI_NORETURN _Noreturn
+N# else
+N /* C89/C99 */
+N#  define _TI_NORETURN __attribute__((noreturn))
+N# endif
+N# define _TI_NOEXCEPT
+N#elif defined(__cplusplus)
+S/* C++ */
+S# if (__cplusplus >= 201103L)
+S /* C++11 */
+S#  define _TI_NORETURN [[noreturn]]
+S#  define _TI_NOEXCEPT noexcept
+S# else
+S /* C++98/03 */
+S#  define _TI_NORETURN __attribute__((noreturn))
+S#  define _TI_NOEXCEPT throw()
+S# endif
+N#endif
+N
+N#if defined(__cplusplus) && (__cplusplus >= 201103L)
+X#if 0L && (__cplusplus >= 201103L)
+S# define _TI_CPP11LIB 1
+N#endif
+N
+N#if defined(__cplusplus) && (__cplusplus >= 201402L)
+X#if 0L && (__cplusplus >= 201402L)
+S# define _TI_CPP14LIB 1
+N#endif
+N
+N#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) || \
+N    defined(_TI_CPP11LIB)
+X#if 1L && (199409L >= 199901L) ||     0L
+S# define _TI_C99LIB 1
+N#endif
+N
+N#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) || \
+N    defined(_TI_CPP14LIB)
+X#if 1L && (199409L >= 201112L) ||     0L
+S# define _TI_C11LIB 1
+N#endif
+N
+N/* _TI_NOEXCEPT_CPP14 is defined to noexcept only when compiling for C++14. It
+N   is intended to be used for functions like abort and atexit that are supposed
+N   to be declared noexcept only in C++14 mode. */
+N#ifdef _TI_CPP14LIB
+S# define _TI_NOEXCEPT_CPP14 noexcept
+N#else
+N# define _TI_NOEXCEPT_CPP14
+N#endif
+N
+N/* Target-specific definitions */
+N#include <linkage.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/linkage.h" 1
+N/*****************************************************************************/
+N/* linkage.h                                                                 */
+N/*                                                                           */
+N/* Copyright (c) 1998 Texas Instruments Incorporated                         */
 N/* http://www.ti.com/                                                        */
 N/*                                                                           */
 N/*  Redistribution and  use in source  and binary forms, with  or without    */
@@ -5961,12 +622,17 @@ N
 N#pragma diag_pop
 N
 N#endif /* ifndef _LINKAGE */
-L 67 "/opt/ti/ccs-latest/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/string.h" 2
+L 99 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/_ti_config.h" 2
+N
+N#pragma diag_pop
+N
+N#endif /* ifndef __TI_CONFIG_H */
+L 67 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/string.h" 2
 N
 N#pragma diag_push
 N#pragma CHECK_MISRA("-19.4") /* macros required for implementation */
 N
-N#if defined(_OPTIMIZE_FOR_SPACE) && (defined(__TMS470__) || 		\
+N#if defined(_OPTIMIZE_FOR_SPACE) && (defined(__ARM_ARCH) || 		\
 N				     defined(__TMS320C2000__)  ||       \
 N                                     defined(__MSP430__))
 X#if 1L && (1L || 						     0L  ||                                            0L)
@@ -5980,14 +646,18 @@ N
 N_OPT_IDECL size_t  strlen(const char *string);
 X size_t  strlen(const char *string);
 N
-N_OPT_IDECL char *strcpy(char *dest, const char *src);
-X char *strcpy(char *dest, const char *src);
-N_OPT_IDECL char *strncpy(char *dest, const char *src, size_t n);
-X char *strncpy(char *dest, const char *src, size_t n);
-N_OPT_IDECL char *strcat(char *string1, const char *string2);
-X char *strcat(char *string1, const char *string2);
-N_OPT_IDECL char *strncat(char *dest, const char *src, size_t n);
-X char *strncat(char *dest, const char *src, size_t n);
+N_OPT_IDECL char *strcpy(char * __restrict dest,
+X char *strcpy(char * __restrict dest,
+N                        const char * __restrict src);
+N_OPT_IDECL char *strncpy(char * __restrict dest,
+X char *strncpy(char * __restrict dest,
+N                         const char * __restrict src, size_t n);
+N_OPT_IDECL char *strcat(char * __restrict string1,
+X char *strcat(char * __restrict string1,
+N                        const char * __restrict string2);
+N_OPT_IDECL char *strncat(char * __restrict dest,
+X char *strncat(char * __restrict dest,
+N                         const char * __restrict src, size_t n);
 N_OPT_IDECL char *strchr(const char *string, int c);
 X char *strchr(const char *string, int c);
 N_OPT_IDECL char *strrchr(const char *string, int c);
@@ -6000,8 +670,9 @@ X int  strncmp(const char *string1, const char *string2, size_t n);
 N
 N_CODE_ACCESS int     strcoll(const char *string1, const char *_string2);
 X int     strcoll(const char *string1, const char *_string2);
-N_CODE_ACCESS size_t  strxfrm(char *to, const char *from, size_t n);
-X size_t  strxfrm(char *to, const char *from, size_t n);
+N_CODE_ACCESS size_t  strxfrm(char * __restrict to,
+X size_t  strxfrm(char * __restrict to,
+N                             const char * __restrict from, size_t n);
 N_CODE_ACCESS char   *strpbrk(const char *string, const char *chs);
 X char   *strpbrk(const char *string, const char *chs);
 N_CODE_ACCESS size_t  strspn(const char *string, const char *chs);
@@ -6010,8 +681,9 @@ N_CODE_ACCESS size_t  strcspn(const char *string, const char *chs);
 X size_t  strcspn(const char *string, const char *chs);
 N_CODE_ACCESS char   *strstr(const char *string1, const char *string2);
 X char   *strstr(const char *string1, const char *string2);
-N_CODE_ACCESS char   *strtok(char *str1, const char *str2);
-X char   *strtok(char *str1, const char *str2);
+N_CODE_ACCESS char   *strtok(char * __restrict str1,
+X char   *strtok(char * __restrict str1,
+N                            const char * __restrict str2);
 N_CODE_ACCESS char   *strerror(int _errno);
 X char   *strerror(int _errno);
 N_CODE_ACCESS char   *strdup(const char *string);
@@ -6022,8 +694,9 @@ N_CODE_ACCESS void   *memmove(void *s1, const void *s2, size_t n);
 X void   *memmove(void *s1, const void *s2, size_t n);
 N#pragma diag_push
 N#pragma CHECK_MISRA("-16.4") /* false positives due to builtin declarations */
-N_CODE_ACCESS void   *memcpy(void *s1, const void *s2, size_t n);
-X void   *memcpy(void *s1, const void *s2, size_t n);
+N_CODE_ACCESS void   *memcpy(void * __restrict s1,
+X void   *memcpy(void * __restrict s1,
+N                            const void * __restrict s2, size_t n);
 N#pragma diag_pop
 N
 N_OPT_IDECL int     memcmp(const void *cs, const void *ct, size_t n);
@@ -6031,34 +704,89 @@ X int     memcmp(const void *cs, const void *ct, size_t n);
 N_OPT_IDECL void   *memchr(const void *cs, int c, size_t n);
 X void   *memchr(const void *cs, int c, size_t n);
 N
+N#if (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__)) || \
+N    defined(__ARM_ARCH) || defined(__ARP32__) || defined(__FROZEN__)
+X#if (0L && !0L) ||     1L || 0L || 0L
 N_CODE_ACCESS void   *memset(void *mem, int ch, size_t length);
 X void   *memset(void *mem, int ch, size_t length);
+N#else
+S_OPT_IDECL   void   *memset(void *mem, int ch, size_t length);
+N#endif
 N
+N#if defined(__TMS320C2000__) && !defined(__TI_EABI__)
+X#if 0L && !1L
+S
+S#ifndef __cplusplus
+S
+S#pragma diag_push
+S
+S/* keep macros as direct #defines and not function-like macros or function
+S   names surrounded by parentheses to support all original supported use cases
+S   including taking their address through the macros and prefixing with
+S   namespace macros */
+S#pragma CHECK_MISRA("-19.4")
+S#define far_memcpy __memcpy_ff
+S#define far_strcpy strcpy_ff
+S
+S#pragma diag_pop
+S
+Ssize_t    far_strlen(const char *s);
+Schar     *strcpy_nf(char *s1, const char *s2);
+Schar *strcpy_fn(char *s1, const char *s2);
+Schar *strcpy_ff(char *s1, const char *s2);
+Schar *far_strncpy(char *s1, const char *s2, size_t n);
+Schar *far_strcat(char *s1, const char *s2);
+Schar *far_strncat(char *s1, const char *s2, size_t n);
+Schar *far_strchr(const char *s, int c);
+Schar *far_strrchr(const char *s, int c);
+Sint       far_strcmp(const char *s1, const char *s2);
+Sint       far_strncmp(const char *s1, const char *s2, size_t n);
+Sint       far_strcoll(const char *s1, const char *s2);
+Ssize_t    far_strxfrm(char *s1, const char *s2, size_t n);
+Schar *far_strpbrk(const char *s1, const char *s2);
+Ssize_t    far_strspn(const char *s1, const char *s2);
+Ssize_t    far_strcspn(const char *s1, const char *s2);
+Schar *far_strstr(const char *s1, const char *s2);
+Schar *far_strtok(char *s1, const char *s2);
+Schar *far_strerror(int _errno);
+Svoid *far_memmove(void *s1, const void *s2, size_t n);
+Svoid     *__memcpy_nf (void *_s1, const void *_s2, size_t _n);
+Svoid *__memcpy_fn (void *_s1, const void *_s2, size_t _n);
+Svoid *__memcpy_ff (void *_s1, const void *_s2, size_t _n);
+Sint       far_memcmp(const void *s1, const void *s2, size_t n);
+Svoid *far_memchr(const void *s, int c, size_t n);
+Svoid *far_memset(void *s, int c, size_t n);
+Svoid *far_memlcpy(void *to, const void *from,
+S                        unsigned long n);
+Svoid *far_memlmove(void *to, const void *from,
+S                         unsigned long n);
+S#else /* __cplusplus */
+Slong      far_memlcpy(long to, long from, unsigned long n);
+Slong      far_memlmove(long to, long from, unsigned long n);
+S#endif /* __cplusplus */
+S
+N#endif /* __TMS320C2000__ && !defined(__TI_EABI__) */
 N
 N#ifdef __cplusplus
-S} /* extern "C" namespace std */
+S} /* extern "C" */
 N#endif /* __cplusplus */
 N
 N#if defined(_INLINE) || defined(_STRING_IMPLEMENTATION)
 X#if 0L || 0L
 S
 S#if (defined(_STRING_IMPLEMENTATION) ||					\
-S     !(defined(_OPTIMIZE_FOR_SPACE) && (defined(__TMS470__) || 		\
+S     !(defined(_OPTIMIZE_FOR_SPACE) && (defined(__ARM_ARCH) || 		\
 S					defined(__TMS320C2000__)  ||    \
 S                                        defined(__MSP430__))))
-X#if (defined(_STRING_IMPLEMENTATION) ||					     !(defined(_OPTIMIZE_FOR_SPACE) && (defined(__TMS470__) || 							defined(__TMS320C2000__)  ||                                            defined(__MSP430__))))
-S
-S#ifdef __cplusplus
-Snamespace std {
-S#endif
+X#if (defined(_STRING_IMPLEMENTATION) ||					     !(defined(_OPTIMIZE_FOR_SPACE) && (defined(__ARM_ARCH) || 							defined(__TMS320C2000__)  ||                                            defined(__MSP430__))))
 S
 S#pragma diag_push
 S#pragma CHECK_MISRA("-19.4") /* macros required for implementation */
 S
-S#if (defined(_OPTIMIZE_FOR_SPACE) && (defined(__TMS470__) || 		\
+S#if (defined(_OPTIMIZE_FOR_SPACE) && (defined(__ARM_ARCH) || 		\
 S				      defined(__TMS320C2000__) ||       \
 S                                      defined(__MSP430__)))
-X#if (defined(_OPTIMIZE_FOR_SPACE) && (defined(__TMS470__) || 						      defined(__TMS320C2000__) ||                                             defined(__MSP430__)))
+X#if (defined(_OPTIMIZE_FOR_SPACE) && (defined(__ARM_ARCH) || 						      defined(__TMS320C2000__) ||                                             defined(__MSP430__)))
 S#define _OPT_IDEFN
 S#else
 S#define _OPT_IDEFN	_IDEFN
@@ -6105,10 +833,10 @@ S}
 S#endif /* _INLINE || _STRLEN */
 S
 S#if defined(_INLINE) || defined(_STRCPY)
-S_OPT_IDEFN char *strcpy(register char *dest, register const char *src)
+S_OPT_IDEFN char *strcpy(char * __restrict dest, const char * __restrict src)
 S{
-S     register char       *d = dest;     
-S     register const char *s = src;
+S     char       *d = dest;
+S     const char *s = src;
 S
 S     while (*d++ = *s++);
 S     return dest;
@@ -6116,14 +844,14 @@ S}
 S#endif /* _INLINE || _STRCPY */
 S
 S#if defined(_INLINE) || defined(_STRNCPY)
-S_OPT_IDEFN char *strncpy(register char *dest,
-S		     register const char *src,
-S		     register size_t n)
+S_OPT_IDEFN char *strncpy(char * __restrict dest,
+S                         const char * __restrict src,
+S                         size_t n)
 S{
 S     if (n) 
 S     {
-S	 register char       *d = dest;
-S	 register const char *s = src;
+S	 char       *d = dest;
+S	 const char *s = src;
 S	 while ((*d++ = *s++) && --n);              /* COPY STRING         */
 S	 if (n-- > 1) do *d++ = '\0'; while (--n);  /* TERMINATION PADDING */
 S     }
@@ -6132,7 +860,8 @@ S}
 S#endif /* _INLINE || _STRNCPY  */
 S
 S#if defined(_INLINE) || defined(_STRCAT)
-S_OPT_IDEFN char *strcat(char *string1, const char *string2)
+S_OPT_IDEFN char *strcat(char * __restrict string1,
+S                        const char * __restrict string2)
 S{
 S   char       *s1 = string1;
 S   const char *s2 = string2;
@@ -6144,7 +873,8 @@ S}
 S#endif /* _INLINE || _STRCAT */
 S
 S#if defined(_INLINE) || defined(_STRNCAT)
-S_OPT_IDEFN char *strncat(char *dest, const char *src, register size_t n)
+S_OPT_IDEFN char *strncat(char * __restrict dest,
+S                         const char * __restrict src, size_t n)
 S{
 S    if (n)
 S    {
@@ -6195,10 +925,9 @@ S}
 S#endif /* _INLINE || _STRRCHR */
 S
 S#if defined(_INLINE) || defined(_STRCMP)
-S_OPT_IDEFN int strcmp(register const char *string1,
-S		  register const char *string2)
+S_OPT_IDEFN int strcmp(const char *string1, const char *string2)
 S{
-S   register int c1, res;
+S   int c1, res;
 S
 S   for (;;)
 S   {
@@ -6264,60 +993,1067 @@ S   return NULL;
 S}
 S#endif /* _INLINE || _MEMCHR */
 S
+S#if (((defined(_INLINE) || defined(_MEMSET)) && \
+S    !(defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))) && \
+S    !defined(__ARM_ARCH) && !defined(__ARP32__) && !defined(__FROZEN__))
+X#if (((defined(_INLINE) || defined(_MEMSET)) &&     !(defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))) &&     !defined(__ARM_ARCH) && !defined(__ARP32__) && !defined(__FROZEN__))
+S_OPT_IDEFN void *memset(void *mem, int ch, size_t length)
+S{
+S     char *m = (char *)mem;
 S
-S#ifdef __cplusplus
-S} /* namespace std */
-S#endif
+S     while (length--) *m++ = ch;
+S     return mem;
+S}
+S#endif /* _INLINE || _MEMSET */
 S
-S#endif /* (_STRING_IMPLEMENTATION || !(_OPTIMIZE_FOR_SPACE && __TMS470__)) */
+S#endif /* (_STRING_IMPLEMENTATION || !(_OPTIMIZE_FOR_SPACE && __ARM_ARCH)) */
 S
 N#endif /* (_INLINE || _STRING_IMPLEMENTATION) */
 N
-N#pragma diag_pop
+N/*----------------------------------------------------------------------------*/
+N/* If sys/cdefs.h is available, go ahead and include it. xlocale.h assumes    */
+N/* this file will have already included sys/cdefs.h.                          */
+N/*----------------------------------------------------------------------------*/
+N#if __has_include(<sys/cdefs.h>)
+X#if 1
+N#include <sys/cdefs.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/cdefs.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-3-Clause
+N *
+N * Copyright (c) 1991, 1993
+N *	The Regents of the University of California.  All rights reserved.
+N *
+N * This code is derived from software contributed to Berkeley by
+N * Berkeley Software Design, Inc.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N * 3. Neither the name of the University nor the names of its contributors
+N *    may be used to endorse or promote products derived from this software
+N *    without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N *	@(#)cdefs.h	8.8 (Berkeley) 1/9/95
+N * $FreeBSD$
+N */
 N
-N#endif /* ! _STRING */
+N#ifndef	_SYS_CDEFS_H_
+N#define	_SYS_CDEFS_H_
 N
+N#if defined(__TI_COMPILER_VERSION__)
+X#if 1L
 N#pragma diag_push
+N#pragma CHECK_MISRA("none")
+N#endif
 N
-N/* using declarations must occur outside header guard to support including both
-N   C and C++-wrapped version of header; see _CPP_STYLE_HEADER check */
-N/* this code is for C++ mode only and thus also not relevant for MISRA */
-N#pragma CHECK_MISRA("-19.15")
+N/*
+N * Testing against Clang-specific extensions.
+N */
+N#ifndef	__has_attribute
+S#define	__has_attribute(x)	0
+N#endif
+N#ifndef	__has_extension
+S#define	__has_extension		__has_feature
+N#endif
+N#ifndef	__has_feature
+S#define	__has_feature(x)	0
+N#endif
+N#ifndef	__has_include
+S#define	__has_include(x)	0
+N#endif
+N#ifndef	__has_builtin
+S#define	__has_builtin(x)	0
+N#endif
 N
-N#if defined(__cplusplus) && !defined(_CPP_STYLE_HEADER)
+N#if defined(__cplusplus)
+X#if 0L
+S#define	__BEGIN_DECLS	extern "C" {
+S#define	__END_DECLS	}
+N#else
+N#define	__BEGIN_DECLS
+N#define	__END_DECLS
+N#endif
+N
+N/*
+N * This code has been put in place to help reduce the addition of
+N * compiler specific defines in FreeBSD code.  It helps to aid in
+N * having a compiler-agnostic source tree.
+N */
+N
+N#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+X#if 0L || 0L
+S
+S#if __GNUC__ >= 3 || defined(__INTEL_COMPILER)
+S#define	__GNUCLIKE_ASM 3
+S#define	__GNUCLIKE_MATH_BUILTIN_CONSTANTS
+S#else
+S#define	__GNUCLIKE_ASM 2
+S#endif
+S#define	__GNUCLIKE___TYPEOF 1
+S#define	__GNUCLIKE___OFFSETOF 1
+S#define	__GNUCLIKE___SECTION 1
+S
+S#ifndef __INTEL_COMPILER
+S#define	__GNUCLIKE_CTOR_SECTION_HANDLING 1
+S#endif
+S
+S#define	__GNUCLIKE_BUILTIN_CONSTANT_P 1
+S#if defined(__INTEL_COMPILER) && defined(__cplusplus) && \
+S   __INTEL_COMPILER < 800
+X#if defined(__INTEL_COMPILER) && defined(__cplusplus) &&    __INTEL_COMPILER < 800
+S#undef __GNUCLIKE_BUILTIN_CONSTANT_P
+S#endif
+S
+S#if (__GNUC_MINOR__ > 95 || __GNUC__ >= 3)
+S#define	__GNUCLIKE_BUILTIN_VARARGS 1
+S#define	__GNUCLIKE_BUILTIN_STDARG 1
+S#define	__GNUCLIKE_BUILTIN_VAALIST 1
+S#endif
+S
+S#if defined(__GNUC__)
+S#define	__GNUC_VA_LIST_COMPATIBILITY 1
+S#endif
+S
+S/*
+S * Compiler memory barriers, specific to gcc and clang.
+S */
+S#if defined(__GNUC__)
+S#define	__compiler_membar()	__asm __volatile(" " : : : "memory")
+S#endif
+S
+S#ifndef __INTEL_COMPILER
+S#define	__GNUCLIKE_BUILTIN_NEXT_ARG 1
+S#define	__GNUCLIKE_MATH_BUILTIN_RELOPS
+S#endif
+S
+S#define	__GNUCLIKE_BUILTIN_MEMCPY 1
+S
+S/* XXX: if __GNUC__ >= 2: not tested everywhere originally, where replaced */
+S#define	__CC_SUPPORTS_INLINE 1
+S#define	__CC_SUPPORTS___INLINE 1
+S#define	__CC_SUPPORTS___INLINE__ 1
+S
+S#define	__CC_SUPPORTS___FUNC__ 1
+S#define	__CC_SUPPORTS_WARNING 1
+S
+S#define	__CC_SUPPORTS_VARADIC_XXX 1 /* see varargs.h */
+S
+S#define	__CC_SUPPORTS_DYNAMIC_ARRAY_INIT 1
+S
+N#endif /* __GNUC__ || __INTEL_COMPILER */
+N
+N#ifdef __TI_COMPILER_VERSION__
+N#define	__GNUCLIKE___TYPEOF 1
+N#define	__GNUCLIKE___OFFSETOF 1
+N#define	__GNUCLIKE___SECTION 1
+N
+N#define	__CC_SUPPORTS_INLINE 1
+N#define	__CC_SUPPORTS___INLINE 1
+N#define	__CC_SUPPORTS___INLINE__ 1
+N
+N#define	__CC_SUPPORTS___FUNC__ 1
+N#define	__CC_SUPPORTS_WARNING 1
+N
+N#define	__CC_SUPPORTS_VARADIC_XXX 1 /* see varargs.h */
+N
+N#define	__CC_SUPPORTS_DYNAMIC_ARRAY_INIT 1
+N#endif /* __TI_COMPILER_VERSION__ */
+N
+N/*
+N * Macro to test if we're using a specific version of gcc or later.
+N */
+N#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 X#if 0L && !0L
-Susing std::size_t;
-Susing std::strlen;
-Susing std::strcpy;
-Susing std::strncpy;
-Susing std::strcat;
-Susing std::strncat;
-Susing std::strchr;
-Susing std::strrchr;
-Susing std::strcmp;
-Susing std::strncmp;
-Susing std::strcoll;
-Susing std::strxfrm;
-Susing std::strpbrk;
-Susing std::strspn;
-Susing std::strcspn;
-Susing std::strstr;
-Susing std::strtok;
-Susing std::strerror;
-Susing std::strdup;
-Susing std::memmove;
-Susing std::memcpy;
-Susing std::memcmp;
-Susing std::memchr;
-Susing std::memset;
+S#define	__GNUC_PREREQ__(ma, mi)	\
+S	(__GNUC__ > (ma) || __GNUC__ == (ma) && __GNUC_MINOR__ >= (mi))
+X#define	__GNUC_PREREQ__(ma, mi)		(__GNUC__ > (ma) || __GNUC__ == (ma) && __GNUC_MINOR__ >= (mi))
+N#else
+N#define	__GNUC_PREREQ__(ma, mi)	0
+N#endif
+N
+N/*
+N * The __CONCAT macro is used to concatenate parts of symbol names, e.g.
+N * with "#define OLD(foo) __CONCAT(old,foo)", OLD(foo) produces oldfoo.
+N * The __CONCAT macro is a bit tricky to use if it must work in non-ANSI
+N * mode -- there must be no spaces between its arguments, and for nested
+N * __CONCAT's, all the __CONCAT's must be at the left.  __CONCAT can also
+N * concatenate double-quoted strings produced by the __STRING macro, but
+N * this only works with ANSI C.
+N *
+N * __XSTRING is like __STRING, but it expands any macros in its argument
+N * first.  It is only available with ANSI C.
+N */
+N#if defined(__STDC__) || defined(__cplusplus)
+X#if 1L || 0L
+N#define	__P(protos)	protos		/* full-blown ANSI C */
+N#define	__CONCAT1(x,y)	x ## y
+N#define	__CONCAT(x,y)	__CONCAT1(x,y)
+N#define	__STRING(x)	#x		/* stringify without expanding x */
+N#define	__XSTRING(x)	__STRING(x)	/* expand x, then stringify */
+N
+N#define	__const		const		/* define reserved names to standard */
+N#define	__signed	signed
+N#define	__volatile	volatile
+N#if defined(__cplusplus)
+X#if 0L
+S#define	__inline	inline		/* convert to C++ keyword */
+N#else
+N#if !(defined(__CC_SUPPORTS___INLINE))
+X#if !(1L)
+S#define	__inline			/* delete GCC keyword */
+N#endif /* ! __CC_SUPPORTS___INLINE */
+N#endif /* !__cplusplus */
+N
+N#else	/* !(__STDC__ || __cplusplus) */
+S#define	__P(protos)	()		/* traditional C preprocessor */
+S#define	__CONCAT(x,y)	x/**/y
+S#define	__STRING(x)	"x"
 S
-S
-N#endif /* _CPP_STYLE_HEADER */
+S#if !defined(__CC_SUPPORTS___INLINE)
+S#define	__const				/* delete pseudo-ANSI C keywords */
+S#define	__inline
+S#define	__signed
+S#define	__volatile
+S/*
+S * In non-ANSI C environments, new programs will want ANSI-only C keywords
+S * deleted from the program and old programs will want them left alone.
+S * When using a compiler other than gcc, programs using the ANSI C keywords
+S * const, inline etc. as normal identifiers should define -DNO_ANSI_KEYWORDS.
+S * When using "gcc -traditional", we assume that this is the intent; if
+S * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
+S */
+S#ifndef	NO_ANSI_KEYWORDS
+S#define	const				/* delete ANSI C keywords */
+S#define	inline
+S#define	signed
+S#define	volatile
+S#endif	/* !NO_ANSI_KEYWORDS */
+S#endif	/* !__CC_SUPPORTS___INLINE */
+N#endif	/* !(__STDC__ || __cplusplus) */
+N
+N/*
+N * Compiler-dependent macros to help declare dead (non-returning) and
+N * pure (no side effects) functions, and unused variables.  They are
+N * null except for versions of gcc that are known to support the features
+N * properly (old versions of gcc-2 supported the dead and pure features
+N * in a different (wrong) way).  If we do not provide an implementation
+N * for a given compiler, let the compile fail if it is told to use
+N * a feature that we cannot live without.
+N */
+N#define	__weak_symbol	__attribute__((__weak__))
+N#if !__GNUC_PREREQ__(2, 5) && !defined(__INTEL_COMPILER) && !defined(__TI_COMPILER_VERSION__)
+X#if !0 && !0L && !1L
+S#define	__dead2
+S#define	__pure2
+S#define	__unused
+N#endif
+N
+N/*
+N * TI ADD - check that __GNUC__ is defined before referencing it to avoid
+N *          generating an error when __GNUC__ treated as zero warning is
+N *          promoted to an error via -pdse195 option.
+N */
+N#if defined(__GNUC__) && __GNUC__ == 2 && __GNUC_MINOR__ >= 5 && __GNUC_MINOR__ < 7 && !defined(__INTEL_COMPILER)
+X#if 0L && __GNUC__ == 2 && __GNUC_MINOR__ >= 5 && __GNUC_MINOR__ < 7 && !0L
+S#define	__dead2		__attribute__((__noreturn__))
+S#define	__pure2		__attribute__((__const__))
+S#define	__unused
+S/* XXX Find out what to do for __packed, __aligned and __section */
+N#endif
+N
+N#if __GNUC_PREREQ__(2, 7) || defined(__INTEL_COMPILER) || defined(__TI_COMPILER_VERSION__)
+X#if 0 || 0L || 1L
+N#define	__dead2		__attribute__((__noreturn__))
+N#define	__pure2		__attribute__((__const__))
+N#define	__unused	__attribute__((__unused__))
+N#define	__used		__attribute__((__used__))
+N#define	__packed	__attribute__((__packed__))
+N#define	__aligned(x)	__attribute__((__aligned__(x)))
+N#define	__section(x)	__attribute__((__section__(x)))
+N#endif
+N#if __GNUC_PREREQ__(4, 3) || __has_attribute(__alloc_size__)
+X#if 0 || 1
+N#define	__alloc_size(x)	__attribute__((__alloc_size__(x)))
+N#else
+S#define	__alloc_size(x)
+N#endif
+N#if __GNUC_PREREQ__(4, 9) || __has_attribute(__alloc_align__)
+X#if 0 || 0
+S#define	__alloc_align(x)	__attribute__((__alloc_align__(x)))
+N#else
+N#define	__alloc_align(x)
+N#endif
+N
+N#if defined(__TI_COMPILER_VERSION__)
+X#if 1L
+N#define __alignof(x)    __alignof__(x)
+N#elif !__GNUC_PREREQ__(2, 95)
+S#define	__alignof(x)	__offsetof(struct { char __a; x __b; }, __b)
+N#endif
+N
+N/*
+N * Keywords added in C11.
+N */
+N
+N#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+X#if !1L || 199409L < 201112L
+N
+N#if !__has_extension(c_alignas)
+X#if !1
+S#if (defined(__cplusplus) && __cplusplus >= 201103L) || \
+S    __has_extension(cxx_alignas)
+X#if (defined(__cplusplus) && __cplusplus >= 201103L) ||     __has_extension(cxx_alignas)
+S#define	_Alignas(x)		alignas(x)
+S#else
+S/* XXX: Only emulates _Alignas(constant-expression); not _Alignas(type-name). */
+S#define	_Alignas(x)		__aligned(x)
+S#endif
+N#endif
+N
+N#if defined(__cplusplus) && __cplusplus >= 201103L
+X#if 0L && __cplusplus >= 201103L
+S#define	_Alignof(x)		alignof(x)
+N#else
+N#define	_Alignof(x)		__alignof(x)
+N#endif
+N
+N#if !defined(__cplusplus) && !__has_extension(c_atomic) && \
+N    !__has_extension(cxx_atomic)
+X#if !0L && !0 &&     !0
+N/*
+N * No native support for _Atomic(). Place object in structure to prevent
+N * most forms of direct non-atomic access.
+N */
+N#define	_Atomic(T)		struct { T volatile __val; }
+N#endif
+N
+N#if defined(__cplusplus) && __cplusplus >= 201103L
+X#if 0L && __cplusplus >= 201103L
+S#define	_Noreturn		[[noreturn]]
+N#else
+N#define	_Noreturn		__dead2
+N#endif
+N
+N#if !__has_extension(c_static_assert)
+X#if !0
+N#if (defined(__cplusplus) && __cplusplus >= 201103L) || \
+N    __has_extension(cxx_static_assert)
+X#if (0L && __cplusplus >= 201103L) ||     0
+S#define	_Static_assert(x, y)	static_assert(x, y)
+S#elif __GNUC_PREREQ__(4,6) && !defined(__cplusplus)
+X#elif 0 && !0L
+S/* Nothing, gcc 4.6 and higher has _Static_assert built-in */
+N#elif defined(__COUNTER__)
+X#elif 1L
+N#define	_Static_assert(x, y)	__Static_assert(x, __COUNTER__)
+N#define	__Static_assert(x, y)	___Static_assert(x, y)
+N#define	___Static_assert(x, y)	typedef char __assert_ ## y[(x) ? 1 : -1] \
+N				__unused
+X#define	___Static_assert(x, y)	typedef char __assert_ ## y[(x) ? 1 : -1] 				__unused
+N#else
+S#define	_Static_assert(x, y)	struct __hack
+N#endif
+N#endif
+N
+N#if !__has_extension(c_thread_local)
+X#if !0
+N/*
+N * XXX: Some compilers (Clang 3.3, GCC 4.7) falsely announce C++11 mode
+N * without actually supporting the thread_local keyword. Don't check for
+N * the presence of C++11 when defining _Thread_local.
+N */
+N#if /* (defined(__cplusplus) && __cplusplus >= 201103L) || */ \
+N    __has_extension(cxx_thread_local)
+X#if       0
+S#define	_Thread_local		thread_local
+N#else
+N#define	_Thread_local		__thread
+N#endif
+N#endif
+N
+N#endif /* __STDC_VERSION__ || __STDC_VERSION__ < 201112L */
+N
+N/*
+N * Emulation of C11 _Generic().  Unlike the previously defined C11
+N * keywords, it is not possible to implement this using exactly the same
+N * syntax.  Therefore implement something similar under the name
+N * __generic().  Unlike _Generic(), this macro can only distinguish
+N * between a single type, so it requires nested invocations to
+N * distinguish multiple cases.
+N */
+N
+N#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) || \
+N    __has_extension(c_generic_selections)
+X#if (1L && 199409L >= 201112L) ||     0
+S#define	__generic(expr, t, yes, no)					\
+S	_Generic(expr, t: yes, default: no)
+X#define	__generic(expr, t, yes, no)						_Generic(expr, t: yes, default: no)
+S#elif __GNUC_PREREQ__(3, 1) && !defined(__cplusplus)
+X#elif 0 && !0L
+S#define	__generic(expr, t, yes, no)					\
+S	__builtin_choose_expr(						\
+S	    __builtin_types_compatible_p(__typeof(expr), t), yes, no)
+X#define	__generic(expr, t, yes, no)						__builtin_choose_expr(							    __builtin_types_compatible_p(__typeof(expr), t), yes, no)
+N#endif
+N
+N/*
+N * C99 Static array indices in function parameter declarations.  Syntax such as:
+N * void bar(int myArray[static 10]);
+N * is allowed in C99 but not in C++.  Define __min_size appropriately so
+N * headers using it can be compiled in either language.  Use like this:
+N * void bar(int myArray[__min_size(10)]);
+N */
+N#if !defined(__cplusplus) && \
+N    (defined(__clang__) || __GNUC_PREREQ__(4, 6)) && \
+N    (!defined(__STDC_VERSION__) || (__STDC_VERSION__ >= 199901))
+X#if !0L &&     (0L || 0) &&     (!1L || (199409L >= 199901))
+S#define __min_size(x)	static (x)
+N#else
+N#define __min_size(x)	(x)
+N#endif
+N
+N#if __GNUC_PREREQ__(2, 96)
+X#if 0
+S#define	__malloc_like	__attribute__((__malloc__))
+S#define	__pure		__attribute__((__pure__))
+N#else
+N#define	__malloc_like
+N#define	__pure
+N#endif
+N
+N#if __GNUC_PREREQ__(3, 1) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER >= 800) || defined(__TI_COMPILER_VERSION__)
+X#if 0 || (0L && __INTEL_COMPILER >= 800) || 1L
+N#define	__always_inline	__attribute__((__always_inline__))
+N#else
+S#define	__always_inline
+N#endif
+N
+N#if __GNUC_PREREQ__(3, 1) || defined(__TI_COMPILER_VERSION__)
+X#if 0 || 1L
+N#define	__noinline	__attribute__ ((__noinline__))
+N#else
+S#define	__noinline
+N#endif
+N
+N#if __GNUC_PREREQ__(3, 4)
+X#if 0
+S#define	__fastcall	__attribute__((__fastcall__))
+S#define	__result_use_check	__attribute__((__warn_unused_result__))
+N#else
+N#define	__fastcall
+N#define	__result_use_check
+N#endif
+N
+N#if __GNUC_PREREQ__(4, 1)
+X#if 0
+S#define	__returns_twice	__attribute__((__returns_twice__))
+N#else
+N#define	__returns_twice
+N#endif
+N
+N#if __GNUC_PREREQ__(4, 6) || __has_builtin(__builtin_unreachable)
+X#if 0 || 0
+S#define	__unreachable()	__builtin_unreachable()
+N#else
+N#define	__unreachable()	((void)0)
+N#endif
+N
+N/* XXX: should use `#if __STDC_VERSION__ < 199901'. */
+N#if !__GNUC_PREREQ__(2, 7) && !defined(__INTEL_COMPILER) && !defined(__TI_COMPILER_VERSION__)
+X#if !0 && !0L && !1L
+S#define	__func__	NULL
+N#endif
+N
+N#if ((defined(__INTEL_COMPILER) || (defined(__GNUC__) && __GNUC__ >= 2)) && !defined(__STRICT_ANSI__) || __STDC_VERSION__ >= 199901) || defined(__TI_COMPILER_VERSION__)
+X#if ((0L || (0L && __GNUC__ >= 2)) && !0L || 199409L >= 199901) || 1L
+N#define	__LONG_LONG_SUPPORTED
+N#endif
+N
+N/* C++11 exposes a load of C99 stuff */
+N#if defined(__cplusplus) && __cplusplus >= 201103L
+X#if 0L && __cplusplus >= 201103L
+S#define	__LONG_LONG_SUPPORTED
+S#ifndef	__STDC_LIMIT_MACROS
+S#define	__STDC_LIMIT_MACROS
+S#endif
+S#ifndef	__STDC_CONSTANT_MACROS
+S#define	__STDC_CONSTANT_MACROS
+S#endif
+N#endif
+N
+N/*
+N * GCC 2.95 provides `__restrict' as an extension to C90 to support the
+N * C99-specific `restrict' type qualifier.  We happen to use `__restrict' as
+N * a way to define the `restrict' type qualifier without disturbing older
+N * software that is unaware of C99 keywords.
+N * The TI compiler supports __restrict in all compilation modes.
+N */
+N#if !defined(__TI_COMPILER_VERSION__)
+X#if !1L
+S#if !(__GNUC__ == 2 && __GNUC_MINOR__ == 95)
+S#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
+S#define	__restrict
+S#else
+S#define	__restrict	restrict
+S#endif
+S#endif
+N#endif
+N
+N/*
+N * GNU C version 2.96 adds explicit branch prediction so that
+N * the CPU back-end can hint the processor and also so that
+N * code blocks can be reordered such that the predicted path
+N * sees a more linear flow, thus improving cache behavior, etc.
+N *
+N * The following two macros provide us with a way to utilize this
+N * compiler feature.  Use __predict_true() if you expect the expression
+N * to evaluate to true, and __predict_false() if you expect the
+N * expression to evaluate to false.
+N *
+N * A few notes about usage:
+N *
+N *	* Generally, __predict_false() error condition checks (unless
+N *	  you have some _strong_ reason to do otherwise, in which case
+N *	  document it), and/or __predict_true() `no-error' condition
+N *	  checks, assuming you want to optimize for the no-error case.
+N *
+N *	* Other than that, if you don't know the likelihood of a test
+N *	  succeeding from empirical or other `hard' evidence, don't
+N *	  make predictions.
+N *
+N *	* These are meant to be used in places that are run `a lot'.
+N *	  It is wasteful to make predictions in code that is run
+N *	  seldomly (e.g. at subsystem initialization time) as the
+N *	  basic block reordering that this affects can often generate
+N *	  larger code.
+N */
+N#if __GNUC_PREREQ__(2, 96)
+X#if 0
+S#define	__predict_true(exp)     __builtin_expect((exp), 1)
+S#define	__predict_false(exp)    __builtin_expect((exp), 0)
+N#else
+N#define	__predict_true(exp)     (exp)
+N#define	__predict_false(exp)    (exp)
+N#endif
+N
+N#if __GNUC_PREREQ__(4, 0)
+X#if 0
+S#define	__null_sentinel	__attribute__((__sentinel__))
+S#define	__exported	__attribute__((__visibility__("default")))
+S#define	__hidden	__attribute__((__visibility__("hidden")))
+N#else
+N#define	__null_sentinel
+N#define	__exported
+N#define	__hidden
+N#endif
+N
+N/*
+N * We define this here since <stddef.h>, <sys/queue.h>, and <sys/types.h>
+N * require it.
+N */
+N#if __GNUC_PREREQ__(4, 1)
+X#if 0
+S#define	__offsetof(type, field)	 __builtin_offsetof(type, field)
+N#else
+N#ifndef __cplusplus
+N#define	__offsetof(type, field) \
+N	((__size_t)(__uintptr_t)((const volatile void *)&((type *)0)->field))
+X#define	__offsetof(type, field) 	((__size_t)(__uintptr_t)((const volatile void *)&((type *)0)->field))
+N#else
+S#define	__offsetof(type, field)					\
+S  (__offsetof__ (reinterpret_cast <__size_t>			\
+S                 (&reinterpret_cast <const volatile char &>	\
+S                  (static_cast<type *> (0)->field))))
+X#define	__offsetof(type, field)					  (__offsetof__ (reinterpret_cast <__size_t>			                 (&reinterpret_cast <const volatile char &>	                  (static_cast<type *> (0)->field))))
+N#endif
+N#endif
+N#define	__rangeof(type, start, end) \
+N	(__offsetof(type, end) - __offsetof(type, start))
+X#define	__rangeof(type, start, end) 	(__offsetof(type, end) - __offsetof(type, start))
+N
+N/*
+N * Given the pointer x to the member m of the struct s, return
+N * a pointer to the containing structure.  When using GCC, we first
+N * assign pointer x to a local variable, to check that its type is
+N * compatible with member m.
+N */
+N#if __GNUC_PREREQ__(3, 1)
+X#if 0
+S#define	__containerof(x, s, m) ({					\
+S	const volatile __typeof(((s *)0)->m) *__x = (x);		\
+S	__DEQUALIFY(s *, (const volatile char *)__x - __offsetof(s, m));\
+S})
+X#define	__containerof(x, s, m) ({						const volatile __typeof(((s *)0)->m) *__x = (x);			__DEQUALIFY(s *, (const volatile char *)__x - __offsetof(s, m));})
+N#else
+N#define	__containerof(x, s, m)						\
+N	__DEQUALIFY(s *, (const volatile char *)(x) - __offsetof(s, m))
+X#define	__containerof(x, s, m)							__DEQUALIFY(s *, (const volatile char *)(x) - __offsetof(s, m))
+N#endif
+N
+N/*
+N * Compiler-dependent macros to declare that functions take printf-like
+N * or scanf-like arguments.  They are null except for versions of gcc
+N * that are known to support the features properly (old versions of gcc-2
+N * didn't permit keeping the keywords out of the application namespace).
+N */
+N#if !__GNUC_PREREQ__(2, 7) && !defined(__INTEL_COMPILER)
+X#if !0 && !0L
+N#define	__printflike(fmtarg, firstvararg)
+N#define	__scanflike(fmtarg, firstvararg)
+N#define	__format_arg(fmtarg)
+N#define	__strfmonlike(fmtarg, firstvararg)
+N#define	__strftimelike(fmtarg, firstvararg)
+N#else
+S#define	__printflike(fmtarg, firstvararg) \
+S	    __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+X#define	__printflike(fmtarg, firstvararg) 	    __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+S#define	__scanflike(fmtarg, firstvararg) \
+S	    __attribute__((__format__ (__scanf__, fmtarg, firstvararg)))
+X#define	__scanflike(fmtarg, firstvararg) 	    __attribute__((__format__ (__scanf__, fmtarg, firstvararg)))
+S#define	__format_arg(fmtarg)	__attribute__((__format_arg__ (fmtarg)))
+S#define	__strfmonlike(fmtarg, firstvararg) \
+S	    __attribute__((__format__ (__strfmon__, fmtarg, firstvararg)))
+X#define	__strfmonlike(fmtarg, firstvararg) 	    __attribute__((__format__ (__strfmon__, fmtarg, firstvararg)))
+S#define	__strftimelike(fmtarg, firstvararg) \
+S	    __attribute__((__format__ (__strftime__, fmtarg, firstvararg)))
+X#define	__strftimelike(fmtarg, firstvararg) 	    __attribute__((__format__ (__strftime__, fmtarg, firstvararg)))
+N#endif
+N
+N/* Compiler-dependent macros that rely on FreeBSD-specific extensions. */
+N#if defined(__FreeBSD_cc_version) && __FreeBSD_cc_version >= 300001 && \
+N    defined(__GNUC__) && !defined(__INTEL_COMPILER)
+X#if 0L && __FreeBSD_cc_version >= 300001 &&     0L && !0L
+S#define	__printf0like(fmtarg, firstvararg) \
+S	    __attribute__((__format__ (__printf0__, fmtarg, firstvararg)))
+X#define	__printf0like(fmtarg, firstvararg) 	    __attribute__((__format__ (__printf0__, fmtarg, firstvararg)))
+N#else
+N#define	__printf0like(fmtarg, firstvararg)
+N#endif
+N
+N#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+X#if 0L || 0L
+S#ifndef __INTEL_COMPILER
+S#define	__strong_reference(sym,aliassym)	\
+S	extern __typeof (sym) aliassym __attribute__ ((__alias__ (#sym)))
+X#define	__strong_reference(sym,aliassym)		extern __typeof (sym) aliassym __attribute__ ((__alias__ (#sym)))
+S#endif
+S#ifdef __STDC__
+S#define	__weak_reference(sym,alias)	\
+S	__asm__(".weak " #alias);	\
+S	__asm__(".equ "  #alias ", " #sym)
+X#define	__weak_reference(sym,alias)		__asm__(".weak " #alias);		__asm__(".equ "  #alias ", " #sym)
+S#define	__warn_references(sym,msg)	\
+S	__asm__(".section .gnu.warning." #sym);	\
+S	__asm__(".asciz \"" msg "\"");	\
+S	__asm__(".previous")
+X#define	__warn_references(sym,msg)		__asm__(".section .gnu.warning." #sym);		__asm__(".asciz \"" msg "\"");		__asm__(".previous")
+S#define	__sym_compat(sym,impl,verid)	\
+S	__asm__(".symver " #impl ", " #sym "@" #verid)
+X#define	__sym_compat(sym,impl,verid)		__asm__(".symver " #impl ", " #sym "@" #verid)
+S#define	__sym_default(sym,impl,verid)	\
+S	__asm__(".symver " #impl ", " #sym "@@@" #verid)
+X#define	__sym_default(sym,impl,verid)		__asm__(".symver " #impl ", " #sym "@@@" #verid)
+S#else
+S#define	__weak_reference(sym,alias)	\
+S	__asm__(".weak alias");		\
+S	__asm__(".equ alias, sym")
+X#define	__weak_reference(sym,alias)		__asm__(".weak alias");			__asm__(".equ alias, sym")
+S#define	__warn_references(sym,msg)	\
+S	__asm__(".section .gnu.warning.sym"); \
+S	__asm__(".asciz \"msg\"");	\
+S	__asm__(".previous")
+X#define	__warn_references(sym,msg)		__asm__(".section .gnu.warning.sym"); 	__asm__(".asciz \"msg\"");		__asm__(".previous")
+S#define	__sym_compat(sym,impl,verid)	\
+S	__asm__(".symver impl, sym@verid")
+X#define	__sym_compat(sym,impl,verid)		__asm__(".symver impl, sym@verid")
+S#define	__sym_default(impl,sym,verid)	\
+S	__asm__(".symver impl, sym@@@verid")
+X#define	__sym_default(impl,sym,verid)		__asm__(".symver impl, sym@@@verid")
+S#endif	/* __STDC__ */
+N#endif	/* __GNUC__ || __INTEL_COMPILER */
+N
+N#define	__GLOBL1(sym)	__asm__(".globl " #sym)
+N#define	__GLOBL(sym)	__GLOBL1(sym)
+N
+N#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+X#if 0L || 0L
+S#define	__IDSTRING(name,string)	__asm__(".ident\t\"" string "\"")
+N#else
+N/*
+N * The following definition might not work well if used in header files,
+N * but it should be better than nothing.  If you want a "do nothing"
+N * version, then it should generate some harmless declaration, such as:
+N *    #define	__IDSTRING(name,string)	struct __hack
+N */
+N#define	__IDSTRING(name,string)	static const char name[] __unused = string
+N#endif
+N
+N#if defined(__TI_COMPILER_VERSION__) && defined(__TI_STRICT_ANSI_MODE__)
+X#if 1L && 1L
+N#define __extension__
+N#endif
+N
+N/*
+N * Embed the rcs id of a source file in the resulting library.  Note that in
+N * more recent ELF binutils, we use .ident allowing the ID to be stripped.
+N * Usage:
+N *	__FBSDID("$FreeBSD$");
+N */
+N#ifndef	__FBSDID
+N#if !defined(lint) && !defined(STRIP_FBSDID)
+X#if !0L && !0L
+N#define	__FBSDID(s)	__IDSTRING(__CONCAT(__rcsid_,__LINE__),s)
+N#else
+S#define	__FBSDID(s)	struct __hack
+N#endif
+N#endif
+N
+N#ifndef	__RCSID
+N#ifndef	NO__RCSID
+N#define	__RCSID(s)	__IDSTRING(__CONCAT(__rcsid_,__LINE__),s)
+N#else
+S#define	__RCSID(s)	struct __hack
+N#endif
+N#endif
+N
+N#ifndef	__RCSID_SOURCE
+N#ifndef	NO__RCSID_SOURCE
+N#define	__RCSID_SOURCE(s)	__IDSTRING(__CONCAT(__rcsid_source_,__LINE__),s)
+N#else
+S#define	__RCSID_SOURCE(s)	struct __hack
+N#endif
+N#endif
+N
+N#ifndef	__SCCSID
+N#ifndef	NO__SCCSID
+N#define	__SCCSID(s)	__IDSTRING(__CONCAT(__sccsid_,__LINE__),s)
+N#else
+S#define	__SCCSID(s)	struct __hack
+N#endif
+N#endif
+N
+N#ifndef	__COPYRIGHT
+N#ifndef	NO__COPYRIGHT
+N#define	__COPYRIGHT(s)	__IDSTRING(__CONCAT(__copyright_,__LINE__),s)
+N#else
+S#define	__COPYRIGHT(s)	struct __hack
+N#endif
+N#endif
+N
+N#ifndef	__DECONST
+N#define	__DECONST(type, var)	((type)(__uintptr_t)(const void *)(var))
+N#endif
+N
+N#ifndef	__DEVOLATILE
+N#define	__DEVOLATILE(type, var)	((type)(__uintptr_t)(volatile void *)(var))
+N#endif
+N
+N#ifndef	__DEQUALIFY
+N#define	__DEQUALIFY(type, var)	((type)(__uintptr_t)(const volatile void *)(var))
+N#endif
+N
+N/*-
+N * The following definitions are an extension of the behavior originally
+N * implemented in <sys/_posix.h>, but with a different level of granularity.
+N * POSIX.1 requires that the macros we test be defined before any standard
+N * header file is included.
+N *
+N * Here's a quick run-down of the versions:
+N *  defined(_POSIX_SOURCE)		1003.1-1988
+N *  _POSIX_C_SOURCE == 1		1003.1-1990
+N *  _POSIX_C_SOURCE == 2		1003.2-1992 C Language Binding Option
+N *  _POSIX_C_SOURCE == 199309		1003.1b-1993
+N *  _POSIX_C_SOURCE == 199506		1003.1c-1995, 1003.1i-1995,
+N *					and the omnibus ISO/IEC 9945-1: 1996
+N *  _POSIX_C_SOURCE == 200112		1003.1-2001
+N *  _POSIX_C_SOURCE == 200809		1003.1-2008
+N *
+N * In addition, the X/Open Portability Guide, which is now the Single UNIX
+N * Specification, defines a feature-test macro which indicates the version of
+N * that specification, and which subsumes _POSIX_C_SOURCE.
+N *
+N * Our macros begin with two underscores to avoid namespace screwage.
+N */
+N
+N/* Deal with IEEE Std. 1003.1-1990, in which _POSIX_C_SOURCE == 1. */
+N#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE == 1
+X#if 0L && _POSIX_C_SOURCE == 1
+S#undef _POSIX_C_SOURCE		/* Probably illegal, but beyond caring now. */
+S#define	_POSIX_C_SOURCE		199009
+N#endif
+N
+N/* Deal with IEEE Std. 1003.2-1992, in which _POSIX_C_SOURCE == 2. */
+N#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE == 2
+X#if 0L && _POSIX_C_SOURCE == 2
+S#undef _POSIX_C_SOURCE
+S#define	_POSIX_C_SOURCE		199209
+N#endif
+N
+N/* Deal with various X/Open Portability Guides and Single UNIX Spec. */
+N#ifdef _XOPEN_SOURCE
+S#if _XOPEN_SOURCE - 0 >= 700
+S#define	__XSI_VISIBLE		700
+S#undef _POSIX_C_SOURCE
+S#define	_POSIX_C_SOURCE		200809
+S#elif _XOPEN_SOURCE - 0 >= 600
+S#define	__XSI_VISIBLE		600
+S#undef _POSIX_C_SOURCE
+S#define	_POSIX_C_SOURCE		200112
+S#elif _XOPEN_SOURCE - 0 >= 500
+S#define	__XSI_VISIBLE		500
+S#undef _POSIX_C_SOURCE
+S#define	_POSIX_C_SOURCE		199506
+S#endif
+N#endif
+N
+N/*
+N * Deal with all versions of POSIX.  The ordering relative to the tests above is
+N * important.
+N */
+N#if defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE)
+X#if 0L && !0L
+S#define	_POSIX_C_SOURCE		198808
+N#endif
+N#ifdef _POSIX_C_SOURCE
+S#if _POSIX_C_SOURCE >= 200809
+S#define	__POSIX_VISIBLE		200809
+S#define	__ISO_C_VISIBLE		1999
+S#elif _POSIX_C_SOURCE >= 200112
+S#define	__POSIX_VISIBLE		200112
+S#define	__ISO_C_VISIBLE		1999
+S#elif _POSIX_C_SOURCE >= 199506
+S#define	__POSIX_VISIBLE		199506
+S#define	__ISO_C_VISIBLE		1990
+S#elif _POSIX_C_SOURCE >= 199309
+S#define	__POSIX_VISIBLE		199309
+S#define	__ISO_C_VISIBLE		1990
+S#elif _POSIX_C_SOURCE >= 199209
+S#define	__POSIX_VISIBLE		199209
+S#define	__ISO_C_VISIBLE		1990
+S#elif _POSIX_C_SOURCE >= 199009
+S#define	__POSIX_VISIBLE		199009
+S#define	__ISO_C_VISIBLE		1990
+S#else
+S#define	__POSIX_VISIBLE		198808
+S#define	__ISO_C_VISIBLE		0
+S#endif /* _POSIX_C_SOURCE */
+N#else
+N/*-
+N * Deal with _ANSI_SOURCE:
+N * If it is defined, and no other compilation environment is explicitly
+N * requested, then define our internal feature-test macros to zero.  This
+N * makes no difference to the preprocessor (undefined symbols in preprocessing
+N * expressions are defined to have value zero), but makes it more convenient for
+N * a test program to print out the values.
+N *
+N * If a program mistakenly defines _ANSI_SOURCE and some other macro such as
+N * _POSIX_C_SOURCE, we will assume that it wants the broader compilation
+N * environment (and in fact we will never get here).
+N */
+N#if defined(_ANSI_SOURCE)	/* Hide almost everything. */
+X#if 0L	 
+S#define	__POSIX_VISIBLE		0
+S#define	__XSI_VISIBLE		0
+S#define	__BSD_VISIBLE		0
+S#define	__ISO_C_VISIBLE		1990
+S#define	__EXT1_VISIBLE		0
+S#elif defined(_C99_SOURCE)	/* Localism to specify strict C99 env. */
+X#elif 0L	 
+S#define	__POSIX_VISIBLE		0
+S#define	__XSI_VISIBLE		0
+S#define	__BSD_VISIBLE		0
+S#define	__ISO_C_VISIBLE		1999
+S#define	__EXT1_VISIBLE		0
+S#elif defined(_C11_SOURCE)	/* Localism to specify strict C11 env. */
+X#elif 0L	 
+S#define	__POSIX_VISIBLE		0
+S#define	__XSI_VISIBLE		0
+S#define	__BSD_VISIBLE		0
+S#define	__ISO_C_VISIBLE		2011
+S#define	__EXT1_VISIBLE		0
+N#else				/* Default environment: show everything. */
+N#define	__POSIX_VISIBLE		200809
+N#define	__XSI_VISIBLE		700
+N#define	__BSD_VISIBLE		1
+N#define	__ISO_C_VISIBLE		2011
+N#define	__EXT1_VISIBLE		1
+N#endif
+N#endif
+N
+N/* User override __EXT1_VISIBLE */
+N#if defined(__STDC_WANT_LIB_EXT1__)
+X#if 0L
+S#undef	__EXT1_VISIBLE
+S#if __STDC_WANT_LIB_EXT1__
+S#define	__EXT1_VISIBLE		1
+S#else
+S#define	__EXT1_VISIBLE		0
+S#endif
+N#endif /* __STDC_WANT_LIB_EXT1__ */
+N
+N#if defined(__mips) || defined(__powerpc64__) || defined(__riscv)
+X#if 0L || 0L || 0L
+S#define	__NO_TLS 1
+N#endif
+N
+N/*
+N * Old versions of GCC use non-standard ARM arch symbols; acle-compat.h
+N * translates them to __ARM_ARCH and the modern feature symbols defined by ARM.
+N */
+N#if defined(__arm__) && !defined(__ARM_ARCH)
+X#if 0L && !1L
+S#include <machine/acle-compat.h>
+N#endif
+N
+N/*
+N * Nullability qualifiers: currently only supported by Clang.
+N */
+N#if !(defined(__clang__) && __has_feature(nullability))
+X#if !(0L && 0)
+N#define	_Nonnull
+N#define	_Nullable
+N#define	_Null_unspecified
+N#define	__NULLABILITY_PRAGMA_PUSH
+N#define	__NULLABILITY_PRAGMA_POP
+N#else
+S#define	__NULLABILITY_PRAGMA_PUSH _Pragma("clang diagnostic push")	\
+S	_Pragma("clang diagnostic ignored \"-Wnullability-completeness\"")
+X#define	__NULLABILITY_PRAGMA_PUSH _Pragma("clang diagnostic push")		_Pragma("clang diagnostic ignored \"-Wnullability-completeness\"")
+S#define	__NULLABILITY_PRAGMA_POP _Pragma("clang diagnostic pop")
+N#endif
+N
+N/*
+N * Type Safety Checking
+N *
+N * Clang provides additional attributes to enable checking type safety
+N * properties that cannot be enforced by the C type system. 
+N */
+N
+N#if __has_attribute(__argument_with_type_tag__) && \
+N    __has_attribute(__type_tag_for_datatype__)
+X#if 0 &&     0
+S#define	__arg_type_tag(arg_kind, arg_idx, type_tag_idx) \
+S	    __attribute__((__argument_with_type_tag__(arg_kind, arg_idx, type_tag_idx)))
+X#define	__arg_type_tag(arg_kind, arg_idx, type_tag_idx) 	    __attribute__((__argument_with_type_tag__(arg_kind, arg_idx, type_tag_idx)))
+S#define	__datatype_type_tag(kind, type) \
+S	    __attribute__((__type_tag_for_datatype__(kind, type)))
+X#define	__datatype_type_tag(kind, type) 	    __attribute__((__type_tag_for_datatype__(kind, type)))
+N#else
+N#define	__arg_type_tag(arg_kind, arg_idx, type_tag_idx)
+N#define	__datatype_type_tag(kind, type)
+N#endif
+N
+N/*
+N * Lock annotations.
+N *
+N * Clang provides support for doing basic thread-safety tests at
+N * compile-time, by marking which locks will/should be held when
+N * entering/leaving a functions.
+N *
+N * Furthermore, it is also possible to annotate variables and structure
+N * members to enforce that they are only accessed when certain locks are
+N * held.
+N */
+N
+N#if __has_extension(c_thread_safety_attributes)
+X#if 0
+S#define	__lock_annotate(x)	__attribute__((x))
+N#else
+N#define	__lock_annotate(x)
+N#endif
+N
+N/* Structure implements a lock. */
+N#define	__lockable		__lock_annotate(lockable)
+N
+N/* Function acquires an exclusive or shared lock. */
+N#define	__locks_exclusive(...) \
+N	__lock_annotate(exclusive_lock_function(__VA_ARGS__))
+X#define	__locks_exclusive(...) 	__lock_annotate(exclusive_lock_function(__VA_ARGS__))
+N#define	__locks_shared(...) \
+N	__lock_annotate(shared_lock_function(__VA_ARGS__))
+X#define	__locks_shared(...) 	__lock_annotate(shared_lock_function(__VA_ARGS__))
+N
+N/* Function attempts to acquire an exclusive or shared lock. */
+N#define	__trylocks_exclusive(...) \
+N	__lock_annotate(exclusive_trylock_function(__VA_ARGS__))
+X#define	__trylocks_exclusive(...) 	__lock_annotate(exclusive_trylock_function(__VA_ARGS__))
+N#define	__trylocks_shared(...) \
+N	__lock_annotate(shared_trylock_function(__VA_ARGS__))
+X#define	__trylocks_shared(...) 	__lock_annotate(shared_trylock_function(__VA_ARGS__))
+N
+N/* Function releases a lock. */
+N#define	__unlocks(...)		__lock_annotate(unlock_function(__VA_ARGS__))
+N
+N/* Function asserts that an exclusive or shared lock is held. */
+N#define	__asserts_exclusive(...) \
+N	__lock_annotate(assert_exclusive_lock(__VA_ARGS__))
+X#define	__asserts_exclusive(...) 	__lock_annotate(assert_exclusive_lock(__VA_ARGS__))
+N#define	__asserts_shared(...) \
+N	__lock_annotate(assert_shared_lock(__VA_ARGS__))
+X#define	__asserts_shared(...) 	__lock_annotate(assert_shared_lock(__VA_ARGS__))
+N
+N/* Function requires that an exclusive or shared lock is or is not held. */
+N#define	__requires_exclusive(...) \
+N	__lock_annotate(exclusive_locks_required(__VA_ARGS__))
+X#define	__requires_exclusive(...) 	__lock_annotate(exclusive_locks_required(__VA_ARGS__))
+N#define	__requires_shared(...) \
+N	__lock_annotate(shared_locks_required(__VA_ARGS__))
+X#define	__requires_shared(...) 	__lock_annotate(shared_locks_required(__VA_ARGS__))
+N#define	__requires_unlocked(...) \
+N	__lock_annotate(locks_excluded(__VA_ARGS__))
+X#define	__requires_unlocked(...) 	__lock_annotate(locks_excluded(__VA_ARGS__))
+N
+N/* Function should not be analyzed. */
+N#define	__no_lock_analysis	__lock_annotate(no_thread_safety_analysis)
+N
+N/* Guard variables and structure members by lock. */
+N#define	__guarded_by(x)		__lock_annotate(guarded_by(x))
+N#define	__pt_guarded_by(x)	__lock_annotate(pt_guarded_by(x))
+N
+N#ifdef __TI_COMPILER_VERSION__
+N#pragma diag_pop
+N#endif
+N
+N#endif /* !_SYS_CDEFS_H_ */
+L 425 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/string.h" 2
+N#endif
+N
+N/*----------------------------------------------------------------------------*/
+N/* Include xlocale/_string.h> if POSIX is enabled. This will expose the       */
+N/* xlocale string interface.                                                  */
+N/*----------------------------------------------------------------------------*/
+N#if defined(_POSIX_VISIBLE) && _POSIX_VISIBLE >= 200809
+X#if 0L && _POSIX_VISIBLE >= 200809
+S__BEGIN_DECLS
+S#include <xlocale/_string.h>
+S__END_DECLS
+N#endif
+N
 N
 N#pragma diag_pop
-L 50 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/porting/user.h" 2
+N
+N#endif /* ! _STRING_H_ */
+L 50 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/user.h" 2
 N#include <ti/drivers/net/wifi/porting/cc_pal.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 1
 N/*
 N * cc_pal.h - CC32xx Host Driver Implementation
 N *
@@ -6356,7 +2092,7 @@ N*/
 N/******************************************************************************
 N*   cc_pal.h
 N*
-N*   SimpleLink Wi-Fi abstraction file for CC3220
+N*   SimpleLink Wi-Fi abstraction file for CC32xx
 N******************************************************************************/
 N
 N#ifndef __CC31xx_PAL_H__
@@ -6367,7 +2103,7 @@ Sextern "C" {
 N#endif
 N
 N#include <ti/drivers/dpl/SemaphoreP.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/dpl/SemaphoreP.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/dpl/SemaphoreP.h" 1
 N/*
 N * Copyright (c) 2015-2017, Texas Instruments Incorporated
 N * All rights reserved.
@@ -6431,13 +2167,1298 @@ Sextern "C" {
 N#endif
 N
 N#include <stdint.h>
-N#include <stdbool.h>
-N#include <stddef.h>
-L 1 "/opt/ti/ccs-latest/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stddef.h" 1
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/stdint.h" 1
 N/*****************************************************************************/
-N/* stddef.h   v16.9.6                                                        */
+N/* STDINT.H                                                                  */
 N/*                                                                           */
-N/* Copyright (c) 1993-2017 Texas Instruments Incorporated                    */
+N/* Copyright (c) 2002 Texas Instruments Incorporated                         */
+N/* http://www.ti.com/                                                        */
+N/*                                                                           */
+N/*  Redistribution and  use in source  and binary forms, with  or without    */
+N/*  modification,  are permitted provided  that the  following conditions    */
+N/*  are met:                                                                 */
+N/*                                                                           */
+N/*     Redistributions  of source  code must  retain the  above copyright    */
+N/*     notice, this list of conditions and the following disclaimer.         */
+N/*                                                                           */
+N/*     Redistributions in binary form  must reproduce the above copyright    */
+N/*     notice, this  list of conditions  and the following  disclaimer in    */
+N/*     the  documentation  and/or   other  materials  provided  with  the    */
+N/*     distribution.                                                         */
+N/*                                                                           */
+N/*     Neither the  name of Texas Instruments Incorporated  nor the names    */
+N/*     of its  contributors may  be used to  endorse or  promote products    */
+N/*     derived  from   this  software  without   specific  prior  written    */
+N/*     permission.                                                           */
+N/*                                                                           */
+N/*  THIS SOFTWARE  IS PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS    */
+N/*  "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT    */
+N/*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    */
+N/*  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT    */
+N/*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    */
+N/*  SPECIAL,  EXEMPLARY,  OR CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT    */
+N/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    */
+N/*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY    */
+N/*  THEORY OF  LIABILITY, WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT    */
+N/*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE    */
+N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
+N/*                                                                           */
+N/*****************************************************************************/
+N#ifndef _STDINT_H_
+N#define _STDINT_H_
+N
+N#if __has_include(<sys/stdint.h>)
+X#if 1
+N#include <sys/stdint.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/stdint.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+N *
+N * Copyright (c) 2001 Mike Barcroft <mike@FreeBSD.org>
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N * $FreeBSD$
+N */
+N
+N#ifndef _SYS_STDINT_H_
+N#define _SYS_STDINT_H_
+N
+N#include <sys/cdefs.h>
+N#include <sys/_types.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/_types.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+N *
+N * Copyright (c) 2002 Mike Barcroft <mike@FreeBSD.org>
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N * $FreeBSD$
+N */
+N
+N#ifndef _SYS__TYPES_H_
+N#define _SYS__TYPES_H_
+N
+N#include <sys/cdefs.h>
+N#include <machine/_types.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/machine/_types.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-4-Clause
+N *
+N * Copyright (c) 2002 Mike Barcroft <mike@FreeBSD.org>
+N * Copyright (c) 1990, 1993
+N *	The Regents of the University of California.  All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N * 3. All advertising materials mentioning features or use of this software
+N *    must display the following acknowledgement:
+N *	This product includes software developed by the University of
+N *	California, Berkeley and its contributors.
+N * 4. Neither the name of the University nor the names of its contributors
+N *    may be used to endorse or promote products derived from this software
+N *    without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N *	From: @(#)ansi.h	8.2 (Berkeley) 1/4/94
+N *	From: @(#)types.h	8.3 (Berkeley) 1/5/94
+N * $FreeBSD$
+N */
+N
+N#ifndef _MACHINE__TYPES_H_
+N#define	_MACHINE__TYPES_H_
+N
+N#ifndef _SYS_CDEFS_H_
+S#error this file needs sys/cdefs.h as a prerequisite
+N#endif
+N
+N#ifdef __TI_COMPILER_VERSION__
+N#pragma diag_push
+N/* This file is required to use base types */
+N#pragma CHECK_MISRA("-6.3")
+N#endif
+N
+N/*
+N * Basic types upon which most other types are built.
+N */
+Ntypedef	signed char		__int8_t;
+Ntypedef	unsigned char		__uint8_t;
+Ntypedef	short			__int16_t;
+Ntypedef	unsigned short		__uint16_t;
+Ntypedef	int			__int32_t;
+Ntypedef	unsigned int		__uint32_t;
+N#ifndef lint
+N__extension__
+X
+N#endif
+N/* LONGLONG */
+Ntypedef	long long		__int64_t;
+N#ifndef lint
+N__extension__
+X
+N#endif
+N/* LONGLONG */
+Ntypedef	unsigned long long	__uint64_t;
+N
+N/*
+N * Standard type definitions.
+N */
+Ntypedef	__uint32_t	__clock_t;		/* clock()... */
+Ntypedef	__int32_t	__critical_t;
+Ntypedef	double		__double_t;
+Ntypedef	float		__float_t;
+Ntypedef	__int32_t	__intfptr_t;
+Ntypedef	__int64_t	__intmax_t;
+Ntypedef	__int32_t	__intptr_t;
+Ntypedef	__int32_t	__int_fast8_t;
+Ntypedef	__int32_t	__int_fast16_t;
+Ntypedef	__int32_t	__int_fast32_t;
+Ntypedef	__int64_t	__int_fast64_t;
+Ntypedef	__int8_t	__int_least8_t;
+Ntypedef	__int16_t	__int_least16_t;
+Ntypedef	__int32_t	__int_least32_t;
+Ntypedef	__int64_t	__int_least64_t;
+Ntypedef	__int32_t	__ptrdiff_t;		/* ptr1 - ptr2 */
+Ntypedef	__int32_t	__register_t;
+Ntypedef	__int32_t	__segsz_t;		/* segment size (in pages) */
+Ntypedef	__uint32_t	__size_t;		/* sizeof() */
+Ntypedef	__int32_t	__ssize_t;		/* byte count or error */
+N#if (defined(__TI_TIME_USES_64) && __TI_TIME_USES_64)
+X#if (0L && __TI_TIME_USES_64)
+Stypedef	__int64_t	__time_t;		/* time()... */
+N#else
+Ntypedef __uint32_t      __time_t;
+N#endif
+Ntypedef	__uint32_t	__uintfptr_t;
+Ntypedef	__uint64_t	__uintmax_t;
+Ntypedef	__uint32_t	__uintptr_t;
+Ntypedef	__uint32_t	__uint_fast8_t;
+Ntypedef	__uint32_t	__uint_fast16_t;
+Ntypedef	__uint32_t	__uint_fast32_t;
+Ntypedef	__uint64_t	__uint_fast64_t;
+Ntypedef	__uint8_t	__uint_least8_t;
+Ntypedef	__uint16_t	__uint_least16_t;
+Ntypedef	__uint32_t	__uint_least32_t;
+Ntypedef	__uint64_t	__uint_least64_t;
+Ntypedef	__uint32_t	__u_register_t;
+Ntypedef	__uint32_t	__vm_offset_t;
+Ntypedef	__uint32_t	__vm_paddr_t;
+Ntypedef	__uint32_t	__vm_size_t;
+N
+Ntypedef	__WCHAR_T_TYPE__ ___wchar_t;
+Xtypedef	unsigned short ___wchar_t;
+N#define	__WCHAR_MIN	0		/* min value for a wchar_t */
+N
+N#ifdef __TI_COMPILER_VERSION__
+N#if !defined(__TI_WCHAR_T_BITS__) || __TI_WCHAR_T_BITS__ == 16
+X#if !1L || 16 == 16
+N#    define __WCHAR_MAX 0xffffu
+N#else
+S#    define __WCHAR_MAX 0xffffffffu
+N#endif
+N#else
+S#define	__WCHAR_MAX	__UINT_MAX	/* max value for a wchar_t */
+N#endif
+N
+N/*
+N * Unusual type definitions.
+N */
+N#ifdef __TI_COMPILER_VERSION__
+Ntypedef struct __va_list_t {
+N    void * __ap;
+N} __va_list;
+N#elif defined(__GNUCLIKE_BUILTIN_VARARGS)
+Stypedef __builtin_va_list	__va_list;	/* internally known to gcc */
+S#else
+Stypedef	char *			__va_list;
+N#endif /* __GNUCLIKE_BUILTIN_VARARGS */
+N#if defined(__GNUCLIKE_BUILTIN_VAALIST) && !defined(__GNUC_VA_LIST) \
+N    && !defined(__NO_GNUC_VA_LIST)
+X#if 0L && !0L     && !0L
+S#define __GNUC_VA_LIST
+Stypedef __va_list		__gnuc_va_list;	/* compatibility w/GNU headers*/
+N#endif
+N
+N#if defined(__TI_COMPILER_VERSION__)
+X#if 1L
+N#pragma diag_pop
+N#endif
+N
+N#endif /* !_MACHINE__TYPES_H_ */
+L 36 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/_types.h" 2
+N
+N#if defined(__TI_COMPILER_VERSION__)
+X#if 1L
+N#pragma diag_push
+N/* This file is required to use types without size and signedness */
+N#pragma CHECK_MISRA("-6.3")
+N#endif
+N
+N/*
+N * Standard type definitions.
+N */
+Ntypedef	__int32_t	__blksize_t;	/* file block size */
+Ntypedef	__int64_t	__blkcnt_t;	/* file block count */
+Ntypedef	__int32_t	__clockid_t;	/* clock_gettime()... */
+Ntypedef	__uint32_t	__fflags_t;	/* file flags */
+Ntypedef	__uint64_t	__fsblkcnt_t;
+Ntypedef	__uint64_t	__fsfilcnt_t;
+Ntypedef	__uint32_t	__gid_t;
+Ntypedef	__int64_t	__id_t;		/* can hold a gid_t, pid_t, or uid_t */
+Ntypedef	__uint64_t	__ino_t;	/* inode number */
+Ntypedef	long		__key_t;	/* IPC key (for Sys V IPC) */
+Ntypedef	__int32_t	__lwpid_t;	/* Thread ID (a.k.a. LWP) */
+Ntypedef	__uint16_t	__mode_t;	/* permissions */
+Ntypedef	int		__accmode_t;	/* access permissions */
+Ntypedef	int		__nl_item;
+Ntypedef	__uint64_t	__nlink_t;	/* link count */
+Ntypedef	__int64_t	__off_t;	/* file offset */
+Ntypedef	__int64_t	__off64_t;	/* file offset (alias) */
+Ntypedef	__int32_t	__pid_t;	/* process [group] */
+Ntypedef	__int64_t	__rlim_t;	/* resource limit - intentionally */
+N					/* signed, because of legacy code */
+N					/* that uses -1 for RLIM_INFINITY */
+Ntypedef	__uint8_t	__sa_family_t;
+Ntypedef	__uint32_t	__socklen_t;
+Ntypedef	long		__suseconds_t;	/* microseconds (signed) */
+Ntypedef	struct __timer	*__timer_t;	/* timer_gettime()... */
+Ntypedef	struct __mq	*__mqd_t;	/* mq_open()... */
+Ntypedef	__uint32_t	__uid_t;
+Ntypedef	unsigned int	__useconds_t;	/* microseconds (unsigned) */
+Ntypedef	int		__cpuwhich_t;	/* which parameter for cpuset. */
+Ntypedef	int		__cpulevel_t;	/* level parameter for cpuset. */
+Ntypedef int		__cpusetid_t;	/* cpuset identifier. */
+N
+N/*
+N * Unusual type definitions.
+N */
+N/*
+N * rune_t is declared to be an ``int'' instead of the more natural
+N * ``unsigned long'' or ``long''.  Two things are happening here.  It is not
+N * unsigned so that EOF (-1) can be naturally assigned to it and used.  Also,
+N * it looks like 10646 will be a 31 bit standard.  This means that if your
+N * ints cannot hold 32 bits, you will be in trouble.  The reason an int was
+N * chosen over a long is that the is*() and to*() routines take ints (says
+N * ANSI C), but they use __ct_rune_t instead of int.
+N *
+N * NOTE: rune_t is not covered by ANSI nor other standards, and should not
+N * be instantiated outside of lib/libc/locale.  Use wchar_t.  wint_t and
+N * rune_t must be the same type.  Also, wint_t should be able to hold all
+N * members of the largest character set plus one extra value (WEOF), and
+N * must be at least 16 bits.
+N */
+Ntypedef	int		__ct_rune_t;	/* arg type for ctype funcs */
+Ntypedef	__ct_rune_t	__rune_t;	/* rune_t (see above) */
+Ntypedef	__ct_rune_t	__wint_t;	/* wint_t (see above) */
+N
+N/* Clang already provides these types as built-ins, but only in C++ mode. */
+N#if !defined(__clang__) || !defined(__cplusplus)
+X#if !0L || !0L
+Ntypedef	__uint_least16_t __char16_t;
+Ntypedef	__uint_least32_t __char32_t;
+N#endif
+N/* In C++11, char16_t and char32_t are built-in types. */
+N#if defined(__cplusplus) && __cplusplus >= 201103L
+X#if 0L && __cplusplus >= 201103L
+S#define	_CHAR16_T_DECLARED
+S#define	_CHAR32_T_DECLARED
+N#endif
+N
+Ntypedef struct {
+N	long long __max_align1 __aligned(_Alignof(long long));
+X	long long __max_align1 __attribute__((__aligned__(__alignof__(long long))));
+N	long double __max_align2 __aligned(_Alignof(long double));
+X	long double __max_align2 __attribute__((__aligned__(__alignof__(long double))));
+N} __max_align_t;
+N
+Ntypedef	__uint64_t	__dev_t;	/* device number */
+N
+Ntypedef	__uint32_t	__fixpt_t;	/* fixed point number */
+N
+N/*
+N * mbstate_t is an opaque object to keep conversion state during multibyte
+N * stream conversions.
+N */
+N
+N#ifdef __TI_COMPILER_VERSION__
+N#if defined(_AEABI_PORTABILITY_LEVEL) && _AEABI_PORTABILITY_LEVEL != 0
+X#if 0L && _AEABI_PORTABILITY_LEVEL != 0
+Stypedef struct _Mbstatet
+S{
+S    unsigned int __state, __state2;
+S} _Mbstatet;
+N#else
+Ntypedef int _Mbstatet;
+N#endif /* _AEABI_PORTABILITY_LEVEL */
+N
+Ntypedef _Mbstatet __mbstate_t;
+N#else
+Stypedef union {
+S	char		__mbstate8[128];
+S	__int64_t	_mbstateL;	/* for alignment */
+S} __mbstate_t;
+N#endif
+N
+Ntypedef __uintmax_t     __rman_res_t;
+N
+N/*
+N * When the following macro is defined, the system uses 64-bit inode numbers.
+N * Programs can use this to avoid including <sys/param.h>, with its associated
+N * namespace pollution.
+N */
+N#define	__INO64
+N
+N#if defined(__TI_COMPILER_VERSION__)
+X#if 1L
+N#pragma diag_pop
+N#endif
+N
+N#endif /* !_SYS__TYPES_H_ */
+L 36 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/stdint.h" 2
+N
+N#include <machine/_stdint.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/machine/_stdint.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+N *
+N * Copyright (c) 2001, 2002 Mike Barcroft <mike@FreeBSD.org>
+N * Copyright (c) 2001 The NetBSD Foundation, Inc.
+N * All rights reserved.
+N *
+N * This code is derived from software contributed to The NetBSD Foundation
+N * by Klaus Klein.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+N * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+N * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+N * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+N * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+N * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+N * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+N * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+N * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+N * POSSIBILITY OF SUCH DAMAGE.
+N *
+N * $FreeBSD$
+N */
+N
+N#ifndef _MACHINE__STDINT_H_
+N#define	_MACHINE__STDINT_H_
+N
+N#pragma diag_push
+N/* 19.4 is issued for macros that are defined in terms of other macros. */
+N#pragma CHECK_MISRA("-19.4")
+N
+N#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
+X#if !0L || 0L
+N
+N#define	INT8_C(c)		(c)
+N#define	INT16_C(c)		(c)
+N#define	INT32_C(c)		(c)
+N#define	INT64_C(c)		(c ## LL)
+N
+N#define	UINT8_C(c)		(c)
+N#define	UINT16_C(c)		(c)
+N#define	UINT32_C(c)		(c ## U)
+N#define	UINT64_C(c)		(c ## ULL)
+N
+N#define	INTMAX_C(c)		INT64_C(c)
+N#define	UINTMAX_C(c)		UINT64_C(c)
+N
+N#endif /* !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS) */
+N
+N#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
+X#if !0L || 0L
+N
+N/*
+N * ISO/IEC 9899:1999
+N * 7.18.2.1 Limits of exact-width integer types
+N */
+N/* Minimum values of exact-width signed integer types. */
+N#define	INT8_MIN	(-0x7f-1)
+N#define	INT16_MIN	(-0x7fff-1)
+N#define	INT32_MIN	(-0x7fffffff-1)
+N#define	INT64_MIN	(-0x7fffffffffffffffLL-1)
+N
+N/* Maximum values of exact-width signed integer types. */
+N#define	INT8_MAX	0x7f
+N#define	INT16_MAX	0x7fff
+N#define	INT32_MAX	0x7fffffff
+N#define	INT64_MAX	0x7fffffffffffffffLL
+N
+N/* Maximum values of exact-width unsigned integer types. */
+N#define	UINT8_MAX	0xff
+N#define	UINT16_MAX	0xffff
+N#define	UINT32_MAX	0xffffffffU
+N#define	UINT64_MAX	0xffffffffffffffffULL
+N
+N/*
+N * ISO/IEC 9899:1999
+N * 7.18.2.2  Limits of minimum-width integer types
+N */
+N/* Minimum values of minimum-width signed integer types. */
+N#define	INT_LEAST8_MIN	INT8_MIN
+N#define	INT_LEAST16_MIN	INT16_MIN
+N#define	INT_LEAST32_MIN	INT32_MIN
+N#define	INT_LEAST64_MIN	INT64_MIN
+N
+N/* Maximum values of minimum-width signed integer types. */
+N#define	INT_LEAST8_MAX	INT8_MAX
+N#define	INT_LEAST16_MAX	INT16_MAX
+N#define	INT_LEAST32_MAX	INT32_MAX
+N#define	INT_LEAST64_MAX	INT64_MAX
+N
+N/* Maximum values of minimum-width unsigned integer types. */
+N#define	UINT_LEAST8_MAX	 UINT8_MAX
+N#define	UINT_LEAST16_MAX UINT16_MAX
+N#define	UINT_LEAST32_MAX UINT32_MAX
+N#define	UINT_LEAST64_MAX UINT64_MAX
+N
+N/*
+N * ISO/IEC 9899:1999
+N * 7.18.2.3  Limits of fastest minimum-width integer types
+N */
+N/* Minimum values of fastest minimum-width signed integer types. */
+N#define	INT_FAST8_MIN	INT32_MIN
+N#define	INT_FAST16_MIN	INT32_MIN
+N#define	INT_FAST32_MIN	INT32_MIN
+N#define	INT_FAST64_MIN	INT64_MIN
+N
+N/* Maximum values of fastest minimum-width signed integer types. */
+N#define	INT_FAST8_MAX	INT32_MAX
+N#define	INT_FAST16_MAX	INT32_MAX
+N#define	INT_FAST32_MAX	INT32_MAX
+N#define	INT_FAST64_MAX	INT64_MAX
+N
+N/* Maximum values of fastest minimum-width unsigned integer types. */
+N#define	UINT_FAST8_MAX	UINT32_MAX
+N#define	UINT_FAST16_MAX	UINT32_MAX
+N#define	UINT_FAST32_MAX	UINT32_MAX
+N#define	UINT_FAST64_MAX	UINT64_MAX
+N
+N/*
+N * ISO/IEC 9899:1999
+N * 7.18.2.4  Limits of integer types capable of holding object pointers
+N */
+N#define	INTPTR_MIN	INT32_MIN
+N#define	INTPTR_MAX	INT32_MAX
+N#define	UINTPTR_MAX	UINT32_MAX
+N
+N/*
+N * ISO/IEC 9899:1999
+N * 7.18.2.5  Limits of greatest-width integer types
+N */
+N#define	INTMAX_MIN	INT64_MIN
+N#define	INTMAX_MAX	INT64_MAX
+N#define	UINTMAX_MAX	UINT64_MAX
+N
+N/*
+N * ISO/IEC 9899:1999
+N * 7.18.3  Limits of other integer types
+N */
+N/* Limits of ptrdiff_t. */
+N#define	PTRDIFF_MIN	INT32_MIN
+N#define	PTRDIFF_MAX	INT32_MAX
+N
+N/* Limits of sig_atomic_t. */
+N#define	SIG_ATOMIC_MIN	INT32_MIN
+N#define	SIG_ATOMIC_MAX	INT32_MAX
+N
+N/* Limit of size_t. */
+N#define	SIZE_MAX	UINT32_MAX
+N
+N/* Limits of wint_t. */
+N#define	WINT_MIN	INT32_MIN
+N#define	WINT_MAX	INT32_MAX
+N
+N#endif /* !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS) */
+N
+N#pragma diag_pop
+N
+N#endif /* !_MACHINE__STDINT_H_ */
+L 38 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/stdint.h" 2
+N#include <sys/_stdint.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/_stdint.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+N *
+N * Copyright (c) 2011 David E. O'Brien <obrien@FreeBSD.org>
+N * Copyright (c) 2001 Mike Barcroft <mike@FreeBSD.org>
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N * $FreeBSD$
+N */
+N
+N#ifndef _SYS__STDINT_H_
+N#define _SYS__STDINT_H_
+N
+N#ifndef _INT8_T_DECLARED
+Ntypedef	__int8_t		int8_t;
+N#define	_INT8_T_DECLARED
+N#endif
+N
+N#ifndef _INT16_T_DECLARED
+Ntypedef	__int16_t		int16_t;
+N#define	_INT16_T_DECLARED
+N#endif
+N
+N#ifndef _INT32_T_DECLARED
+Ntypedef	__int32_t		int32_t;
+N#define	_INT32_T_DECLARED
+N#endif
+N
+N#ifndef _INT64_T_DECLARED
+Ntypedef	__int64_t		int64_t;
+N#define	_INT64_T_DECLARED
+N#endif
+N
+N#ifndef _UINT8_T_DECLARED
+Ntypedef	__uint8_t		uint8_t;
+N#define	_UINT8_T_DECLARED
+N#endif
+N
+N#ifndef _UINT16_T_DECLARED
+Ntypedef	__uint16_t		uint16_t;
+N#define	_UINT16_T_DECLARED
+N#endif
+N
+N#ifndef _UINT32_T_DECLARED
+Ntypedef	__uint32_t		uint32_t;
+N#define	_UINT32_T_DECLARED
+N#endif
+N
+N#ifndef _UINT64_T_DECLARED
+Ntypedef	__uint64_t		uint64_t;
+N#define	_UINT64_T_DECLARED
+N#endif
+N
+N#ifndef _INTPTR_T_DECLARED
+Ntypedef	__intptr_t		intptr_t;
+N#define	_INTPTR_T_DECLARED
+N#endif
+N#ifndef _UINTPTR_T_DECLARED
+Ntypedef	__uintptr_t		uintptr_t;
+N#define	_UINTPTR_T_DECLARED
+N#endif
+N#ifndef _INTMAX_T_DECLARED
+Ntypedef	__intmax_t		intmax_t;
+N#define	_INTMAX_T_DECLARED
+N#endif
+N#ifndef _UINTMAX_T_DECLARED
+Ntypedef	__uintmax_t		uintmax_t;
+N#define	_UINTMAX_T_DECLARED
+N#endif
+N
+N#endif /* !_SYS__STDINT_H_ */
+L 39 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/stdint.h" 2
+N
+Ntypedef	__int_least8_t		int_least8_t;
+Ntypedef	__int_least16_t		int_least16_t;
+Ntypedef	__int_least32_t		int_least32_t;
+Ntypedef	__int_least64_t		int_least64_t;
+N
+Ntypedef	__uint_least8_t		uint_least8_t;
+Ntypedef	__uint_least16_t	uint_least16_t;
+Ntypedef	__uint_least32_t	uint_least32_t;
+Ntypedef	__uint_least64_t	uint_least64_t;
+N
+Ntypedef	__int_fast8_t		int_fast8_t;
+Ntypedef	__int_fast16_t		int_fast16_t;
+Ntypedef	__int_fast32_t		int_fast32_t;
+Ntypedef	__int_fast64_t		int_fast64_t;
+N
+Ntypedef	__uint_fast8_t		uint_fast8_t;
+Ntypedef	__uint_fast16_t		uint_fast16_t;
+Ntypedef	__uint_fast32_t		uint_fast32_t;
+Ntypedef	__uint_fast64_t		uint_fast64_t;
+N
+N/* GNU and Darwin define this and people seem to think it's portable */
+N#if defined(UINTPTR_MAX) && defined(UINT64_MAX) && (UINTPTR_MAX == UINT64_MAX)
+X#if 1L && 1L && (0xffffffffU == 0xffffffffffffffffULL)
+S#define	__WORDSIZE		64
+N#else
+N#define	__WORDSIZE		32
+N#endif
+N
+N#pragma diag_push
+N#pragma CHECK_MISRA("-19.4")
+N/* Limits of wchar_t. */
+N#define	WCHAR_MIN	__WCHAR_MIN
+N#define	WCHAR_MAX	__WCHAR_MAX
+N#pragma diag_pop
+N
+N#if __EXT1_VISIBLE
+X#if 1
+N/* ISO/IEC 9899:2011 K.3.4.4 */
+N#ifndef RSIZE_MAX
+N#define RSIZE_MAX (SIZE_MAX >> 1)
+N#endif
+N#endif /* __EXT1_VISIBLE */
+N
+N#endif /* !_SYS_STDINT_H_ */
+L 42 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/stdint.h" 2
+N#else
+S/* 7.18.1.1 Exact-width integer types */
+S
+S#if defined(__MSP430__) || defined(__TMS320C55X_PLUS_BYTE__)
+S    typedef   signed char    int8_t;
+S    typedef unsigned char   uint8_t;
+S    typedef          int    int16_t;
+S    typedef unsigned int   uint16_t;
+S    typedef          long   int32_t;
+S    typedef unsigned long  uint32_t;
+S#elif defined(_TMS320C5XX) || defined(__TMS320C55X__)
+S    typedef          int    int16_t;
+S    typedef unsigned int   uint16_t;
+S    typedef          long   int32_t;
+S    typedef unsigned long  uint32_t;
+S#elif defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__ARP32__) || \
+S      defined(__PRU__)    || defined(__FROZEN__)
+X#elif defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__ARP32__) ||       defined(__PRU__)    || defined(__FROZEN__)
+S    typedef   signed char   int8_t;
+S    typedef unsigned char  uint8_t;
+S    typedef          short  int16_t;
+S    typedef unsigned short uint16_t;
+S    typedef          int    int32_t;
+S    typedef unsigned int   uint32_t;
+S#elif defined (__TMS320C2000__)
+S#if defined(__TMS320C28XX_CLA__)
+S    typedef          short  int16_t;
+S    typedef unsigned short uint16_t;
+S    typedef          int    int32_t;
+S    typedef unsigned int   uint32_t;
+S#else
+S    typedef          int    int16_t;
+S    typedef unsigned int   uint16_t;
+S    typedef          long   int32_t;
+S    typedef unsigned long  uint32_t;
+S#endif
+S#endif
+S
+S#if defined(__TMS320C55X__)
+S    typedef          long long  int40_t;
+S    typedef unsigned long long uint40_t;
+S#elif defined(_TMS320C6X) && !defined(__C6X_MIGRATION__)
+S    typedef          __int40_t  int40_t;
+S    typedef unsigned __int40_t uint40_t;
+S#endif
+S
+S#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__ARP32__) || \
+S    defined(__MSP430__) || defined(__PRU__)    || defined(__FROZEN__)
+X#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__ARP32__) ||     defined(__MSP430__) || defined(__PRU__)    || defined(__FROZEN__)
+S    typedef          long long  int64_t;
+S    typedef unsigned long long uint64_t;
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    typedef          long long  int64_t;
+S    typedef unsigned long long uint64_t;
+S#endif
+S#endif
+S
+S/* 7.18.1.2 Minimum-width integer types */
+S
+S#if defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__MSP430__) || \
+S    defined(__TMS320C55X_PLUS_BYTE__)          || defined(__ARP32__)  || \
+S    defined(__PRU__)    || defined(__FROZEN__)
+X#if defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__MSP430__) ||     defined(__TMS320C55X_PLUS_BYTE__)          || defined(__ARP32__)  ||     defined(__PRU__)    || defined(__FROZEN__)
+S    typedef  int8_t   int_least8_t;
+S    typedef uint8_t  uint_least8_t;
+S#elif defined(__TMS320C2000__) || defined(_TMS320C5XX) || defined(__TMS320C55X__)
+S    typedef  int16_t  int_least8_t;
+S    typedef uint16_t uint_least8_t;
+S#endif
+S
+S    typedef  int16_t  int_least16_t;
+S    typedef uint16_t uint_least16_t;
+S    typedef  int32_t  int_least32_t;
+S    typedef uint32_t uint_least32_t;
+S
+S#if defined(__TMS320C55X__) || \
+S    (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+X#if defined(__TMS320C55X__) ||     (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+S    typedef  int40_t  int_least40_t;
+S    typedef uint40_t uint_least40_t;
+S#endif
+S
+S#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S    defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+X#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) ||     defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+S    typedef  int64_t  int_least64_t;
+S    typedef uint64_t uint_least64_t;
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    typedef  int64_t  int_least64_t;
+S    typedef uint64_t uint_least64_t;
+S#else
+S/* sorry, [u]int_least64_t not implemented for C27X, CLA */
+S#endif
+S#elif defined(_TMS320C5XX) || defined(__TMS320C55X__) 
+S/* sorry, [u]int_least64_t not implemented for C54x, C55x */
+S#endif
+S
+S/* 7.18.1.3 Fastest minimum-width integer types */
+S
+S#if defined(_TMS320C5XX) || defined(__TMS320C55X__)  || defined(__MSP430__)
+S    typedef  int16_t  int_fast8_t;
+S    typedef uint16_t uint_fast8_t;
+S    typedef  int16_t  int_fast16_t;
+S    typedef uint16_t uint_fast16_t;
+S#elif defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__ARP32__) || \
+S      defined(__PRU__)    || defined(__FROZEN__)
+X#elif defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__ARP32__) ||       defined(__PRU__)    || defined(__FROZEN__)
+S    typedef  int32_t  int_fast8_t;
+S    typedef uint32_t uint_fast8_t;
+S    typedef  int32_t  int_fast16_t;
+S    typedef uint32_t uint_fast16_t;
+S#elif defined (__TMS320C2000__)
+S#if defined(__TMS320C28XX_CLA__)
+S    typedef  int32_t  int_fast8_t;
+S    typedef uint32_t uint_fast8_t;
+S    typedef  int32_t  int_fast16_t;
+S    typedef uint32_t uint_fast16_t;
+S#else
+S    typedef  int16_t  int_fast8_t;
+S    typedef uint16_t uint_fast8_t;
+S    typedef  int16_t  int_fast16_t;
+S    typedef uint16_t uint_fast16_t;
+S#endif
+S#endif
+S
+S    typedef  int32_t  int_fast32_t;
+S    typedef uint32_t uint_fast32_t;
+S
+S#if defined(__TMS320C55X__) || \
+S    (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+X#if defined(__TMS320C55X__) ||     (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+S    typedef  int40_t  int_fast40_t;
+S    typedef uint40_t uint_fast40_t;
+S#endif
+S
+S#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S    defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+X#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) ||     defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+S    typedef  int64_t  int_fast64_t;
+S    typedef uint64_t uint_fast64_t;
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    typedef  int64_t  int_fast64_t;
+S    typedef uint64_t uint_fast64_t;
+S#else
+S/* sorry, [u]int_fast64_t not implemented for C27X, CLA */
+S#endif
+S#elif defined(_TMS320C5XX) || defined(__TMS320C55X__) 
+S/* sorry, [u]int_fast64_t not implemented for C54x, C55x */
+S#endif
+S
+S/* 7.18.1.4 Integer types capable of holding object pointers */
+S#if defined(_TMS320C5XX) || defined(__TMS320C55X__)        || \
+S    (defined(__MSP430__) && defined(__LARGE_CODE_MODEL__)) || \
+S    defined(__FROZEN__)
+X#if defined(_TMS320C5XX) || defined(__TMS320C55X__)        ||     (defined(__MSP430__) && defined(__LARGE_CODE_MODEL__)) ||     defined(__FROZEN__)
+S    typedef          long intptr_t;
+S    typedef unsigned long uintptr_t;
+S#elif defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__MSP430__) || \
+S      defined(__ARP32__)  || defined(__PRU__)
+X#elif defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__MSP430__) ||       defined(__ARP32__)  || defined(__PRU__)
+S    typedef          int intptr_t;
+S    typedef unsigned int uintptr_t;
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28XX_CLA__)
+S    typedef          short intptr_t;
+S    typedef unsigned short uintptr_t;
+S#else
+S    typedef          long intptr_t;
+S    typedef unsigned long uintptr_t;
+S#endif
+S#endif
+S
+S/* 7.18.1.5 Greatest-width integer types */
+S#if defined(__TMS320C55X__) || defined(__ARM_ARCH) || defined(_TMS320C6X) || \
+S    defined(__ARP32__)      || defined(__MSP430__) || defined(__PRU__)    || \
+S    defined(__FROZEN__)
+X#if defined(__TMS320C55X__) || defined(__ARM_ARCH) || defined(_TMS320C6X) ||     defined(__ARP32__)      || defined(__MSP430__) || defined(__PRU__)    ||     defined(__FROZEN__)
+S    typedef          long long intmax_t;
+S    typedef unsigned long long uintmax_t;
+S#elif defined(_TMS320C5XX)
+S    typedef          long intmax_t;
+S    typedef unsigned long uintmax_t;
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    typedef          long long intmax_t;
+S    typedef unsigned long long uintmax_t;
+S#else /* C27X or CLA */
+S    typedef          long intmax_t;
+S    typedef unsigned long uintmax_t;
+S#endif
+S#endif
+S
+S/*
+S   According to footnotes in the 1999 C standard, "C++ implementations
+S   should define these macros only when __STDC_LIMIT_MACROS is defined
+S   before <stdint.h> is included." 
+S*/
+S#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
+S
+S/* 7.18.2 Limits of specified width integer types */
+S
+S#if defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__MSP430__) || \
+S    defined(__TMS320C55X_PLUS_BYTE__)          || defined(__ARP32__)  || \
+S    defined(__PRU__)    || defined(__FROZEN__)
+X#if defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__MSP430__) ||     defined(__TMS320C55X_PLUS_BYTE__)          || defined(__ARP32__)  ||     defined(__PRU__)    || defined(__FROZEN__)
+S    #define  INT8_MAX   0x7f
+S    #define  INT8_MIN   (-INT8_MAX-1)
+S    #define UINT8_MAX   0xff
+S#endif
+S
+S    #define  INT16_MAX  0x7fff
+S    #define  INT16_MIN  (-INT16_MAX-1)
+S    #define UINT16_MAX  0xffff
+S
+S    #define  INT32_MAX  0x7fffffff
+S    #define  INT32_MIN  (-INT32_MAX-1)
+S    #define UINT32_MAX  0xffffffff
+S
+S#if defined(__TMS320C55X__) || \
+S    (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+X#if defined(__TMS320C55X__) ||     (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+S    #define  INT40_MAX  0x7fffffffff
+S    #define  INT40_MIN  (-INT40_MAX-1)
+S    #define UINT40_MAX  0xffffffffff
+S#endif
+S
+S#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S    defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+X#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) ||     defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+S    #define  INT64_MAX  0x7fffffffffffffff
+S    #define  INT64_MIN  (-INT64_MAX-1)
+S    #define UINT64_MAX  0xffffffffffffffff
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    #define  INT64_MAX  0x7fffffffffffffff
+S    #define  INT64_MIN  (-INT64_MAX-1)
+S    #define UINT64_MAX  0xffffffffffffffff
+S#endif
+S#endif
+S
+S#if defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__MSP430__) || \
+S    defined(__TMS320C55X_PLUS_BYTE__)          || defined(__ARP32__)  || \
+S    defined(__PRU__)    || defined(__FROZEN__)
+X#if defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__MSP430__) ||     defined(__TMS320C55X_PLUS_BYTE__)          || defined(__ARP32__)  ||     defined(__PRU__)    || defined(__FROZEN__)
+S    #define  INT_LEAST8_MAX   (INT8_MAX)
+S    #define  INT_LEAST8_MIN   (INT8_MIN)
+S    #define UINT_LEAST8_MAX   (UINT8_MAX)
+S#elif defined(__TMS320C2000__) || defined(_TMS320C5XX) || defined(__TMS320C55X__)
+S    #define  INT_LEAST8_MAX   (INT16_MAX)
+S    #define  INT_LEAST8_MIN   (INT16_MIN)
+S    #define UINT_LEAST8_MAX   (UINT16_MAX)
+S#endif
+S
+S    #define  INT_LEAST16_MAX  (INT16_MAX)
+S    #define  INT_LEAST16_MIN  (INT16_MIN)
+S    #define UINT_LEAST16_MAX  (UINT16_MAX)
+S    #define  INT_LEAST32_MAX  (INT32_MAX)
+S    #define  INT_LEAST32_MIN  (INT32_MIN)
+S    #define UINT_LEAST32_MAX  (UINT32_MAX)
+S
+S#if defined(__TMS320C55X__) || \
+S    (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+X#if defined(__TMS320C55X__) ||     (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+S    #define  INT_LEAST40_MAX  (INT40_MAX)
+S    #define  INT_LEAST40_MIN  (INT40_MIN)
+S    #define UINT_LEAST40_MAX  (UINT40_MAX)
+S#endif
+S
+S#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S    defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+X#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) ||     defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+S    #define  INT_LEAST64_MAX  (INT64_MAX)
+S    #define  INT_LEAST64_MIN  (INT64_MIN)
+S    #define UINT_LEAST64_MAX  (UINT64_MAX)
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    #define  INT_LEAST64_MAX  (INT64_MAX)
+S    #define  INT_LEAST64_MIN  (INT64_MIN)
+S    #define UINT_LEAST64_MAX  (UINT64_MAX)
+S#endif
+S#endif
+S
+S#if defined(_TMS320C5XX) || defined(__TMS320C55X__)
+S    #define  INT_FAST8_MAX   (INT16_MAX)
+S    #define  INT_FAST8_MIN   (INT16_MIN)
+S    #define UINT_FAST8_MAX   (UINT16_MAX)
+S    #define  INT_FAST16_MAX  (INT16_MAX)
+S    #define  INT_FAST16_MIN  (INT16_MIN)
+S    #define UINT_FAST16_MAX  (UINT16_MAX)
+S#elif defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__ARP32__) || \
+S      defined(__PRU__)    || defined(__FROZEN__)
+X#elif defined(_TMS320C6X) || defined(__ARM_ARCH) || defined(__ARP32__) ||       defined(__PRU__)    || defined(__FROZEN__)
+S    #define  INT_FAST8_MAX   (INT32_MAX)
+S    #define  INT_FAST8_MIN   (INT32_MIN)
+S    #define UINT_FAST8_MAX   (UINT32_MAX)
+S    #define  INT_FAST16_MAX  (INT32_MAX)
+S    #define  INT_FAST16_MIN  (INT32_MIN)
+S    #define UINT_FAST16_MAX  (UINT32_MAX)
+S#elif defined(__MSP430__)
+S    #define  INT_FAST8_MAX    (INT16_MAX)
+S    #define  INT_FAST8_MIN    (INT16_MIN)
+S    #define  UINT_FAST8_MAX   (UINT16_MAX)
+S    #define  INT_FAST16_MAX   (INT16_MAX)
+S    #define  INT_FAST16_MIN   (INT16_MIN)
+S    #define  UINT_FAST16_MAX  (UINT16_MAX)
+S#elif defined (__TMS320C2000__)
+S#if defined(__TMS320C28XX_CLA__)
+S    #define  INT_FAST8_MAX   (INT32_MAX)
+S    #define  INT_FAST8_MIN   (INT32_MIN)
+S    #define UINT_FAST8_MAX   (UINT32_MAX)
+S    #define  INT_FAST16_MAX  (INT32_MAX)
+S    #define  INT_FAST16_MIN  (INT32_MIN)
+S    #define UINT_FAST16_MAX  (UINT32_MAX)
+S#else
+S    #define  INT_FAST8_MAX   (INT16_MAX)
+S    #define  INT_FAST8_MIN   (INT16_MIN)
+S    #define UINT_FAST8_MAX   (UINT16_MAX)
+S    #define  INT_FAST16_MAX  (INT16_MAX)
+S    #define  INT_FAST16_MIN  (INT16_MIN)
+S    #define UINT_FAST16_MAX  (UINT16_MAX)
+S#endif
+S#endif
+S
+S    #define  INT_FAST32_MAX  (INT32_MAX)
+S    #define  INT_FAST32_MIN  (INT32_MIN)
+S    #define UINT_FAST32_MAX  (UINT32_MAX)
+S
+S#if defined(__TMS320C55X__) || \
+S    (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+X#if defined(__TMS320C55X__) ||     (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+S    #define  INT_FAST40_MAX  (INT40_MAX)
+S    #define  INT_FAST40_MIN  (INT40_MIN)
+S    #define UINT_FAST40_MAX  (UINT40_MAX)
+S#endif
+S
+S#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S    defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+X#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) ||     defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+S    #define  INT_FAST64_MAX  (INT64_MAX)
+S    #define  INT_FAST64_MIN  (INT64_MIN)
+S    #define UINT_FAST64_MAX  (UINT64_MAX)
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    #define  INT_FAST64_MAX  (INT64_MAX)
+S    #define  INT_FAST64_MIN  (INT64_MIN)
+S    #define UINT_FAST64_MAX  (UINT64_MAX)
+S#endif
+S#endif
+S
+S#if defined(__MSP430__) && !defined(__LARGE_CODE_MODEL__)
+S    #define INTPTR_MAX   (INT16_MAX)
+S    #define INTPTR_MIN   (INT16_MIN)
+S    #define UINTPTR_MAX  (UINT16_MAX)
+S#elif defined(__FROZEN__)
+S    #define INTPTR_MAX   (INT64_MAX)
+S    #define INTPTR_MIN   (INT64_MIN)
+S    #define UINTPTR_MAX  (UINT64_MAX)
+S#else
+S    #define INTPTR_MAX   (INT32_MAX)
+S    #define INTPTR_MIN   (INT32_MIN)
+S    #define UINTPTR_MAX  (UINT32_MAX)
+S#endif
+S
+S#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S    defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+X#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) ||     defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+S    #define INTMAX_MIN   (INT64_MIN)
+S    #define INTMAX_MAX   (INT64_MAX)
+S    #define UINTMAX_MAX  (UINT64_MAX)
+S#elif defined(__TMS320C55X__)
+S    #define INTMAX_MIN   (INT40_MIN)
+S    #define INTMAX_MAX   (INT40_MAX)
+S    #define UINTMAX_MAX  (UINT40_MAX)
+S#elif defined(_TMS320C5XX)
+S    #define INTMAX_MIN   (INT32_MIN)
+S    #define INTMAX_MAX   (INT32_MAX)
+S    #define UINTMAX_MAX  (UINT32_MAX)
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    #define INTMAX_MIN   (INT64_MIN)
+S    #define INTMAX_MAX   (INT64_MAX)
+S    #define UINTMAX_MAX  (UINT64_MAX)
+S#else
+S    #define INTMAX_MIN   (INT32_MIN)
+S    #define INTMAX_MAX   (INT32_MAX)
+S    #define UINTMAX_MAX  (UINT32_MAX)
+S#endif
+S#endif
+S
+S/* 7.18.3 Limits of other integer types */
+S
+S#if defined(_TMS320C5XX) || defined(__TMS320C55X__) || \
+S    (defined(__MSP430__) && !defined(__LONG_PTRDIFF_T__))
+X#if defined(_TMS320C5XX) || defined(__TMS320C55X__) ||     (defined(__MSP430__) && !defined(__LONG_PTRDIFF_T__))
+S    #define PTRDIFF_MAX (INT16_MAX)
+S    #define PTRDIFF_MIN (INT16_MIN)
+S#elif defined(__TMS320C2000__) || defined(__MSP430__) || \
+S      (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__)) || \
+S      defined(__ARM_ARCH)      || defined(__ARP32__) || defined(__PRU__)
+X#elif defined(__TMS320C2000__) || defined(__MSP430__) ||       (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__)) ||       defined(__ARM_ARCH)      || defined(__ARP32__) || defined(__PRU__)
+S    #define PTRDIFF_MAX (INT32_MAX)
+S    #define PTRDIFF_MIN (INT32_MIN)
+S#elif defined(__FROZEN__)
+S    #define PTRDIFF_MAX (INT64_MAX)
+S    #define PTRDIFF_MIN (INT64_MIN)
+S#endif
+S
+S#if defined(_TMS320C5XX) || defined(__TMS320C55X__) || defined(__MSP430__)
+S    #define SIG_ATOMIC_MIN (INT16_MIN)
+S    #define SIG_ATOMIC_MAX (INT16_MAX)
+S#elif defined(__TMS320C2000__) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S      defined(__ARM_ARCH)      || defined(__ARP32__)  || defined(__PRU__)
+X#elif defined(__TMS320C2000__) || defined(_TMS320C6X) || defined(__FROZEN__) ||       defined(__ARM_ARCH)      || defined(__ARP32__)  || defined(__PRU__)
+S    #define SIG_ATOMIC_MIN (INT32_MIN)
+S    #define SIG_ATOMIC_MAX (INT32_MAX)
+S#endif
+S
+S#if defined(_TMS320C5XX) || defined(__TMS320C55X__) || \
+S    (defined(__MSP430__) && !defined(__LONG_PTRDIFF_T__))
+X#if defined(_TMS320C5XX) || defined(__TMS320C55X__) ||     (defined(__MSP430__) && !defined(__LONG_PTRDIFF_T__))
+S    #define SIZE_MAX (UINT16_MAX)
+S#elif defined(__TMS320C2000__) || defined(__MSP430__) || \
+S      (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__)) || \
+S      defined(__ARM_ARCH)      || defined(__ARP32__)  || defined(__PRU__)
+X#elif defined(__TMS320C2000__) || defined(__MSP430__) ||       (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__)) ||       defined(__ARM_ARCH)      || defined(__ARP32__)  || defined(__PRU__)
+S    #define SIZE_MAX (UINT32_MAX)
+S#elif defined(__FROZEN__)
+S    #define SIZE_MAX (UINT64_MAX)
+S#endif
+S
+S#ifndef WCHAR_MAX
+S#if !defined(__TI_WCHAR_T_BITS__) || __TI_WCHAR_T_BITS__ == 16
+S#define WCHAR_MAX 0xffffu
+S#else 
+S#define WCHAR_MAX 0xffffffffu
+S#endif
+S#endif
+S
+S#ifndef WCHAR_MIN
+S#define WCHAR_MIN 0
+S#endif
+S
+S#if defined(_TMS320C5XX) || defined(__TMS320C55X__) || defined(__MSP430__)
+S    #define WINT_MIN (INT16_MIN)
+S    #define WINT_MAX (INT16_MAX)
+S#elif defined(__TMS320C2000__) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S      defined(__ARM_ARCH)      || defined(__ARP32__)  || defined(__PRU__)
+X#elif defined(__TMS320C2000__) || defined(_TMS320C6X) || defined(__FROZEN__) ||       defined(__ARM_ARCH)      || defined(__ARP32__)  || defined(__PRU__)
+S    #define WINT_MIN (INT32_MIN)
+S    #define WINT_MAX (INT32_MAX)
+S#endif
+S
+S/* 7.18.4.1 Macros for minimum-width integer constants */
+S
+S/*
+S   There is a defect report filed against the C99 standard concerning how 
+S   the (U)INTN_C macros should be implemented.  Please refer to --
+S   http://wwwold.dkuug.dk/JTC1/SC22/WG14/www/docs/dr_209.htm 
+S   for more information.  These macros are implemented according to the
+S   suggestion given at this web site.
+S*/
+S
+S    #define  INT8_C(value)  ((int_least8_t)(value))
+S    #define UINT8_C(value)  ((uint_least8_t)(value))
+S    #define  INT16_C(value) ((int_least16_t)(value))
+S    #define UINT16_C(value) ((uint_least16_t)(value))
+S    #define  INT32_C(value) ((int_least32_t)(value))
+S    #define UINT32_C(value) ((uint_least32_t)(value))
+S
+S#if defined(__TMS320C55X__) || \
+S    (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+X#if defined(__TMS320C55X__) ||     (defined(_TMS320C6X) && !defined(__C6X_MIGRATION__))
+S    #define  INT40_C(value) ((int_least40_t)(value))
+S    #define UINT40_C(value) ((uint_least40_t)(value))
+S#endif
+S
+S#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) || \
+S    defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+X#if defined(__ARM_ARCH) || defined(_TMS320C6X) || defined(__FROZEN__) ||     defined(__ARP32__)  || defined(__MSP430__) || defined(__PRU__)
+S    #define  INT64_C(value) ((int_least64_t)(value))
+S    #define UINT64_C(value) ((uint_least64_t)(value))
+S#elif defined(__TMS320C2000__)
+S#if defined(__TMS320C28X__) || \
+S    (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+X#if defined(__TMS320C28X__) ||     (defined(__TMS320C28XX_CLA__) && defined(__TI_EABI__))
+S    #define  INT64_C(value) ((int_least64_t)(value))
+S    #define UINT64_C(value) ((uint_least64_t)(value))
+S#endif
+S#endif
+S
+S/* 7.18.4.2 Macros for greatest-width integer constants */
+S
+S    #define  INTMAX_C(value) ((intmax_t)(value))
+S    #define UINTMAX_C(value) ((uintmax_t)(value))
+S
+S#endif /* !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS) */
+N#endif
+N#endif /* _STDINT_H_ */
+L 64 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/dpl/SemaphoreP.h" 2
+N#include <stdbool.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/stdbool.h" 1
+N/*
+N * Copyright (c) 2000 Jeroen Ruigrok van der Werven <asmodai@FreeBSD.org>
+N * All rights reserved.
+N *
+N * Copyright (c) 2014-2014 Texas Instruments Incorporated
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N * $FreeBSD: release/10.0.0/include/stdbool.h 228878 2011-12-25 20:15:41Z ed $
+N */
+N
+N#ifndef __bool_true_false_are_defined
+N#define	__bool_true_false_are_defined	1
+N
+N#ifndef __cplusplus
+N
+N#define	false	0
+N#define	true	1
+N
+N#define	bool	_Bool
+N#if __TI_STRICT_ANSI_MODE__ && 199901L > __STDC_VERSION__
+X#if 0 && 199901L > 199409L
+Stypedef unsigned char _Bool;
+N#endif
+N
+N#endif /* !__cplusplus */
+N#endif /* __bool_true_false_are_defined */
+L 65 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/dpl/SemaphoreP.h" 2
+N#include <stddef.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/stddef.h" 1
+N/*****************************************************************************/
+N/* stddef.h                                                                  */
+N/*                                                                           */
+N/* Copyright (c) 1993 Texas Instruments Incorporated                         */
 N/* http://www.ti.com/                                                        */
 N/*                                                                           */
 N/*  Redistribution and  use in source  and binary forms, with  or without    */
@@ -6480,7 +3501,7 @@ N#pragma CHECK_MISRA("-20.1") /* standard headers must define standard names */
 N#pragma CHECK_MISRA("-20.2") /* standard headers must define standard names */
 N
 N#ifdef __cplusplus
-Sextern "C" namespace std {
+Sextern "C" {
 N#endif
 N
 N#ifndef NULL
@@ -6490,14 +3511,14 @@ N
 Ntypedef __PTRDIFF_T_TYPE__ ptrdiff_t;
 Xtypedef int ptrdiff_t;
 N
-N#ifndef _SIZE_T
-S#define _SIZE_T
+N#ifndef _SIZE_T_DECLARED
+S#define _SIZE_T_DECLARED
 Stypedef __SIZE_T_TYPE__ size_t;
 N#endif
 N
 N#ifndef __cplusplus
-N#ifndef _WCHAR_T
-N#define _WCHAR_T
+N#ifndef _WCHAR_T_DECLARED
+N#define _WCHAR_T_DECLARED
 N
 Ntypedef __WCHAR_T_TYPE__ wchar_t;
 Xtypedef unsigned short wchar_t;
@@ -6505,73 +3526,46 @@ N
 N#endif /* _WCHAR_T */
 N#endif /* ! __cplusplus */
 N
+N/*----------------------------------------------------------------------------*/
+N/* C++11 and C11 required max_align_t to be defined. The libc++ cstddef       */
+N/* header expects the macro __DEFINED_max_align_t to be defined if it is to   */
+N/* use the definintion of max_align_t from stddef.h. Only define it if        */
+N/* compiling for C11 or we're in non strict ansi mode.                        */
+N/*----------------------------------------------------------------------------*/
+N#if defined(_TI_C11LIB) || __TI_STRICT_ANSI_MODE__ == 0
+X#if 0L || 0 == 0
+N#ifndef __DEFINED_max_align_t
+N#define __DEFINED_max_align_t
+Ntypedef long double max_align_t;
+N#endif /*__DEFINED_max_align_t */
+N#endif /* defined(_TI_C11LIB) || __TI_STRICT_ANSI_MODE__ == 0 */
+N
 N#pragma diag_push
 N#pragma CHECK_MISRA("-19.10") /* need types as macro arguments */
 N
 N#ifdef __TI_LLVM__
 S#  define offsetof(_type, _ident) __builtin_offsetof(_type, _ident)
 N#else
-N#    ifdef __cplusplus
-S#      define offsetof(_type, _ident) \
-S         ((std::size_t)__intaddr__(&(((_type *)0)->_ident)))
-X#      define offsetof(_type, _ident)          ((std::size_t)__intaddr__(&(((_type *)0)->_ident)))
-N#    else
+N#  ifndef __TMS320C55X__
 N#      define offsetof(_type, _ident) \
 N         ((size_t)__intaddr__(&(((_type *)0)->_ident)))
 X#      define offsetof(_type, _ident)          ((size_t)__intaddr__(&(((_type *)0)->_ident)))
-N#    endif
+N#  else /* __TMS320C55X__ */
+S#    define offsetof(_type, _ident) \
+S    (__intaddr__( ((char *) &((_type *)0)->_ident) - ((char *) 0) ))
+X#    define offsetof(_type, _ident)     (__intaddr__( ((char *) &((_type *)0)->_ident) - ((char *) 0) ))
+N#  endif /* __TMS320C55X__ */
 N#endif
 N
 N#ifdef __cplusplus
-S} /* extern "C" namespace std */
+S} /* extern "C" */
 N#endif  /* __cplusplus */
 N
 N#pragma diag_pop
 N
 N#endif  /* _STDDEF */
 N
-N#if defined(__cplusplus) && !defined(_CPP_STYLE_HEADER)
-X#if 0L && !0L
-Susing std::ptrdiff_t;
-Susing std::size_t;
-S/*using std::wchar_t;*/
-N#endif /* _CPP_STYLE_HEADER */
-N
-N#pragma diag_push
-N#pragma CHECK_MISRA("-19.15") /* code outside guard; see below comment */
-N
-N/*-----------------------------------------------------------------------*/
-N/* Define _win_t, for compiling GCC libraries with the TI compiler.      */
-N/* GCC's library (newlib) expects wint_t to be defined here, in stddef.h,*/
-N/* which is arguably incorrect, but we go along for compatibility.       */
-N/* This is outside the _STDDEF guard in case this file has already       */
-N/* been included without __need_wint_t.                                  */
-N/*-----------------------------------------------------------------------*/
-N#if defined(__need_wint_t) && !defined(_WINT_T) 
-X#if 0L && !0L 
-S#if (__STDC_VERSION__ >= 199901L || !__TI_STRICT_ANSI_MODE__)
-S
-S#undef __need_wint_t
-S#define _WINT_T
-S#ifdef __cplusplus
-S   extern "C" namespace std {
-S#endif /* __cplusplus */
-S
-Stypedef unsigned int wint_t;
-S
-S#ifdef __cplusplus
-S   } /* extern "C" namespace std { */
-S#endif /* __cplusplus */
-S
-S#if defined(__cplusplus) && !defined(_CPP_STYLE_HEADER)
-Susing std::wint_t;
-S#endif /* _CPP_STYLE_HEADER */
-S
-S#endif /* __STDC_VERSION__ >= 199901L  */
-N#endif
-N
-N#pragma diag_pop
-L 66 "/vagrant/Q4_04/sdk_root/source/ti/drivers/dpl/SemaphoreP.h" 2
+L 66 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/dpl/SemaphoreP.h" 2
 N
 N/*!
 N *  @brief    Number of bytes greater than or equal to the size of any RTOS
@@ -6763,9 +3757,9 @@ S}
 N#endif
 N
 N#endif /* ti_dpl_SemaphoreP__include */
-L 50 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 2
+L 50 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 2
 N#include <ti/drivers/dpl/MutexP.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/dpl/MutexP.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/dpl/MutexP.h" 1
 N/*
 N * Copyright (c) 2015-2017, Texas Instruments Incorporated
 N * All rights reserved.
@@ -6830,143 +3824,6 @@ N
 N#include <stdint.h>
 N#include <stdbool.h>
 N#include <stddef.h>
-L 1 "/opt/ti/ccs-latest/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stddef.h" 1
-N/*****************************************************************************/
-N/* stddef.h   v16.9.6                                                        */
-N/*                                                                           */
-N/* Copyright (c) 1993-2017 Texas Instruments Incorporated                    */
-N/* http://www.ti.com/                                                        */
-N/*                                                                           */
-N/*  Redistribution and  use in source  and binary forms, with  or without    */
-N/*  modification,  are permitted provided  that the  following conditions    */
-N/*  are met:                                                                 */
-N/*                                                                           */
-N/*     Redistributions  of source  code must  retain the  above copyright    */
-N/*     notice, this list of conditions and the following disclaimer.         */
-N/*                                                                           */
-N/*     Redistributions in binary form  must reproduce the above copyright    */
-N/*     notice, this  list of conditions  and the following  disclaimer in    */
-N/*     the  documentation  and/or   other  materials  provided  with  the    */
-N/*     distribution.                                                         */
-N/*                                                                           */
-N/*     Neither the  name of Texas Instruments Incorporated  nor the names    */
-N/*     of its  contributors may  be used to  endorse or  promote products    */
-N/*     derived  from   this  software  without   specific  prior  written    */
-N/*     permission.                                                           */
-N/*                                                                           */
-N/*  THIS SOFTWARE  IS PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS    */
-N/*  "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT    */
-N/*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    */
-N/*  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT    */
-N/*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    */
-N/*  SPECIAL,  EXEMPLARY,  OR CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT    */
-N/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    */
-N/*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY    */
-N/*  THEORY OF  LIABILITY, WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT    */
-N/*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE    */
-N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
-N/*                                                                           */
-N/*****************************************************************************/
-N
-N#ifndef _STDDEF
-S#define _STDDEF
-S
-S#pragma diag_push
-S#pragma CHECK_MISRA("-19.7") /* macros required for implementation */
-S#pragma CHECK_MISRA("-20.1") /* standard headers must define standard names */
-S#pragma CHECK_MISRA("-20.2") /* standard headers must define standard names */
-S
-S#ifdef __cplusplus
-Sextern "C" namespace std {
-S#endif
-S
-S#ifndef NULL
-S#define NULL 0
-S#endif
-S
-Stypedef __PTRDIFF_T_TYPE__ ptrdiff_t;
-S
-S#ifndef _SIZE_T
-S#define _SIZE_T
-Stypedef __SIZE_T_TYPE__ size_t;
-S#endif
-S
-S#ifndef __cplusplus
-S#ifndef _WCHAR_T
-S#define _WCHAR_T
-S
-Stypedef __WCHAR_T_TYPE__ wchar_t;
-S
-S#endif /* _WCHAR_T */
-S#endif /* ! __cplusplus */
-S
-S#pragma diag_push
-S#pragma CHECK_MISRA("-19.10") /* need types as macro arguments */
-S
-S#ifdef __TI_LLVM__
-S#  define offsetof(_type, _ident) __builtin_offsetof(_type, _ident)
-S#else
-S#    ifdef __cplusplus
-S#      define offsetof(_type, _ident) \
-S         ((std::size_t)__intaddr__(&(((_type *)0)->_ident)))
-X#      define offsetof(_type, _ident)          ((std::size_t)__intaddr__(&(((_type *)0)->_ident)))
-S#    else
-S#      define offsetof(_type, _ident) \
-S         ((size_t)__intaddr__(&(((_type *)0)->_ident)))
-X#      define offsetof(_type, _ident)          ((size_t)__intaddr__(&(((_type *)0)->_ident)))
-S#    endif
-S#endif
-S
-S#ifdef __cplusplus
-S} /* extern "C" namespace std */
-S#endif  /* __cplusplus */
-S
-S#pragma diag_pop
-S
-N#endif  /* _STDDEF */
-N
-N#if defined(__cplusplus) && !defined(_CPP_STYLE_HEADER)
-X#if 0L && !0L
-Susing std::ptrdiff_t;
-Susing std::size_t;
-S/*using std::wchar_t;*/
-N#endif /* _CPP_STYLE_HEADER */
-N
-N#pragma diag_push
-N#pragma CHECK_MISRA("-19.15") /* code outside guard; see below comment */
-N
-N/*-----------------------------------------------------------------------*/
-N/* Define _win_t, for compiling GCC libraries with the TI compiler.      */
-N/* GCC's library (newlib) expects wint_t to be defined here, in stddef.h,*/
-N/* which is arguably incorrect, but we go along for compatibility.       */
-N/* This is outside the _STDDEF guard in case this file has already       */
-N/* been included without __need_wint_t.                                  */
-N/*-----------------------------------------------------------------------*/
-N#if defined(__need_wint_t) && !defined(_WINT_T) 
-X#if 0L && !0L 
-S#if (__STDC_VERSION__ >= 199901L || !__TI_STRICT_ANSI_MODE__)
-S
-S#undef __need_wint_t
-S#define _WINT_T
-S#ifdef __cplusplus
-S   extern "C" namespace std {
-S#endif /* __cplusplus */
-S
-Stypedef unsigned int wint_t;
-S
-S#ifdef __cplusplus
-S   } /* extern "C" namespace std { */
-S#endif /* __cplusplus */
-S
-S#if defined(__cplusplus) && !defined(_CPP_STYLE_HEADER)
-Susing std::wint_t;
-S#endif /* _CPP_STYLE_HEADER */
-S
-S#endif /* __STDC_VERSION__ >= 199901L  */
-N#endif
-N
-N#pragma diag_pop
-L 65 "/vagrant/Q4_04/sdk_root/source/ti/drivers/dpl/MutexP.h" 2
 N
 N/*!
 N *  @brief    Number of bytes greater than or equal to the size of any RTOS
@@ -7118,11 +3975,11 @@ S}
 N#endif
 N
 N#endif /* ti_dpl_MutexP__include */
-L 51 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 2
+L 51 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 2
 N#include <ti/drivers/dpl/ClockP.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/dpl/ClockP.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/dpl/ClockP.h" 1
 N/*
-N * Copyright (c) 2016-2017, Texas Instruments Incorporated
+N * Copyright (c) 2016-2018, Texas Instruments Incorporated
 N * All rights reserved.
 N *
 N * Redistribution and use in source and binary forms, with or without
@@ -7187,143 +4044,6 @@ N
 N#include <stdint.h>
 N#include <stdbool.h>
 N#include <stddef.h>
-L 1 "/opt/ti/ccs-latest/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stddef.h" 1
-N/*****************************************************************************/
-N/* stddef.h   v16.9.6                                                        */
-N/*                                                                           */
-N/* Copyright (c) 1993-2017 Texas Instruments Incorporated                    */
-N/* http://www.ti.com/                                                        */
-N/*                                                                           */
-N/*  Redistribution and  use in source  and binary forms, with  or without    */
-N/*  modification,  are permitted provided  that the  following conditions    */
-N/*  are met:                                                                 */
-N/*                                                                           */
-N/*     Redistributions  of source  code must  retain the  above copyright    */
-N/*     notice, this list of conditions and the following disclaimer.         */
-N/*                                                                           */
-N/*     Redistributions in binary form  must reproduce the above copyright    */
-N/*     notice, this  list of conditions  and the following  disclaimer in    */
-N/*     the  documentation  and/or   other  materials  provided  with  the    */
-N/*     distribution.                                                         */
-N/*                                                                           */
-N/*     Neither the  name of Texas Instruments Incorporated  nor the names    */
-N/*     of its  contributors may  be used to  endorse or  promote products    */
-N/*     derived  from   this  software  without   specific  prior  written    */
-N/*     permission.                                                           */
-N/*                                                                           */
-N/*  THIS SOFTWARE  IS PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS    */
-N/*  "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT    */
-N/*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    */
-N/*  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT    */
-N/*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    */
-N/*  SPECIAL,  EXEMPLARY,  OR CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT    */
-N/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    */
-N/*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY    */
-N/*  THEORY OF  LIABILITY, WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT    */
-N/*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE    */
-N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
-N/*                                                                           */
-N/*****************************************************************************/
-N
-N#ifndef _STDDEF
-S#define _STDDEF
-S
-S#pragma diag_push
-S#pragma CHECK_MISRA("-19.7") /* macros required for implementation */
-S#pragma CHECK_MISRA("-20.1") /* standard headers must define standard names */
-S#pragma CHECK_MISRA("-20.2") /* standard headers must define standard names */
-S
-S#ifdef __cplusplus
-Sextern "C" namespace std {
-S#endif
-S
-S#ifndef NULL
-S#define NULL 0
-S#endif
-S
-Stypedef __PTRDIFF_T_TYPE__ ptrdiff_t;
-S
-S#ifndef _SIZE_T
-S#define _SIZE_T
-Stypedef __SIZE_T_TYPE__ size_t;
-S#endif
-S
-S#ifndef __cplusplus
-S#ifndef _WCHAR_T
-S#define _WCHAR_T
-S
-Stypedef __WCHAR_T_TYPE__ wchar_t;
-S
-S#endif /* _WCHAR_T */
-S#endif /* ! __cplusplus */
-S
-S#pragma diag_push
-S#pragma CHECK_MISRA("-19.10") /* need types as macro arguments */
-S
-S#ifdef __TI_LLVM__
-S#  define offsetof(_type, _ident) __builtin_offsetof(_type, _ident)
-S#else
-S#    ifdef __cplusplus
-S#      define offsetof(_type, _ident) \
-S         ((std::size_t)__intaddr__(&(((_type *)0)->_ident)))
-X#      define offsetof(_type, _ident)          ((std::size_t)__intaddr__(&(((_type *)0)->_ident)))
-S#    else
-S#      define offsetof(_type, _ident) \
-S         ((size_t)__intaddr__(&(((_type *)0)->_ident)))
-X#      define offsetof(_type, _ident)          ((size_t)__intaddr__(&(((_type *)0)->_ident)))
-S#    endif
-S#endif
-S
-S#ifdef __cplusplus
-S} /* extern "C" namespace std */
-S#endif  /* __cplusplus */
-S
-S#pragma diag_pop
-S
-N#endif  /* _STDDEF */
-N
-N#if defined(__cplusplus) && !defined(_CPP_STYLE_HEADER)
-X#if 0L && !0L
-Susing std::ptrdiff_t;
-Susing std::size_t;
-S/*using std::wchar_t;*/
-N#endif /* _CPP_STYLE_HEADER */
-N
-N#pragma diag_push
-N#pragma CHECK_MISRA("-19.15") /* code outside guard; see below comment */
-N
-N/*-----------------------------------------------------------------------*/
-N/* Define _win_t, for compiling GCC libraries with the TI compiler.      */
-N/* GCC's library (newlib) expects wint_t to be defined here, in stddef.h,*/
-N/* which is arguably incorrect, but we go along for compatibility.       */
-N/* This is outside the _STDDEF guard in case this file has already       */
-N/* been included without __need_wint_t.                                  */
-N/*-----------------------------------------------------------------------*/
-N#if defined(__need_wint_t) && !defined(_WINT_T) 
-X#if 0L && !0L 
-S#if (__STDC_VERSION__ >= 199901L || !__TI_STRICT_ANSI_MODE__)
-S
-S#undef __need_wint_t
-S#define _WINT_T
-S#ifdef __cplusplus
-S   extern "C" namespace std {
-S#endif /* __cplusplus */
-S
-Stypedef unsigned int wint_t;
-S
-S#ifdef __cplusplus
-S   } /* extern "C" namespace std { */
-S#endif /* __cplusplus */
-S
-S#if defined(__cplusplus) && !defined(_CPP_STYLE_HEADER)
-Susing std::wint_t;
-S#endif /* _CPP_STYLE_HEADER */
-S
-S#endif /* __STDC_VERSION__ >= 199901L  */
-N#endif
-N
-N#pragma diag_pop
-L 67 "/vagrant/Q4_04/sdk_root/source/ti/drivers/dpl/ClockP.h" 2
 N
 N/*!
 N *  @brief    Number of bytes greater than or equal to the size of any RTOS
@@ -7350,8 +4070,8 @@ N/*!
 N *  @brief  Frequency-in-hertz struct
 N */
 Ntypedef struct ClockP_FreqHz {
-N    uint32_t hi;      /*! most significant 32-bits of frequency */
-N    uint32_t lo;      /*! least significant 32-bits of frequency */
+N    uint32_t hi;      /*!< most significant 32-bits of frequency */
+N    uint32_t lo;      /*!< least significant 32-bits of frequency */
 N} ClockP_FreqHz;
 N
 N/*!
@@ -7584,7 +4304,1630 @@ S}
 N#endif
 N
 N#endif /* ti_dpl_ClockP__include */
-L 52 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 2
+L 52 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 2
+N
+N#if defined(SL_PLATFORM_MULTI_THREADED)
+X#if 1L
+N#if defined(__TI_COMPILER_VERSION__)
+X#if 1L
+N#include <ti/posix/ccs/pthread.h>
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/pthread.h" 1
+N/*
+N * Copyright (c) 2015-2017 Texas Instruments Incorporated - http://www.ti.com
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N/*
+N *  ======== pthread.h ========
+N */
+N
+N#ifndef ti_posix_ccs_pthread__include
+N#define ti_posix_ccs_pthread__include
+N
+N/* compiler vendor check */
+N#ifndef __TI_COMPILER_VERSION__
+S#error Incompatible compiler: use this include path (.../ti/posix/ccs) only \
+Swith a Texas Instruments compiler. You appear to be using a different compiler.
+X#error Incompatible compiler: use this include path (.../ti/posix/ccs) only with a Texas Instruments compiler. You appear to be using a different compiler.
+N#endif
+N
+N#include <stdint.h>
+N
+N#include "sys/types.h"
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/sys/types.h" 1
+N/*
+N * Copyright (c) 2017-2018 Texas Instruments Incorporated - http://www.ti.com
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N/*
+N *  ======== sys/types.h ========
+N */
+N
+N#ifndef ti_posix_ccs_sys_types__include
+N#define ti_posix_ccs_sys_types__include
+N
+N/* compiler vendor check */
+N#ifndef __TI_COMPILER_VERSION__
+S#error Incompatible compiler: use this include path (.../ti/posix/ccs) only \
+Swith a Texas Instruments compiler. You appear to be using a different compiler.
+X#error Incompatible compiler: use this include path (.../ti/posix/ccs) only with a Texas Instruments compiler. You appear to be using a different compiler.
+N#endif
+N
+N#include <stddef.h>
+N#include <stdint.h>
+N
+N/*  TI ARM 18.1.0.LTS added sys/types.h but we intentionally do *not*
+N *  include it (effectively hiding it from source files). We were not
+N *  able to use it because of type collisions (off_t in file.h).
+N */
+N
+N#include "_internal.h"
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/sys/_internal.h" 1
+N/*
+N * Copyright (c) 2017-2018 Texas Instruments Incorporated - http://www.ti.com
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N/*
+N *  ======== sys/_internal.h ========
+N *  Vendor specific internal details
+N */
+N
+N#ifndef ti_posix_ccs_sys__internal__include
+N#define ti_posix_ccs_sys__internal__include
+N
+N/* compiler vendor check */
+N#ifndef __TI_COMPILER_VERSION__
+S#error Incompatible compiler: use this include path (.../ti/posix/ccs) only \
+Swith a Texas Instruments compiler. You appear to be using a different compiler.
+X#error Incompatible compiler: use this include path (.../ti/posix/ccs) only with a Texas Instruments compiler. You appear to be using a different compiler.
+N#endif
+N
+N#include <stdint.h>     /* C99 standard integer types */
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif
+N
+N/*  These opaque object types replicate the kernel internal object
+N *  structures. They are used in a union when defining an opaque
+N *  object in order to guarantee the opaque object is correctly sized
+N *  and aligned with respect to the kernel objects.
+N */
+Nenum Opaque_Mode {
+N    Opaque_Mode_1,
+N    Opaque_Mode_2,
+N    Opaque_Mode_3,
+N    Opaque_Mode_4
+N};
+N
+Nstruct Opaque_Struct__;
+N
+Nstruct Opaque_QueueElem {
+N    struct Opaque_QueueElem *volatile next;
+N    struct Opaque_QueueElem *volatile prev;
+N};
+N
+Nstruct Opaque_QueueStruct {
+N    struct Opaque_QueueElem __f0;
+N    struct Opaque_Struct__ *__f1;
+N};
+N
+Nstruct sysbios_Semaphore {
+N    struct Opaque_Struct__ *__f0;
+N    unsigned int __f1;
+N    enum Opaque_Mode __f2;
+N    volatile uint_least16_t __f3;
+N    struct Opaque_QueueStruct __f4;
+N    struct Opaque_Struct__ *__f5;
+N};
+N
+Nstruct freertos_Semaphore {
+N    void *__f0;
+N};
+N
+Nstruct sysbios_Barrier {
+N    struct sysbios_Semaphore sem;
+N    int count;
+N    int pendCount;
+N};
+N
+Nstruct freertos_Barrier {
+N    int count;
+N    int pendCount;
+N    struct Opaque_Struct__ *waitList;
+N    struct Opaque_Struct__ *last;
+N};
+N
+Nstruct sysbios_Mutex {
+N    struct Opaque_Struct__ *owner;
+N    int lockCnt;
+N    int type;
+N    struct sysbios_Semaphore sem;
+N    struct Opaque_Struct__ *mpo;
+N};
+N
+Nstruct freertos_Mutex {
+N    int protocol;
+N    void *owner;
+N    int type;
+N    void *sem; /* struct freertos_Semaphore */
+N};
+N
+Nstruct sysbios_RWLock {
+N    struct sysbios_Semaphore sem;
+N    struct sysbios_Semaphore readSem;
+N    int activeReaderCnt;
+N    int blockedReaderCnt;
+N    void *owner;
+N};
+N
+Nstruct freertos_RWLock {
+N    struct freertos_Semaphore sem;
+N    struct freertos_Semaphore readSem;
+N    int activeReaderCnt;
+N    int blockedReaderCnt;
+N    void *owner;
+N};
+N
+Nstruct sysbios_Cond {
+N    struct Opaque_QueueStruct waitList;
+N    uint32_t clockId;
+N};
+N
+Nstruct freertos_Cond {
+N    struct Opaque_QueueElem waitList;
+N    uint32_t clockId;
+N};
+N
+N
+N#ifdef __cplusplus
+S}
+N#endif
+N
+N#endif /* ti_posix_ccs_sys__internal__include */
+L 55 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/sys/types.h" 2
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif
+N
+N/*  TI compiler does not define type ssize_t. However, the compiler does
+N *  define size_t as __SIZE_T_TYPE__ for all ISAs. We define ssize_t by
+N *  changing 'unsigned' to 'signed' for this one definition to ensure both
+N *  types have the same bit-width. Set declaration flag using same name
+N *  as GNU compiler, which defines both types.
+N */
+N#ifdef __SIZE_T_TYPE__
+N#define unsigned signed
+Ntypedef __SIZE_T_TYPE__ ssize_t;
+Xtypedef signed ssize_t;
+N#undef unsigned
+N#define _SSIZE_T_DECLARED
+N#else
+S#error __SIZE_T_TYPE__ not defined
+N#endif
+N
+N#ifndef _CLOCKID_T_DECLARED
+Ntypedef uint32_t clockid_t;
+N#define _CLOCKID_T_DECLARED
+N#endif
+N
+N#ifndef _USECONDS_T_DECLARED
+Ntypedef unsigned long useconds_t;
+N#define _USECONDS_T_DECLARED
+N#endif
+N
+N#ifndef _TIMER_T_DECLARED
+Ntypedef unsigned long timer_t;
+N#define _TIMER_T_DECLARED
+N#endif
+N
+N#ifndef _SUSECONDS_T_DECLARED
+Ntypedef long suseconds_t;
+N#define _SUSECONDS_T_DECLARED
+N#endif
+N
+N#ifndef _UID_T_DECLARED
+Ntypedef unsigned short uid_t;
+N#define _UID_T_DECLARED
+N#endif
+N
+N/*  TI compiler defines time_t in time.h (should be in sys/types.h).
+N *  Pull in time.h to get time_t definition.
+N */
+N#include <../include/time.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/../include/time.h" 1
+N/*****************************************************************************/
+N/* time.h                                                                    */
+N/*                                                                           */
+N/* Copyright (c) 1990 Texas Instruments Incorporated                         */
+N/* http://www.ti.com/                                                        */
+N/*                                                                           */
+N/*  Redistribution and  use in source  and binary forms, with  or without    */
+N/*  modification,  are permitted provided  that the  following conditions    */
+N/*  are met:                                                                 */
+N/*                                                                           */
+N/*     Redistributions  of source  code must  retain the  above copyright    */
+N/*     notice, this list of conditions and the following disclaimer.         */
+N/*                                                                           */
+N/*     Redistributions in binary form  must reproduce the above copyright    */
+N/*     notice, this  list of conditions  and the following  disclaimer in    */
+N/*     the  documentation  and/or   other  materials  provided  with  the    */
+N/*     distribution.                                                         */
+N/*                                                                           */
+N/*     Neither the  name of Texas Instruments Incorporated  nor the names    */
+N/*     of its  contributors may  be used to  endorse or  promote products    */
+N/*     derived  from   this  software  without   specific  prior  written    */
+N/*     permission.                                                           */
+N/*                                                                           */
+N/*  THIS SOFTWARE  IS PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS    */
+N/*  "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT    */
+N/*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    */
+N/*  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT    */
+N/*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    */
+N/*  SPECIAL,  EXEMPLARY,  OR CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT    */
+N/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    */
+N/*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY    */
+N/*  THEORY OF  LIABILITY, WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT    */
+N/*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE    */
+N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
+N/*                                                                           */
+N/*****************************************************************************/
+N
+N#ifndef _TIME_H_
+N#define _TIME_H_
+N
+N#include <_ti_config.h>
+N#include <abi_prefix.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/abi_prefix.h" 1
+N/*****************************************************************************/
+N/* ABI_PREFIX.H                                                              */
+N/*                                                                           */
+N/* Copyright (c) 2016 Texas Instruments Incorporated                         */
+N/* http://www.ti.com/                                                        */
+N/*                                                                           */
+N/*  Redistribution and  use in source  and binary forms, with  or without    */
+N/*  modification,  are permitted provided  that the  following conditions    */
+N/*  are met:                                                                 */
+N/*                                                                           */
+N/*     Redistributions  of source  code must  retain the  above copyright    */
+N/*     notice, this list of conditions and the following disclaimer.         */
+N/*                                                                           */
+N/*     Redistributions in binary form  must reproduce the above copyright    */
+N/*     notice, this  list of conditions  and the following  disclaimer in    */
+N/*     the  documentation  and/or   other  materials  provided  with  the    */
+N/*     distribution.                                                         */
+N/*                                                                           */
+N/*     Neither the  name of Texas Instruments Incorporated  nor the names    */
+N/*     of its  contributors may  be used to  endorse or  promote products    */
+N/*     derived  from   this  software  without   specific  prior  written    */
+N/*     permission.                                                           */
+N/*                                                                           */
+N/*  THIS SOFTWARE  IS PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS    */
+N/*  "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT    */
+N/*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    */
+N/*  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT    */
+N/*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    */
+N/*  SPECIAL,  EXEMPLARY,  OR CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT    */
+N/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    */
+N/*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY    */
+N/*  THEORY OF  LIABILITY, WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT    */
+N/*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE    */
+N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
+N/*                                                                           */
+N/*****************************************************************************/
+N
+N#ifndef __abi_prefix__
+N#define __abi_prefix__
+N
+N#if defined(__FROZEN__) /* Keep __FROZEN__ ordered before __TMS320C6X__ */
+X#if 0L  
+S#  define __TI_P(x) __c7xabi_##x
+S#elif defined(__TMS320C6X__)
+X#elif 0L
+S#  define __TI_P(x) __c6xabi_##x
+S#elif defined(__ARP32__)
+X#elif 0L
+S#  define __TI_P(x) __arp32abi_##x
+S#elif defined(__MSP430__)
+X#elif 0L
+S#  define __TI_P(x) __mspabi_##x
+S#elif defined(__PRU__)
+X#elif 0L
+S#  define __TI_P(x) __pruabi_##x
+N#elif defined(__ARM_ARCH)
+X#elif 1L
+N#  define __TI_P(x) __aeabi_##x
+N#elif defined(__TMS320C2000__)
+S#  if defined(__TMS320C28XX_CLA__)
+S#    define __TI_P(x) __claabi_##x
+S#  else
+S#    define __TI_P(x) __c28xabi_##x
+S#  endif
+S#else
+S#error "TARGET NOT DEFINED"
+N#endif
+N
+N#endif
+L 43 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/../include/time.h" 2
+N#if __has_include(<sys/_types.h>)
+X#if 1
+N#include <sys/_types.h>
+N#endif
+N
+N#if defined(__TMS320C2000__)
+X#if 0L
+S#if defined(__TMS320C28XX_CLA__)
+S#error "Header file <time.h> not supported by CLA compiler"
+S#endif
+N#endif
+N
+N#ifndef NULL
+S#define NULL      0
+N#endif
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif
+N
+N/* Use sys/_types.h for clock_t and time_t if it exists */
+N#if __has_include(<sys/_types.h>)
+X#if 1
+N#ifndef _CLOCK_T_DECLARED
+Ntypedef __clock_t clock_t;
+N#define _CLOCK_T_DECLARED
+N#endif
+N
+N#ifndef _TIME_T_DECLARED
+Ntypedef __time_t  time_t;
+N#define _TIME_T_DECLARED
+N#endif
+N
+Ntypedef __int64_t __time64_t;
+Ntypedef __uint32_t __time32_t;
+N
+N#ifndef _SIZE_T_DECLARED
+Stypedef __size_t size_t;
+S#define _SIZE_T_DECLARED
+N#endif
+N
+N#else
+S
+S#if (!defined(__C6X_MIGRATION__) && (defined(_TMS320C6X) || defined(__TMS320C6X__))) || defined(__ARM_ARCH)
+Stypedef unsigned int clock_t;
+Stypedef unsigned int __time32_t;
+S#else
+Stypedef unsigned long clock_t;
+Stypedef unsigned long __time32_t;
+S#endif /* int is 32 bits */
+S
+Stypedef long long __time64_t;
+S
+S#if defined(__FROZEN__) || (defined(__TMS320C2000__) && defined(__TI_EABI__))
+S#define _TARGET_DEFAULTS_TO_TIME64
+S#endif
+S
+S#if defined(_TARGET_DEFAULTS_TO_TIME64) || \
+S    (defined(__TI_TIME_USES_64) && __TI_TIME_USES_64)
+X#if defined(_TARGET_DEFAULTS_TO_TIME64) ||     (defined(__TI_TIME_USES_64) && __TI_TIME_USES_64)
+Stypedef __time64_t time_t;
+S#else
+Stypedef __time32_t time_t;
+S#endif
+S
+S#ifndef _SIZE_T_DECLARED
+S#define _SIZE_T_DECLARED
+Stypedef __SIZE_T_TYPE__ size_t;
+S#endif
+S
+N#endif
+N
+N/*---------------------------------------------------------------------------*/
+N/* The ARM ABI says __aeabi_CLOCKS_PER_SEC is a const int. C99 says that     */
+N/* CLOCKS_PER_SEC is a constant of type clock_t. Therefore on ARM we define  */
+N/* type of __clocks_per_sec_t as int and for all other targets it is clock_t */
+N/*---------------------------------------------------------------------------*/
+N#if defined(__ARM_ARCH)
+X#if 1L
+Ntypedef int          __clocks_per_sec_t;
+N#else
+Stypedef clock_t      __clocks_per_sec_t;
+N#endif
+N
+Nextern _DATA_ACCESS const __clocks_per_sec_t __TI_P(CLOCKS_PER_SEC);
+Xextern  const __clocks_per_sec_t __aeabi_CLOCKS_PER_SEC;
+N#define CLOCKS_PER_SEC __TI_P(CLOCKS_PER_SEC)
+N
+Nstruct tm
+N{
+N    int tm_sec;      /* seconds after the minute   - [0,59]  */
+N    int tm_min;      /* minutes after the hour     - [0,59]  */
+N    int tm_hour;     /* hours after the midnight   - [0,23]  */
+N    int tm_mday;     /* day of the month           - [1,31]  */
+N    int tm_mon;      /* months since January       - [0,11]  */
+N    int tm_year;     /* years since 1900                     */
+N    int tm_wday;     /* days since Sunday          - [0,6]   */
+N    int tm_yday;     /* days since Jan 1st         - [0,365] */
+N    int tm_isdst;    /* Daylight Savings Time flag           */
+N#if defined(_AEABI_PORTABILITY_LEVEL) && _AEABI_PORTABILITY_LEVEL != 0
+X#if 0L && _AEABI_PORTABILITY_LEVEL != 0
+S    int __extra_1, __extra_2;            /* ABI-required extra fields */
+N#endif
+N
+N};
+N
+N/*************************************************************************/
+N/* TIME ZONE STRUCTURE DEFINITION                                        */
+N/*************************************************************************/
+Ntypedef struct 
+N{
+N    short daylight;
+N    long  timezone; /* seconds WEST of UTC.  Strange but traditional */
+N    char  tzname[4];
+N    char  dstname[4];
+N} TZ;
+N
+Nextern _DATA_ACCESS TZ _tz;
+Xextern  TZ _tz;
+N
+N/****************************************************************************/
+N/* FUNCTION DECLARATIONS.  (NOTE : clock AND time ARE SYSTEM SPECIFIC)      */
+N/****************************************************************************/
+N_CODE_ACCESS clock_t    clock(void);             
+X clock_t    clock(void);             
+N
+N_CODE_ACCESS __time32_t __time32(__time32_t *_timer);   
+X __time32_t __time32(__time32_t *_timer);   
+N_CODE_ACCESS __time32_t __mktime32(struct tm *_tptr);
+X __time32_t __mktime32(struct tm *_tptr);
+N_CODE_ACCESS double     __difftime32(__time32_t _time1, __time32_t _time0);
+X double     __difftime32(__time32_t _time1, __time32_t _time0);
+N      _IDECL char      *__ctime32(const __time32_t *_timer);
+X      extern  char      *__ctime32(const __time32_t *_timer);
+N_CODE_ACCESS struct tm *__gmtime32(const __time32_t *_timer);
+X struct tm *__gmtime32(const __time32_t *_timer);
+N_CODE_ACCESS struct tm *__localtime32(const __time32_t *_timer);
+X struct tm *__localtime32(const __time32_t *_timer);
+N
+N_CODE_ACCESS __time64_t __time64(__time64_t *_timer);   
+X __time64_t __time64(__time64_t *_timer);   
+N_CODE_ACCESS __time64_t __mktime64(struct tm *_tptr);
+X __time64_t __mktime64(struct tm *_tptr);
+N_CODE_ACCESS double     __difftime64(__time64_t _time1, __time64_t _time0);
+X double     __difftime64(__time64_t _time1, __time64_t _time0);
+N      _IDECL char      *__ctime64(const __time64_t *_timer);
+X      extern  char      *__ctime64(const __time64_t *_timer);
+N_CODE_ACCESS struct tm *__gmtime64(const __time64_t *_timer);
+X struct tm *__gmtime64(const __time64_t *_timer);
+N_CODE_ACCESS struct tm *__localtime64(const __time64_t *_timer);
+X struct tm *__localtime64(const __time64_t *_timer);
+N
+N_CODE_ACCESS char      *asctime(const struct tm *_timeptr);
+X char      *asctime(const struct tm *_timeptr);
+N_CODE_ACCESS size_t     strftime(char * __restrict _out, size_t _maxsize,
+X size_t     strftime(char * __restrict _out, size_t _maxsize,
+N				 const char * __restrict _format,
+N				 const struct tm * __restrict _timeptr);
+N
+N#if defined(_INLINE) || defined(_CTIME32_IMPLEMENTATION)
+X#if 0L || 0L
+S_IDEFN char *__ctime32(const __time32_t *timer)
+S{
+S   return asctime(__localtime32(timer));
+S}
+N#endif /* _INLINE || _CTIME32_IMPLEMENTATION */
+N
+N#if defined(_INLINE) || defined(_CTIME64_IMPLEMENTATION)
+X#if 0L || 0L
+S_IDEFN char *__ctime64(const __time64_t *timer)
+S{
+S   return asctime(__localtime64(timer));
+S}
+N#endif /* _INLINE || _CTIME64_IMPLEMENTATION */
+N
+N/*-----------------------------------------------------------------------*/
+N/* The user may define __TI_TIME_USES_64=1 to redirects all time        */
+N/* functions to time64 functions.                                        */
+N/*-----------------------------------------------------------------------*/
+N#if defined(_TIME_IMPLEMENTATION) && defined(__TI_TIME_USES_64) && __TI_TIME_USES_64
+X#if 0L && 0L && __TI_TIME_USES_64
+S#error "Do not build the RTS with __TI_TIME_USES_64 set"
+S#elif defined(__TI_TIME_USES_64) && __TI_TIME_USES_64
+X#elif 0L && __TI_TIME_USES_64
+Sstatic __inline time_t     time(time_t *timer) { return __time64(timer); }
+Sstatic __inline time_t     mktime(struct tm *tptr) { return __mktime64(tptr); }
+Sstatic __inline double     difftime(time_t time1, time_t time0) { return __difftime64(time1, time0); }
+Sstatic __inline char      *ctime(const time_t *timer) { return __ctime64(timer); }
+Sstatic __inline struct tm *gmtime(const time_t *timer) { return __gmtime64(timer); }
+Sstatic __inline struct tm *localtime(const time_t *timer) { return __localtime64(timer); }
+N#else
+N_CODE_ACCESS time_t     time(time_t *_timer);   
+X time_t     time(time_t *_timer);   
+N_CODE_ACCESS time_t     mktime(struct tm *_tptr);
+X time_t     mktime(struct tm *_tptr);
+N_CODE_ACCESS double     difftime(time_t _time1, time_t _time0);
+X double     difftime(time_t _time1, time_t _time0);
+N      _IDECL char      *ctime(const time_t *_timer);
+X      extern  char      *ctime(const time_t *_timer);
+N_CODE_ACCESS struct tm *gmtime(const time_t *_timer);
+X struct tm *gmtime(const time_t *_timer);
+N_CODE_ACCESS struct tm *localtime(const time_t *_timer);
+X struct tm *localtime(const time_t *_timer);
+N  #if defined(_INLINE) && !defined(_TIME_IMPLEMENTATION)
+X  #if 0L && !0L
+S  _IDEFN char *ctime(const time_t *timer)
+S  {
+S     return asctime(localtime(timer));
+S  }
+N  #endif /* _INLINE */
+N#endif
+N
+N#ifdef __cplusplus
+S} /* extern "C" */
+N#endif /* __cplusplus */
+N
+N#if defined(_AEABI_PORTABILITY_LEVEL) && _AEABI_PORTABILITY_LEVEL != 0 && \
+N   !defined(_AEABI_PORTABLE)
+X#if 0L && _AEABI_PORTABILITY_LEVEL != 0 &&    !0L
+S#define _AEABI_PORTABLE
+N#endif
+N
+N/*----------------------------------------------------------------------------*/
+N/* If sys/cdefs.h is available, go ahead and include it. xlocale.h assumes    */
+N/* this file will have already included sys/cdefs.h.                          */
+N/*----------------------------------------------------------------------------*/
+N#if __has_include(<sys/cdefs.h>)
+X#if 1
+N#include <sys/cdefs.h>
+N#endif
+N
+N/*----------------------------------------------------------------------------*/
+N/* Include xlocale/_time.h> if POSIX is enabled. This will expose the         */
+N/* xlocale time interface.                                                    */
+N/*----------------------------------------------------------------------------*/
+N#if (defined(__POSIX_VISIBLE) && __POSIX_VISIBLE >= 200809) || defined(_XLOCALE_H_)
+X#if (1L && 200809 >= 200809) || 0L
+N__BEGIN_DECLS
+X
+N#include <xlocale/_time.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/xlocale/_time.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+N *
+N * Copyright (c) 2011, 2012 The FreeBSD Foundation
+N * All rights reserved.
+N *
+N * This software was developed by David Chisnall under sponsorship from
+N * the FreeBSD Foundation.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N * $FreeBSD$
+N */
+N
+N#ifndef _LOCALE_T_DEFINED
+N#define _LOCALE_T_DEFINED
+Ntypedef struct	_xlocale *locale_t;
+N#endif
+N
+N/*
+N * This file is included from both locale.h and xlocale.h.  We need to expose
+N * the declarations unconditionally if we are included from xlocale.h, but only
+N * if we are in POSIX2008 mode if included from locale.h.
+N */
+N#ifndef _XLOCALE_LOCALE1_H
+N#define _XLOCALE_LOCALE1_H
+N
+Nsize_t	 strftime_l(char * __restrict, size_t, const char * __restrict,
+N	    const struct tm * __restrict, locale_t) __strftimelike(3, 0);
+X	    const struct tm * __restrict, locale_t) ;
+N
+N#endif /* _XLOCALE_LOCALE1_H */
+N
+N#ifdef _XLOCALE_H_
+S#ifndef _XLOCALE_LOCALE2_H
+S#define _XLOCALE_LOCALE2_H
+S
+Schar	*strptime_l(const char * __restrict, const char * __restrict,
+S           struct tm * __restrict, locale_t);
+S
+S#endif /* _XLOCALE_LOCALE2_H */
+N#endif /* _XLOCALE_H_ */
+L 245 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/../include/time.h" 2
+N__END_DECLS
+X
+N#endif
+N
+N#endif /* _TIME_H_ */
+N
+L 104 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/sys/types.h" 2
+N
+N
+N/*
+N *************************************************************************
+N *                      posix types
+N *************************************************************************
+N */
+N
+N/*
+N *  ======== pthread_attr_t ========
+N */
+Ntypedef struct pthread_attr_t {
+N    int priority;
+N    void *stack;
+N    size_t stacksize;
+N    size_t guardsize;
+N    int  detachstate;
+N} pthread_attr_t;
+N
+Ntypedef uint32_t pthread_barrierattr_t;
+Ntypedef uint32_t pthread_condattr_t;
+N
+Ntypedef void *pthread_key_t;
+N
+Ntypedef struct pthread_mutexattr_t {
+N    int type;
+N    int protocol;
+N    int prioceiling;
+N} pthread_mutexattr_t;
+N
+Ntypedef uint32_t pthread_rwlockattr_t;
+N
+Ntypedef void *pthread_t;
+N
+Ntypedef union {
+N    struct sysbios_Barrier sysbios;
+N    struct freertos_Barrier freertos;
+N} pthread_barrier_t;
+N
+Ntypedef union {
+N    struct sysbios_Cond sysbios;
+N    struct freertos_Cond freertos;
+N} pthread_cond_t;
+N
+Ntypedef union {
+N    struct sysbios_Mutex sysbios;
+N    struct freertos_Mutex freertos;
+N} pthread_mutex_t;
+N
+Ntypedef uint32_t pthread_once_t;
+N
+Ntypedef union {
+N    struct sysbios_RWLock sysbios;
+N    struct freertos_RWLock freertos;
+N} pthread_rwlock_t;
+N
+Nstruct _pthread_cleanup_context {
+N    pthread_t  thread;
+N    void       (*fxn)(void *);
+N    void      *arg;
+N    int        cancelType;
+N    struct _pthread_cleanup_context *next;
+N};
+N
+N#ifdef __cplusplus
+S}
+N#endif
+N
+N#endif /* ti_posix_ccs_sys_types__include */
+L 49 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/pthread.h" 2
+N#include "time.h"
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/time.h" 1
+N/*
+N * Copyright (c) 2017-2018 Texas Instruments Incorporated - http://www.ti.com
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N/*
+N *  ======== time.h ========
+N */
+N
+N#ifndef ti_posix_ccs_time__include
+N#define ti_posix_ccs_time__include
+N
+N/* compiler vendor check */
+N#ifndef __TI_COMPILER_VERSION__
+S#error Incompatible compiler: use this include path (.../ti/posix/ccs) only \
+Swith a Texas Instruments compiler. You appear to be using a different compiler.
+X#error Incompatible compiler: use this include path (.../ti/posix/ccs) only with a Texas Instruments compiler. You appear to be using a different compiler.
+N#endif
+N
+N#include <stddef.h>
+N#include <stdint.h>
+N
+N/* include compiler time.h */
+N#include <../include/time.h>
+N
+N#include "signal.h"
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/signal.h" 1
+N/*
+N * Copyright (c) 2017 Texas Instruments Incorporated - http://www.ti.com
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N/*
+N *  ======== signal.h ========
+N */
+N
+N#ifndef ti_posix_ccs_signal__include
+N#define ti_posix_ccs_signal__include
+N
+N/* compiler vendor check */
+N#ifndef __TI_COMPILER_VERSION__
+S#error Incompatible compiler: use this include path (.../ti/posix/ccs) only \
+Swith a Texas Instruments compiler. You appear to be using a different compiler.
+X#error Incompatible compiler: use this include path (.../ti/posix/ccs) only with a Texas Instruments compiler. You appear to be using a different compiler.
+N#endif
+N
+N#include "sys/types.h"
+N
+N/* include toolchain's header file */
+N#include <../include/signal.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/../include/signal.h" 1
+N/*-
+N * Copyright (c) 1982, 1986, 1989, 1991, 1993
+N *	The Regents of the University of California.  All rights reserved.
+N * (c) UNIX System Laboratories, Inc.
+N * 
+N * Copyright (c) 2014-2014 Texas Instruments Incorporated
+N *
+N * All or some portions of this file are derived from material licensed
+N * to the University of California by American Telephone and Telegraph
+N * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+N * the permission of UNIX System Laboratories, Inc.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N * 4. Neither the name of the University nor the names of its contributors
+N *    may be used to endorse or promote products derived from this software
+N *    without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N *	@(#)signal.h	8.4 (Berkeley) 5/4/95
+N * $FreeBSD: release/10.0.0/sys/sys/signal.h 233519 2012-03-26 19:12:09Z rmh $
+N */
+N 
+N#ifndef _SIGNAL_H
+N#define _SIGNAL_H
+N
+N#include <_ti_config.h>
+N
+N#if defined(__cplusplus)
+X#if 0L
+Sextern "C" {
+N#endif
+N
+N_CODE_ACCESS int raise(int);
+X int raise(int);
+N
+Ntypedef void __sighandler_t(int);
+N
+N#if __PRU__
+S/* Avoid warning by first converting to short */
+S#define SIG_DFL ((__sighandler_t *) (short)0)
+S#define SIG_IGN ((__sighandler_t *) (short)1)
+S#define SIG_ERR ((__sighandler_t *) (short)-1)
+N#else
+N#define SIG_DFL ((__sighandler_t *) 0)
+N#define SIG_IGN ((__sighandler_t *) 1)
+N#define SIG_ERR ((__sighandler_t *) -1)
+N#endif
+N
+N#define SIGINT 2
+N#define SIGILL 4
+N#define SIGABRT 5
+N#define SIGFPE 8
+N#define SIGSEGV 11
+N#define SIGTERM 15
+N
+N#define NSIG 32
+N
+N_CODE_ACCESS __sighandler_t *signal(int s, __sighandler_t * t);
+X __sighandler_t *signal(int s, __sighandler_t * t);
+N
+Ntypedef int sig_atomic_t;
+N
+N#if defined(__cplusplus)
+X#if 0L
+S}
+N#endif
+N
+N#endif
+L 50 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/signal.h" 2
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif
+N
+N#ifndef SIGEV_NONE
+N#define SIGEV_NONE 1
+N#endif
+N
+N#ifndef SIGEV_SIGNAL
+N#define SIGEV_SIGNAL 2
+N#endif
+N
+N#ifndef SIGEV_THREAD
+N#define SIGEV_THREAD 3
+N#endif
+N
+N
+N/*
+N *************************************************************************
+N *                      signal types
+N *************************************************************************
+N */
+N
+N/*
+N *  ======== sigval ========
+N */
+Nunion sigval {
+N    int     sival_int;      /* integer signal value */
+N    void   *sival_ptr;      /* pointer signal value */
+N};
+N
+N/*  Deprecated. This typedef is for compatibility with old SDKs. It is
+N *  not part of the POSIX standard. It will be removed in a future
+N *  release. TIRTOS-1317
+N */
+Ntypedef union sigval sigval;
+N
+N/*
+N *  ======== sigevent ========
+N */
+Nstruct sigevent {
+N    int             sigev_notify;       /* notification type */
+N    int             sigev_signo;        /* signal number */
+N    union sigval    sigev_value;        /* signal value */
+N
+N    void (*sigev_notify_function)(union sigval val);    /* notify function */
+N    pthread_attr_t *sigev_notify_attributes;            /* notify attributes */
+N};
+N
+N/*  Deprecated. This typedef is for compatibility with old SDKs. It is
+N *  not part of the POSIX standard. It will be removed in a future
+N *  release. TIRTOS-1317
+N */
+Ntypedef struct sigevent sigevent;
+N
+N
+N#ifdef __cplusplus
+S}
+N#endif
+N
+N#endif /* ti_posix_ccs_signal__include */
+L 53 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/time.h" 2
+N#include "sys/types.h"
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif
+N
+N/*
+N *  Timer support.
+N */
+N/*
+N *  CLOCK_REALTIME represents the realtime clock for the system.  For this
+N *  clock, clock_gettime() returns the time since the beginning of the
+N *  Epoch.  SYS/BIOS implements clock_gettime() and clock_settime() with
+N *  the ti.sysbios.hal.Seconds module for CLOCK_REALTIME.
+N */
+N#ifndef CLOCK_REALTIME
+N#define CLOCK_REALTIME (clockid_t)1
+N#endif
+N
+N/*
+N *  CLOCK_MONOTONIC represents a system clock that cannot be set via
+N *  clock_settime().  For SYS/BIOS, CLOCK_MONOTONIC represents the
+N *  ti.sysbios.knl.Clock system clock.
+N */
+N#ifndef CLOCK_MONOTONIC
+N#define CLOCK_MONOTONIC (clockid_t)2
+N#endif
+N
+N#ifndef TIMER_ABSTIME
+N#define TIMER_ABSTIME 4
+N#endif
+N
+N#if defined(__TMS470__) && (__TI_COMPILER_VERSION__ >= 18001000)
+X#if 1L && (18001002 >= 18001000)
+N#include <../include/sys/timespec.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/../include/sys/timespec.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-3-Clause
+N *
+N * Copyright (c) 1982, 1986, 1993
+N *	The Regents of the University of California.  All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N * 3. Neither the name of the University nor the names of its contributors
+N *    may be used to endorse or promote products derived from this software
+N *    without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N *	@(#)time.h	8.5 (Berkeley) 5/4/95
+N * from: FreeBSD: src/sys/sys/time.h,v 1.43 2000/03/20 14:09:05 phk Exp
+N *	$FreeBSD$
+N */
+N
+N#ifndef _SYS_TIMESPEC_H_
+N#define _SYS_TIMESPEC_H_
+N
+N#include <sys/cdefs.h>
+N#include <sys/_timespec.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/sys/_timespec.h" 1
+N/*-
+N * SPDX-License-Identifier: BSD-3-Clause
+N *
+N * Copyright (c) 1982, 1986, 1993
+N *	The Regents of the University of California.  All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N * 1. Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N * 2. Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N * 3. Neither the name of the University nor the names of its contributors
+N *    may be used to endorse or promote products derived from this software
+N *    without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+N * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+N * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+N * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+N * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+N * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+N * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+N * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+N * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+N * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+N * SUCH DAMAGE.
+N *
+N *	@(#)time.h	8.5 (Berkeley) 5/4/95
+N * from: FreeBSD: src/sys/sys/time.h,v 1.43 2000/03/20 14:09:05 phk Exp
+N *	$FreeBSD$
+N */
+N
+N#ifndef _SYS__TIMESPEC_H_
+N#define	_SYS__TIMESPEC_H_
+N
+N#include <sys/_types.h>
+N
+N#ifndef _TIME_T_DECLARED
+Stypedef	__time_t	time_t;
+S#define	_TIME_T_DECLARED
+N#endif
+N
+Nstruct timespec {
+N	time_t	tv_sec;		/* seconds */
+N	long	tv_nsec;	/* and nanoseconds */
+N};
+N
+N#endif /* !_SYS__TIMESPEC_H_ */
+L 41 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/../include/sys/timespec.h" 2
+N
+N#if __BSD_VISIBLE
+X#if 1
+N#define	TIMEVAL_TO_TIMESPEC(tv, ts)					\
+N	do {								\
+N		(ts)->tv_sec = (tv)->tv_sec;				\
+N		(ts)->tv_nsec = (tv)->tv_usec * 1000;			\
+N	} while (0)
+X#define	TIMEVAL_TO_TIMESPEC(tv, ts)						do {										(ts)->tv_sec = (tv)->tv_sec;						(ts)->tv_nsec = (tv)->tv_usec * 1000;				} while (0)
+N#define	TIMESPEC_TO_TIMEVAL(tv, ts)					\
+N	do {								\
+N		(tv)->tv_sec = (ts)->tv_sec;				\
+N		(tv)->tv_usec = (ts)->tv_nsec / 1000;			\
+N	} while (0)
+X#define	TIMESPEC_TO_TIMEVAL(tv, ts)						do {										(tv)->tv_sec = (ts)->tv_sec;						(tv)->tv_usec = (ts)->tv_nsec / 1000;				} while (0)
+N
+N#endif /* __BSD_VISIBLE */
+N
+N/*
+N * Structure defined by POSIX.1b to be like a itimerval, but with
+N * timespecs. Used in the timer_*() system calls.
+N */
+Nstruct itimerspec {
+N	struct timespec  it_interval;
+N	struct timespec  it_value;
+N};
+N
+N#endif /* _SYS_TIMESPEC_H_ */
+L 87 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/time.h" 2
+N#else
+Sstruct timespec {
+S    time_t  tv_sec;   /* Seconds */
+S    long    tv_nsec;  /* Nanoseconds */
+S};
+S
+Sstruct itimerspec {
+S    struct timespec it_interval;  /* Timer interval */
+S    struct timespec it_value;     /* Timer expiration */
+S};
+N#endif /* TI ARM version < 18.1.0.LTS */
+N
+N/*
+N *  For clockId = CLOCK_REALTIME, clock_gettime() and clock_settime() use
+N *  the BIOS Seconds module to get/set the time.  Before using clock_gettime()
+N *  with clockId = CLOCK_REALTIME, the Seconds module must be initialized.
+N *  This can be done by either calling clock_settime(CLOCK_REALTIME,...),
+N *  or Seconds_set().
+N *  For clockId = CLOCK_MONOTONIC, clock_gettime() returns a time based on
+N *  ti.sysbios.knl.Clock ticks.
+N */
+Nextern int clock_gettime(clockid_t clockId, struct timespec *ts);
+N
+Nextern int clock_nanosleep(clockid_t clock_id, int flags,
+N        const struct timespec *rqtp, struct timespec *rmtp);
+N
+N/*
+N *  Only clockId = CLOCK_REALTIME is supported for clock_settime(). Only
+N *  the value of ts->tv_sec is used is used in clock_settime().
+N *  Returns EINVAL if clockId = CLOCK_MONOTONIC.
+N */
+Nextern int clock_settime(clockid_t clockId, const struct timespec *ts);
+N
+N/*
+N *  Create a timer based on the BIOS Clock module.  To reduce code size,
+N *  the clockId parameter is ignored.
+N */
+Nextern int timer_create(clockid_t clockId, struct sigevent *evp,
+N       timer_t *timerid);
+Nextern int timer_delete(timer_t timerid);
+Nextern int timer_gettime(timer_t timerid, struct itimerspec *its);
+Nextern int timer_settime(timer_t timerid, int flags,
+N        const struct itimerspec *value, struct itimerspec *ovalue);
+N
+N#ifdef __cplusplus
+S}
+N#endif
+N
+N#endif /* ti_posix_ccs_time__include */
+L 50 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/pthread.h" 2
+N#include "sched.h"
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/sched.h" 1
+N/*
+N * Copyright (c) 2016-2017 Texas Instruments Incorporated - http://www.ti.com
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N/*
+N *  ======== sched.h ========
+N */
+N
+N#ifndef ti_posix_ccs_sched__include
+N#define ti_posix_ccs_sched__include
+N
+N/* compiler vendor check */
+N#ifndef __TI_COMPILER_VERSION__
+S#error Incompatible compiler: use this include path (.../ti/posix/ccs) only \
+Swith a Texas Instruments compiler. You appear to be using a different compiler.
+X#error Incompatible compiler: use this include path (.../ti/posix/ccs) only with a Texas Instruments compiler. You appear to be using a different compiler.
+N#endif
+N
+N#include <stdint.h>
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif
+N
+N/*
+N *  These defines would be in a sched.h, which TI and IAR
+N *  toolchains don't have.
+N */
+N#ifndef SCHED_FIFO
+N#define SCHED_FIFO 0
+N#endif
+N
+N#ifndef SCHED_RR
+N#define SCHED_RR 0
+N#endif
+N
+N#ifndef SCHED_OTHER
+N#define SCHED_OTHER 0
+N#endif
+N
+N/*
+N *  ======== sched_param ========
+N *  This was taken from sys/sched.h
+N */
+Nstruct sched_param {
+N  int sched_priority; /* Thread execution priority */
+N};
+N
+N/*
+N *  GNU sched.h declares sched_get_priority_min(),
+N *  sched_get_priority_max(), and sched_yield() inside an
+N *      #if defined(_POSIX_PRIORITY_SCHEDULING)
+N *  block.
+N */
+Nextern int sched_get_priority_min(int policy);
+Nextern int sched_get_priority_max(int policy);
+N
+Nextern int sched_yield(void);
+N
+N#ifdef __cplusplus
+S}
+N#endif
+N
+N#endif /* ti_posix_ccs_sched__include */
+L 51 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/ccs/pthread.h" 2
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif
+N
+N#define PTHREAD_BARRIER_SERIAL_THREAD -1
+N
+N#define PTHREAD_CREATE_JOINABLE     0
+N#define PTHREAD_CREATE_DETACHED     1
+N
+N/* PThread cancellation */
+N#define PTHREAD_CANCEL_ENABLE       0
+N#define PTHREAD_CANCEL_DISABLE      1
+N#define PTHREAD_CANCELED            ((void *) -1)
+N
+N/*
+N *  Mutex attributes - type
+N *
+N *  PTHREAD_MUTEX_NORMAL: Owner of mutex cannot relock it. Attempting
+N *      to relock will cause deadlock.
+N *  PTHREAD_MUTEX_RECURSIVE: Owner can relock the mutex.
+N *  PTHREAD_MUTEX_ERRORCHECK: If owner attempts to relock the mutex, an
+N *      error is returned.
+N *
+N */
+N#define PTHREAD_MUTEX_NORMAL        0
+N#define PTHREAD_MUTEX_RECURSIVE     1
+N#define PTHREAD_MUTEX_ERRORCHECK    2
+N#define PTHREAD_MUTEX_DEFAULT       PTHREAD_MUTEX_NORMAL
+N
+N/* Passed to pthread_once() */
+N#define PTHREAD_ONCE_INIT 0
+N
+N/*
+N *  Mutex attributes - protocol
+N *
+N *  PTHREAD_PRIO_NONE: Ownership of mutex does not affect priority.
+N *  PTHREAD_PRIO_INHERIT: Owner's priority is boosted to the priority of
+N *      highest priority thread blocked on the mutex.
+N *  PTHREAD_PRIO_PROTECT:  Mutex has a priority ceiling.  The owner's
+N *      priority is boosted to the highest priority ceiling of all mutexes
+N *      owned (regardless of whether or not other threads are blocked on
+N *      any of these mutexes).
+N */
+N#define PTHREAD_PRIO_NONE           0
+N#define PTHREAD_PRIO_INHERIT        1
+N#define PTHREAD_PRIO_PROTECT        2
+N
+N#define PTHREAD_PROCESS_PRIVATE     0
+N
+N/*
+N *************************************************************************
+N *                      pthread_attr
+N *************************************************************************
+N */
+Nextern int pthread_attr_destroy(pthread_attr_t *attr);
+N
+Nextern int pthread_attr_getdetachstate(const pthread_attr_t *attr,
+N        int *detachstate);
+Nextern int pthread_attr_getguardsize(const pthread_attr_t *attr,
+N        size_t *guardsize);
+N
+Nextern int pthread_attr_getschedparam(const pthread_attr_t *attr,
+N        struct sched_param *schedparam);
+N
+Nextern int pthread_attr_getstack(const pthread_attr_t *attr,
+N        void **stackaddr, size_t *stacksize);
+Nextern int pthread_attr_getstacksize(const pthread_attr_t *attr,
+N        size_t *stacksize);
+N
+Nextern int pthread_attr_init(pthread_attr_t *attr);
+N
+Nextern int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachedstate);
+Nextern int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
+N
+Nextern int pthread_attr_setschedparam(pthread_attr_t *attr,
+N        const struct sched_param *schedparam);
+N
+Nextern int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
+N        size_t stacksize);
+Nextern int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
+N
+N/*
+N *************************************************************************
+N *                      pthread
+N *************************************************************************
+N */
+Nextern int pthread_cancel(pthread_t pthread);
+Nextern void _pthread_cleanup_pop(struct _pthread_cleanup_context *context,
+N                int execute);
+Nextern void _pthread_cleanup_push(struct _pthread_cleanup_context *context,
+N        void (*fxn)(void *), void *arg);
+N
+N#define pthread_cleanup_push(fxn, arg) \
+N    do { \
+N        struct _pthread_cleanup_context _pthread_clup_ctx; \
+N        _pthread_cleanup_push(&_pthread_clup_ctx, (fxn), (arg))
+X#define pthread_cleanup_push(fxn, arg)     do {         struct _pthread_cleanup_context _pthread_clup_ctx;         _pthread_cleanup_push(&_pthread_clup_ctx, (fxn), (arg))
+N
+N#define pthread_cleanup_pop(execute) \
+N        _pthread_cleanup_pop(&_pthread_clup_ctx, (execute)); \
+N    } while (0)
+X#define pthread_cleanup_pop(execute)         _pthread_cleanup_pop(&_pthread_clup_ctx, (execute));     } while (0)
+N
+Nextern int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
+N            void *(*startroutine)(void *), void *arg);
+Nextern int pthread_detach(pthread_t pthread);
+Nextern int pthread_equal(pthread_t pt1, pthread_t pt2);
+Nextern void pthread_exit(void *ptr);
+Nextern int pthread_getschedparam(pthread_t thread, int *policy,
+N        struct sched_param *param);
+Nextern int pthread_join(pthread_t th, void **thread_return);
+Nextern int pthread_once(pthread_once_t *once, void (*initFxn)(void));
+Nextern pthread_t pthread_self(void);
+Nextern int pthread_setcancelstate(int state, int *oldstate);
+Nextern int pthread_setschedparam(pthread_t pthread, int policy,
+N        const struct sched_param *param);
+N
+N/*
+N *************************************************************************
+N *                      pthread_barrierattr
+N *************************************************************************
+N */
+Nextern int pthread_barrierattr_destroy(pthread_barrierattr_t *attr);
+Nextern int pthread_barrierattr_init(pthread_barrierattr_t *attr);
+N
+N/*
+N *************************************************************************
+N *                      pthread_barrier
+N *************************************************************************
+N */
+Nextern int pthread_barrier_destroy(pthread_barrier_t *barrier);
+Nextern int pthread_barrier_init(pthread_barrier_t *barrier,
+N        const pthread_barrierattr_t *attr, unsigned count);
+Nextern int pthread_barrier_wait(pthread_barrier_t *barrier);
+N
+N/*
+N *************************************************************************
+N *                      pthread_condattr
+N *************************************************************************
+N */
+Nextern int pthread_condattr_destroy(pthread_condattr_t *attr);
+Nextern int pthread_condattr_getclock(const pthread_condattr_t *attr,
+N        clockid_t *clock_id);
+Nextern int pthread_condattr_init(pthread_condattr_t * attr);
+Nextern int pthread_condattr_setclock(pthread_condattr_t *attr,
+N        clockid_t clock_id);
+N
+N/*
+N *************************************************************************
+N *                      pthread_cond
+N *************************************************************************
+N */
+Nextern int pthread_cond_broadcast(pthread_cond_t *cond);
+Nextern int pthread_cond_destroy(pthread_cond_t *cond);
+Nextern int pthread_cond_init(pthread_cond_t *cond,
+N        const pthread_condattr_t *attr);
+Nextern int pthread_cond_signal(pthread_cond_t *cond);
+Nextern int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+N        const struct timespec *abstime);
+Nextern int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
+N
+N/*
+N *************************************************************************
+N *                      pthread_key
+N *************************************************************************
+N */
+Nextern int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));
+Nextern int pthread_key_delete(pthread_key_t key);
+Nextern void *pthread_getspecific(pthread_key_t key);
+Nextern int pthread_setspecific(pthread_key_t key, const void *value);
+N
+N/*
+N *************************************************************************
+N *                      pthread_mutexattr
+N *************************************************************************
+N */
+Nextern int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
+Nextern int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr,
+N        int *type);
+Nextern int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr,
+N        int *prioceiling);
+Nextern int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
+N        int *protocol);
+Nextern int pthread_mutexattr_init(pthread_mutexattr_t *attr);
+Nextern int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr,
+N        int prioceiling);
+Nextern int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr,
+N        int protocol);
+Nextern int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+N
+N/*
+N *************************************************************************
+N *                      pthread_mutex
+N *************************************************************************
+N */
+Nextern int pthread_mutex_destroy(pthread_mutex_t *mutex);
+Nextern int pthread_mutex_getprioceiling(const pthread_mutex_t *mutex,
+N        int *prioceiling);
+Nextern int pthread_mutex_init(pthread_mutex_t *mutex,
+N            const pthread_mutexattr_t *attr);
+Nextern int pthread_mutex_lock(pthread_mutex_t *mutex);
+Nextern int pthread_mutex_setprioceiling(pthread_mutex_t *mutex,
+N        int prioceiling, int *oldceiling);
+Nextern int pthread_mutex_timedlock(pthread_mutex_t *mutex,
+N            const struct timespec *abstime);
+Nextern int pthread_mutex_trylock(pthread_mutex_t *mutex);
+N
+Nextern int pthread_mutex_unlock(pthread_mutex_t *mutex);
+N
+N/*
+N *************************************************************************
+N *                      pthread_rwlockattr
+N *************************************************************************
+N */
+Nextern int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
+Nextern int pthread_rwlockattr_init(pthread_rwlockattr_t * attr);
+N
+N/*
+N *************************************************************************
+N *                      pthread_rwlock
+N *************************************************************************
+N */
+Nextern int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
+Nextern int pthread_rwlock_init(pthread_rwlock_t *rwlock,
+N        const pthread_rwlockattr_t *attr);
+N
+Nextern int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
+Nextern int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
+N        const struct timespec *abstime);
+Nextern int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
+N        const struct timespec *abstime);
+Nextern int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
+Nextern int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
+Nextern int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
+Nextern int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
+N
+N#ifdef __cplusplus
+S}
+N#endif
+N
+N#endif /* ti_posix_ccs_pthread__include */
+L 56 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/cc_pal.h" 2
+N#elif defined(__IAR_SYSTEMS_ICC__)
+S#include <ti/posix/iar/pthread.h>
+S#elif defined(__GNUC__)
+S#include <ti/posix/gcc/pthread.h>
+S#else
+S#error "Unknown compiler, use __TI_COMPILER_VERSION__ __IAR_SYSTEMS_ICC__ or __GNUC__"
+N#endif
+N#endif
+N
+N
+N
+N
 N
 N
 N#define MAX_QUEUE_SIZE					(4)
@@ -7830,7 +6173,8 @@ N    \note           belongs to \ref ported_sec
 N*/
 Nint SemaphoreP_post_handle(SemaphoreP_Handle* pSemHandle);
 N
-N
+N#if defined(SL_PLATFORM_MULTI_THREADED)
+X#if 1L
 N/*!
 N    \brief Creates a mutex object handle, using the driver porting layer of the core SDK. 
 N
@@ -7841,7 +6185,7 @@ N					Otherwise, -1 shall be returned
 N
 N	\note           belongs to \ref ported_sec	
 N*/
-Nint Mutex_create_handle(MutexP_Handle* pMutexHandle);
+Nint Mutex_create_handle(pthread_mutex_t* pMutexHandle);
 N
 N
 N/*!
@@ -7853,7 +6197,7 @@ N    \return         the function shall return 0.
 N
 N    \note           belongs to \ref ported_sec
 N*/
-Nint  MutexP_delete_handle(MutexP_Handle* pMutexHandle);
+Nint  MutexP_delete_handle(pthread_mutex_t* pMutexHandle);
 N
 N/*!
 N    \brief Unlocks a mutex object.
@@ -7864,7 +6208,7 @@ N	\return			upon successful unlocking, the function shall return 0.
 N
 N	\note           belongs to \ref ported_sec	
 N*/
-Nint Mutex_unlock(MutexP_Handle pMutexHandle);
+Nint Mutex_unlock(pthread_mutex_t *pMutexHandle);
 N
 N
 N/*!
@@ -7878,8 +6222,57 @@ N	\note           belongs to \ref ported_sec
 N	
 N	\warning        The lock will block until the mutex is available.
 N*/
-Nint Mutex_lock(MutexP_Handle pMutexHandle);
-N
+Nint Mutex_lock(pthread_mutex_t *pMutexHandle);
+N#else
+S/*!
+S    \brief Creates a mutex object handle, using the driver porting layer of the core SDK.
+S
+S    \param          pMutexHandle    -   pointer to a memory structure that would contain the handle.
+S
+S    \return         upon successful creation, the function shall return 0.
+S                    Otherwise, -1 shall be returned
+S
+S    \note           belongs to \ref ported_sec
+S*/
+Sint Mutex_create_handle(MutexP_Handle* pMutexHandle);
+S
+S
+S/*!
+S    \brief Deletes a mutex object handle, using the driver porting layer of the core SDK.
+S
+S    \param          pMutexHandle    -   pointer to a memory structure that would contain the handle.
+S
+S    \return         the function shall return 0.
+S
+S    \note           belongs to \ref ported_sec
+S*/
+Sint  MutexP_delete_handle(MutexP_Handle* pMutexHandle);
+S
+S/*!
+S    \brief Unlocks a mutex object.
+S
+S    \param          pMutexHandle    -   pointer to a memory structure that contains the object.
+S
+S    \return         upon successful unlocking, the function shall return 0.
+S
+S    \note           belongs to \ref ported_sec
+S*/
+Sint Mutex_unlock(MutexP_Handle pMutexHandle);
+S
+S
+S/*!
+S    \brief Locks a mutex object.
+S
+S    \param          pMutexHandle    -   pointer to a memory structure that contains the object.
+S
+S    \return         upon successful locking, the function shall return 0.
+S
+S    \note           belongs to \ref ported_sec
+S
+S    \warning        The lock will block until the mutex is available.
+S*/
+Sint Mutex_lock(MutexP_Handle pMutexHandle);
+N#endif
 N
 N/*!
 N    \brief Take a time stamp value.
@@ -7910,7 +6303,7 @@ N#endif // __cplusplus
 N
 N#endif
 N
-L 51 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/porting/user.h" 2
+L 51 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/user.h" 2
 N
 Ntypedef signed int _SlFd_t;
 N
@@ -7918,30 +6311,476 @@ N#define SL_TIMESTAMP_TICKS_IN_10_MILLISECONDS     (_u32)(10)
 N#define SL_TIMESTAMP_MAX_VALUE                    (_u32)(0xFFFFFFFF)
 N
 N/*!
-N	\def		MAX_CONCURRENT_ACTIONS
+N ******************************************************************************
+N
+N    \defgroup   configuration_mem_mgm             Configuration - Memory Management
+N
+N    This section declare in which memory management model the SimpleLink driver
+N    will run:
+N        -# Static
+N        -# Dynamic
+N
+N    This section IS NOT REQUIRED in case Static model is selected.
+N
+N    The default memory model is Static
+N
+N
+N    @{
+N
+N *****************************************************************************
+N*/
+N
+N/*!
+N    \brief      Defines whether the SimpleLink driver is working in dynamic
+N                memory model or not
+N
+N                When defined, the SimpleLink driver use dynamic allocations
+N                if dynamic allocation is selected malloc and free functions
+N                must be retrieved
+N
+N    \sa
+N
+N    \note       belongs to \ref configuration_sec
+N
+N    \warning
+N*/
+N
+N#define SL_MEMORY_MGMT_DYNAMIC
+N
+N#ifdef SL_MEMORY_MGMT_DYNAMIC
+N
+N
+N#include <stdlib.h>
+L 1 "/opt/ti/ccs-latest/ccsv8/tools/compiler/ti-cgt-arm_18.1.2.LTS/include/stdlib.h" 1
+N/*****************************************************************************/
+N/* stdlib.h                                                                  */
+N/*                                                                           */
+N/* Copyright (c) 1993 Texas Instruments Incorporated                         */
+N/* http://www.ti.com/                                                        */
+N/*                                                                           */
+N/*  Redistribution and  use in source  and binary forms, with  or without    */
+N/*  modification,  are permitted provided  that the  following conditions    */
+N/*  are met:                                                                 */
+N/*                                                                           */
+N/*     Redistributions  of source  code must  retain the  above copyright    */
+N/*     notice, this list of conditions and the following disclaimer.         */
+N/*                                                                           */
+N/*     Redistributions in binary form  must reproduce the above copyright    */
+N/*     notice, this  list of conditions  and the following  disclaimer in    */
+N/*     the  documentation  and/or   other  materials  provided  with  the    */
+N/*     distribution.                                                         */
+N/*                                                                           */
+N/*     Neither the  name of Texas Instruments Incorporated  nor the names    */
+N/*     of its  contributors may  be used to  endorse or  promote products    */
+N/*     derived  from   this  software  without   specific  prior  written    */
+N/*     permission.                                                           */
+N/*                                                                           */
+N/*  THIS SOFTWARE  IS PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS    */
+N/*  "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT    */
+N/*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    */
+N/*  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT    */
+N/*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    */
+N/*  SPECIAL,  EXEMPLARY,  OR CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT    */
+N/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    */
+N/*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY    */
+N/*  THEORY OF  LIABILITY, WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT    */
+N/*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE    */
+N/*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.     */
+N/*                                                                           */
+N/*****************************************************************************/
+N
+N#ifndef _STDLIB_H_
+N#define _STDLIB_H_
+N
+N#if defined(__TMS320C2000__)
+X#if 0L
+S#if defined(__TMS320C28XX_CLA__)
+S#error "Header file <stdlib.h> not supported by CLA compiler"
+S#endif
+N#endif
+N
+N#pragma diag_push
+N#pragma CHECK_MISRA("-6.3") /* standard types required for standard headers */
+N#pragma CHECK_MISRA("-8.5") /* need to define inline function */
+N#pragma CHECK_MISRA("-19.1") /* #includes required for implementation */
+N#pragma CHECK_MISRA("-19.7") /* need function-like macros */
+N#pragma CHECK_MISRA("-20.1") /* standard headers must define standard names */
+N#pragma CHECK_MISRA("-20.2") /* standard headers must define standard names */
+N
+N/*---------------------------------------------------------------------------*/
+N/* Attributes are only available in relaxed ANSI mode.                       */
+N/*---------------------------------------------------------------------------*/
+N#ifndef __ATTRIBUTE
+N#if __TI_STRICT_ANSI_MODE__
+X#if 0
+S#define __ATTRIBUTE(attr)
+N#else
+N#define __ATTRIBUTE(attr) __attribute__(attr)
+N#endif
+N#endif
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif /* !__cplusplus */
+N
+N#pragma diag_push
+N#pragma CHECK_MISRA("-5.7") /* keep names intact */
+N
+Ntypedef struct { int quot, rem; } div_t;
+N
+N#ifndef __ARM_ARCH
+Stypedef struct { long quot, rem; } ldiv_t;
+N#else /* __ARM_ARCH */
+Ntypedef struct { int quot, rem; } ldiv_t;
+N#endif /* __ARM_ARCH */
+N
+N#if defined(__TMS320C55X__) || defined(__ARM_ARCH)      || \
+N    defined(_TMS320C6X)     || defined(__TMS320C2000__) || \
+N    defined(__ARP32__)      || defined(__MSP430__)      || \
+N    defined(__PRU__)        || defined(__FROZEN__)
+X#if 0L || 1L      ||     0L     || 0L ||     0L      || 0L      ||     0L        || 0L
+N#define _LLONG_AVAILABLE 1
+Ntypedef struct { long long quot, rem; } lldiv_t;
+N#endif
+N
+N#pragma diag_pop
+N
+N#if defined(_AEABI_PORTABILITY_LEVEL) && _AEABI_PORTABILITY_LEVEL != 0
+X#if 0L && _AEABI_PORTABILITY_LEVEL != 0
+Sextern int __aeabi_MB_CUR_MAX(void);
+S#define MB_CUR_MAX ( __aeabi_MB_CUR_MAX() )
+N#else
+N#define MB_CUR_MAX    1
+N#endif /* _AEABI_PORTABILITY_LEVEL */
+N
+N#ifndef NULL
+S#define NULL          0
+N#endif
+N
+N#ifndef _SIZE_T_DECLARED
+S#define _SIZE_T_DECLARED
+Stypedef __SIZE_T_TYPE__ size_t;
+N#endif
+N
+N#ifndef __cplusplus
+N#ifndef _WCHAR_T_DECLARED
+S#define _WCHAR_T_DECLARED
+Stypedef __WCHAR_T_TYPE__ wchar_t;
+N#endif
+N#endif
+N
+N#define EXIT_FAILURE  1
+N#define EXIT_SUCCESS  0
+N
+N#define RAND_MAX      32767
+N
+N#include <_ti_config.h>
+N
+N/*---------------------------------------------------------------*/
+N/* NOTE - Normally, abs, labs, and fabs are expanded inline, so  */
+N/*        no formal definition is really required. However, ANSI */
+N/*        requires that they exist as separate functions, so     */
+N/*        they are supplied in the library.  The prototype is    */
+N/*        here mainly for documentation.                         */
+N/*---------------------------------------------------------------*/
+N#pragma diag_push
+N#pragma CHECK_MISRA("-16.4") /* false positives due to builtin declarations */
+N    _CODE_ACCESS  int       abs(int _val);
+X      int       abs(int _val);
+N    _CODE_ACCESS  long      labs(long _val);
+X      long      labs(long _val);
+N#if defined(_LLONG_AVAILABLE)
+X#if 1L
+N    _CODE_ACCESS  long long llabs(long long _val);
+X      long long llabs(long long _val);
+N#endif
+N#pragma diag_pop
+N
+N    _CODE_ACCESS int       atoi(const char *_st);
+X     int       atoi(const char *_st);
+N    _CODE_ACCESS long      atol(const char *_st);
+X     long      atol(const char *_st);
+N#if defined(_LLONG_AVAILABLE)
+X#if 1L
+N    _CODE_ACCESS long long atoll(const char *_st);
+X     long long atoll(const char *_st);
+N#endif
+N    _CODE_ACCESS int       ltoa(long val, char *buffer);
+X     int       ltoa(long val, char *buffer);
+N          _IDECL double    atof(const char *_st);
+X          extern  double    atof(const char *_st);
+N
+N    _CODE_ACCESS long      strtol(const char * __restrict _st,
+X     long      strtol(const char * __restrict _st,
+N                                  char ** __restrict _endptr, int _base);
+N    _CODE_ACCESS unsigned long strtoul(const char * __restrict _st,
+X     unsigned long strtoul(const char * __restrict _st,
+N                                       char ** __restrict _endptr, int _base);
+N#if defined(_LLONG_AVAILABLE)
+X#if 1L
+N    _CODE_ACCESS long long strtoll(const char * __restrict _st,
+X     long long strtoll(const char * __restrict _st,
+N                                   char ** __restrict _endptr, int _base);
+N    _CODE_ACCESS unsigned long long strtoull(const char * __restrict _st,
+X     unsigned long long strtoull(const char * __restrict _st,
+N                                             char ** __restrict _endptr,
+N					     int _base);
+N#endif
+N    _CODE_ACCESS float     strtof(const char * __restrict _st,
+X     float     strtof(const char * __restrict _st,
+N                                  char ** __restrict _endptr);
+N    _CODE_ACCESS double    strtod(const char * __restrict _st,
+X     double    strtod(const char * __restrict _st,
+N                                  char ** __restrict _endptr);
+N    _CODE_ACCESS long double strtold(const char * __restrict _st,
+X     long double strtold(const char * __restrict _st,
+N                                     char ** __restrict _endptr);
+N
+N    _CODE_ACCESS int    rand(void);
+X     int    rand(void);
+N    _CODE_ACCESS void   srand(unsigned _seed);
+X     void   srand(unsigned _seed);
+N
+N    _CODE_ACCESS void  *calloc(size_t _num, size_t _size)
+X     void  *calloc(size_t _num, size_t _size)
+N               __ATTRIBUTE((malloc));
+X               __attribute__((malloc));
+N    _CODE_ACCESS void  *malloc(size_t _size)
+X     void  *malloc(size_t _size)
+N               __ATTRIBUTE((malloc));
+X               __attribute__((malloc));
+N    _CODE_ACCESS void  *realloc(void *_ptr, size_t _size)
+X     void  *realloc(void *_ptr, size_t _size)
+N               __ATTRIBUTE((malloc));
+X               __attribute__((malloc));
+N    _CODE_ACCESS void   free(void *_ptr);
+X     void   free(void *_ptr);
+N    _CODE_ACCESS void  *memalign(size_t _aln, size_t _size)
+X     void  *memalign(size_t _aln, size_t _size)
+N               __ATTRIBUTE((malloc));
+X               __attribute__((malloc));
+N
+N    _CODE_ACCESS _TI_NORETURN void abort(void) _TI_NOEXCEPT_CPP14;
+X     __attribute__((noreturn)) void abort(void) ;
+N
+N    typedef void (*__TI_atexit_fn)(void);
+N    _CODE_ACCESS int    atexit(__TI_atexit_fn _func) _TI_NOEXCEPT_CPP14;
+X     int    atexit(__TI_atexit_fn _func) ;
+N
+N    typedef int (*__TI_compar_fn)(const void *_a,const void *_b);
+N    _CODE_ACCESS void  *bsearch(const void *_key, const void *_base,
+X     void  *bsearch(const void *_key, const void *_base,
+N                                size_t _nmemb, size_t _size,
+N                                __TI_compar_fn compar);
+N    _CODE_ACCESS void   qsort(void *_base, size_t _nmemb, size_t _size,
+X     void   qsort(void *_base, size_t _nmemb, size_t _size,
+N                              __TI_compar_fn compar);
+N
+N    _CODE_ACCESS _TI_NORETURN void exit(int _status);
+X     __attribute__((noreturn)) void exit(int _status);
+N#ifdef _TI_C99LIB
+S    _CODE_ACCESS _TI_NORETURN void _Exit(int _status);
+N#endif
+N
+N    _CODE_ACCESS div_t  div(int _numer, int _denom);
+X     div_t  div(int _numer, int _denom);
+N    _CODE_ACCESS ldiv_t ldiv(long _numer, long _denom);
+X     ldiv_t ldiv(long _numer, long _denom);
+N#if defined(_LLONG_AVAILABLE)
+X#if 1L
+N    _CODE_ACCESS lldiv_t lldiv(long long _numer, long long _denom);
+X     lldiv_t lldiv(long long _numer, long long _denom);
+N#endif
+N
+N    _CODE_ACCESS char  *getenv(const char *_string);
+X     char  *getenv(const char *_string);
+N    _CODE_ACCESS int    system(const char *_name);
+X     int    system(const char *_name);
+N
+N    _CODE_ACCESS int    mblen(const char *_s, size_t _n);
+X     int    mblen(const char *_s, size_t _n);
+N    _CODE_ACCESS size_t mbstowcs(wchar_t * __restrict _dest,
+X     size_t mbstowcs(wchar_t * __restrict _dest,
+N                                 const char * __restrict _src, size_t _n);
+N    _CODE_ACCESS int    mbtowc(wchar_t * __restrict _dest,
+X     int    mbtowc(wchar_t * __restrict _dest,
+N                               const char * __restrict _src, size_t _n);
+N
+N    _CODE_ACCESS size_t wcstombs(char * __restrict _dest,
+X     size_t wcstombs(char * __restrict _dest,
+N                                 const wchar_t * __restrict _src, size_t _n);
+N    _CODE_ACCESS int    wctomb(char *_s, wchar_t _wc);
+X     int    wctomb(char *_s, wchar_t _wc);
+N
+N#ifdef __cplusplus
+S} /* extern "C" */
+N#endif /* __cplusplus */
+N
+N
+N#ifdef _INLINE
+S
+Sstatic __inline double atof(const char *_st)
+S{
+S  return strtod(_st, (char **)0);
+S}
+S
+N#endif  /* _INLINE */
+N
+N#ifdef __cplusplus
+S/*****************************************************************************/
+S/* If we leave these active when in relaxed ANSI mode, we get infinite       */
+S/* recursion due to changes in type matching.  See comment in                */
+S/* ansi/sys_predef.c line 4377 on why we specifically check the              */
+S/* __TI_STRICT_ANSI_MODE__ macro here and its relation to strict ANSI and    */
+S/* relaxed ANSI parser modes.                                                */
+S/*****************************************************************************/
+S#if __TI_STRICT_ANSI_MODE__
+S    _CODE_ACCESS inline int atexit(void (*func)(void)) _TI_NOEXCEPT_CPP14
+S        {
+S            return atexit((__TI_atexit_fn)func);
+S        }
+S
+S    _CODE_ACCESS inline void  *bsearch(const void *_key, const void *_base,
+S                                       size_t _nmemb, size_t _size,
+S                                       int (*compar)(const void *,const void *))
+S        {
+S            return bsearch(_key, _base, _nmemb, _size, (__TI_compar_fn)compar);
+S        }
+S
+S    _CODE_ACCESS inline void   qsort(void *_base, size_t _nmemb, size_t _size,
+S                                     int (*_compar)(const void *, const void *))
+S        {
+S            return qsort(_base, _nmemb, _size, (__TI_compar_fn)_compar);
+S        }
+S#endif
+N#endif
+N
+N#pragma diag_pop
+N
+N#if defined(_AEABI_PORTABILITY_LEVEL) && _AEABI_PORTABILITY_LEVEL != 0 && \
+N   !defined(_AEABI_PORTABLE)
+X#if 0L && _AEABI_PORTABILITY_LEVEL != 0 &&    !0L
+S#define _AEABI_PORTABLE
+N#endif
+N
+N#endif  /* ! _STDLIB_H_ */
+N
+N#pragma diag_push
+N
+N/* C2000-specific additions to header implemented with #include */
+N#pragma CHECK_MISRA("-19.1")
+N#pragma CHECK_MISRA("-19.15")
+N
+N#if defined(__TMS320C2000__)
+X#if 0L
+S#include <stdlibf.h>     /* far versions of stdlib fns */
+N#endif
+N
+N/*----------------------------------------------------------------------------*/
+N/* If sys/cdefs.h is available, go ahead and include it. xlocale.h assumes    */
+N/* this file will have already included sys/cdefs.h.                          */
+N/*----------------------------------------------------------------------------*/
+N#if __has_include(<sys/cdefs.h>)
+X#if 1
+N#include <sys/cdefs.h>
+N#endif
+N
+N/*----------------------------------------------------------------------------*/
+N/* Include xlocale/_stdlib.h if xlocale.h has already been included. This     */
+N/* comes from FreeBSD's stdlib.h.                                             */
+N/*----------------------------------------------------------------------------*/
+N#ifdef _XLOCALE_H_
+S#include <sys/_types.h>
+S__BEGIN_DECLS
+S#include <xlocale/_stdlib.h>
+S__END_DECLS
+N#endif
+N
+N#pragma diag_pop
+L 98 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/porting/user.h" 2
+N/*!
+N    \brief
+N    \sa
+N    \note           belongs to \ref configuration_sec
+N    \warning        
+N*/
+N#define sl_Malloc(Size)                                 malloc(Size)
+N
+N/*!
+N    \brief
+N    \sa
+N    \note           belongs to \ref configuration_sec
+N    \warning        
+N*/
+N#define sl_Free(pMem)                                   free(pMem)
+N#endif
+N
+N
+N/*!
+N
+N Close the Doxygen group.
+N @}
+N
+N*/
+N
+N/*!
+N
+N    \def        MAX_CONCURRENT_ACTIONS
 N
 N    \brief      Defines the maximum number of concurrent action in the system
-N				Min:1 , Max: 32
-N
-N                Actions which has async events as return, can be
+N                Min:1 , Max: 32
+N                    
+N                Actions which has async events as return, will be blocked until the event arrive 
 N
 N    \sa
 N
 N    \note       In case there are not enough resources for the actions needed in the system,
-N	        	error is received: POOL_IS_EMPTY
-N			    one option is to increase MAX_CONCURRENT_ACTIONS
-N				(improves performance but results in memory consumption)
-N		     	Other option is to call the API later (decrease performance)
+N                error is received: SL_POOL_IS_EMPTY
+N                one option is to increase MAX_CONCURRENT_ACTIONS
+N                (improves performance but results in memory consumption)
+N                Other option is to call the API later (decrease performance)
+N
+N                Async events which arrive during command context will be dynamically or static
+N                allocated and handled in spawn context. If MAX_CONCURRENT_ACTIONS
+N                is high, there will be more events which might arrive during this period.
+N                Due to memory constrains MAX_CONCURRENT_ACTIONS is lower in static allocation mode.
+N
 N
 N    \warning    In case of setting to one, recommend to use non-blocking recv\recvfrom to allow
-N				multiple socket recv
+N                multiple socket recv
 N*/
 N#ifndef SL_TINY_EXT
-N#define MAX_CONCURRENT_ACTIONS 10
+N#ifdef SL_MEMORY_MGMT_DYNAMIC
+N#define MAX_CONCURRENT_ACTIONS 18
+N#else
+S#define MAX_CONCURRENT_ACTIONS 5
+N#endif
 N#else
 S#define MAX_CONCURRENT_ACTIONS 1
 N#endif
+N    /*!
+N    \def        SL_MAX_ASYNC_BUFFERS
 N
+N
+N
+N    \brief      Defines the maximum static buffers to store asycn events which
+N                arrives during command context. The event is stored in a buffer (if free)
+N                and handle in spwan cotext. value must be set to MAX_CONCURRENT_ACTIONS which
+N                is the maximum simultaniuos async event which could arrive in command context.
+N    value:      MAX_CONCURRENT_ACTIONS
+N
+N    \sa
+N
+N    \note       Events which arrive when there is no free buffer will be dropped.
+N                If there is a command which is waiting on this event, it will be released
+N                with error SL_RET_CODE_NO_FREE_ASYNC_BUFFERS_ERROR.
+N                In this case need to increase MAX_CONCURRENT_ACTIONS
+N                (improves performance but results in memory consumption)
+N
+N
+N    */
+N    
+N#define SL_MAX_ASYNC_BUFFERS  MAX_CONCURRENT_ACTIONS
 N/*!
 N	\def		CPU_FREQ_IN_MHZ
 N    \brief      Defines CPU frequency for Host side, for better accuracy of busy loops, if any
@@ -8009,35 +6848,6 @@ N                (for example all handlers must not be NULL)
 N*/
 N#define SL_INC_ARG_CHECK
 N
-N
-N/*!
-N    \def		SL_INC_INTERNAL_ERRNO
-N
-N    \brief      Defines whether SimpleLink driver should employ it's internal errno
-N                setter and getter to comply with BSD.
-N                (Usually, this kind of mechanism should be handled by the OS).
-N
-N                When defined, the SimpleLink driver would set and manage the errno variable
-N                per thread, to the various returned errors by the standard BSD API.
-N                The BSD API includes the following functions:
-N                socket, close, accept, bind, listen, connect, select,
-N                setsockopt, getsockopt, recv, recvfrom, send, sendto,
-N                gethostbyname. Furthermore, the user's application can read errno's value.
-N                When not defined, user must provide an errno setter, such that the SimpleLink driver
-N                would use the users's external errno meachnism to set an error code.
-N
-N    \sa         slcb_SetErrno
-N
-N    \note       belongs to \ref configuration_sec
-N
-N    \warning    Query errno in the user's application is by simply invoking the macro 'errno'
-N                which returns a dereferenced pointer to the allocated calling thread's errno value.
-N                If the user choose to change, write to or modifiy the value of errno in any way,
-N                It might overwrite the errno value allocated to any other thread at the point in time.
-N                (Once errno has been read, the driver assumes it can be allocated to another thread).
-N*/
-N
-N#define SL_INC_INTERNAL_ERRNO
 N
 N/*!
 N    \brief      Defines whether to include extended API in SimpleLink driver
@@ -8533,24 +7343,6 @@ N*/
 N
 N#define WAIT_NWP_SHUTDOWN_READY          NwpWaitForShutDownInd()
 N
-N/*!
-N    \brief      User's errno setter function. User must provide an errno setter
-N                in order to let the SimpleLink Wi-Fi driver to support BSD API
-N                alongside the user's errno mechanism.
-N
-N    \param      None.
-N
-N    \sa         SL_INC_INTERNAL_ERRNO
-N
-N    \note
-N
-N    \note       belongs to \ref porting_sec
-N
-N    \warning
-N*/
-N#ifndef SL_INC_INTERNAL_ERRNO
-S#define slcb_SetErrno
-N#endif
 N
 N/*!
 N Close the Doxygen group.
@@ -8650,7 +7442,7 @@ N
 N/*!
 N	\brief 	This function creates a sync object
 N
-N	The sync object is used for synchronization between diffrent thread or ISR and
+N	The sync object is used for synchronization between different thread or ISR and
 N	a thread.
 N
 N	\param	pSyncObj	-	pointer to the sync object control block
@@ -8724,18 +7516,19 @@ N    \warning
 N*/
 N#define sl_SyncObjWait(pSyncObj,Timeout)            SemaphoreP_pend((*(pSyncObj)),Timeout)
 N
-N
+N#if defined(SL_PLATFORM_MULTI_THREADED)
+X#if 1L
 N/*!
 N	\brief 	type definition for a locking object container
 N
 N	Locking object are used to protect a resource from mutual accesses of two or more threads.
-N	The locking object should suppurt reentrant locks by a signal thread.
+N	The locking object should support reentrant locks by a signal thread.
 N	This object is generally implemented by mutex semaphore
 N
 N	\note	On each configuration or platform the type could be whatever is needed - integer, structure etc.
 N    \note       belongs to \ref configuration_sec
 N*/
-N#define _SlLockObj_t 			             MutexP_Handle
+N#define _SlLockObj_t 			             pthread_mutex_t 
 N
 N/*!
 N	\brief 	This function creates a locking object.
@@ -8785,7 +7578,7 @@ N			Otherwise, a negative value indicating the error code shall be returned
 N    \note       belongs to \ref configuration_sec
 N    \warning
 N*/
-N#define sl_LockObjLock(pLockObj,Timeout)          Mutex_lock(*(pLockObj))
+N#define sl_LockObjLock(pLockObj,Timeout)          Mutex_lock(pLockObj) 
 N
 N
 N/*!
@@ -8798,8 +7591,84 @@ N			Otherwise, a negative value indicating the error code shall be returned
 N    \note       belongs to \ref configuration_sec
 N    \warning
 N*/
-N#define sl_LockObjUnlock(pLockObj)                   Mutex_unlock(*(pLockObj))
-N
+N#define sl_LockObjUnlock(pLockObj)                  Mutex_unlock(pLockObj)
+N#else
+S/*!
+S	\brief 	type definition for a locking object container
+S
+S	Locking object are used to protect a resource from mutual accesses of two or more threads.
+S	The locking object should support reentrant locks by a signal thread.
+S	This object is generally implemented by mutex semaphore
+S
+S	\note	On each configuration or platform the type could be whatever is needed - integer, structure etc.
+S    \note       belongs to \ref configuration_sec
+S*/
+S#define _SlLockObj_t 			             MutexP_Handle
+S
+S/*!
+S	\brief 	This function creates a locking object.
+S
+S	The locking object is used for protecting a shared resources between different
+S	threads.
+S
+S	\param	pLockObj	-	pointer to the locking object control block
+S
+S	\return upon successful creation the function should return 0
+S			Otherwise, a negative value indicating the error code shall be returned
+S    \note       belongs to \ref configuration_sec
+S    \warning
+S*/
+S#define sl_LockObjCreate(pLockObj, pName)     Mutex_create_handle(pLockObj)
+S
+S
+S/*!
+S	\brief 	This function deletes a locking object.
+S
+S	\param	pLockObj	-	pointer to the locking object control block
+S
+S	\return upon successful deletion the function should return 0
+S			Otherwise, a negative value indicating the error code shall be returned
+S    \note       belongs to \ref configuration_sec
+S    \warning
+S*/
+S#define sl_LockObjDelete(pLockObj)                  MutexP_delete_handle(pLockObj)
+S
+S
+S/*!
+S	\brief 	This function locks a locking object.
+S
+S	All other threads that call this function before this thread calls
+S	the osi_LockObjUnlock would be suspended
+S
+S	\param	pLockObj	-	pointer to the locking object control block
+S	\param	Timeout		-	numeric value specifies the maximum number of mSec to
+S							stay suspended while waiting for the locking object
+S							Currently, the SimpleLink driver uses only two values:
+S								- OSI_WAIT_FOREVER
+S								- OSI_NO_WAIT
+S
+S
+S	\return upon successful reception of the locking object the function should return 0
+S			Otherwise, a negative value indicating the error code shall be returned
+S    \note       belongs to \ref configuration_sec
+S    \warning
+S*/
+S#define sl_LockObjLock(pLockObj,Timeout)          Mutex_lock(*(pLockObj))
+S
+S
+S/*!
+S	\brief 	This function unlock a locking object.
+S
+S	\param	pLockObj	-	pointer to the locking object control block
+S
+S	\return upon successful unlocking the function should return 0
+S			Otherwise, a negative value indicating the error code shall be returned
+S    \note       belongs to \ref configuration_sec
+S    \warning
+S*/
+S#define sl_LockObjUnlock(pLockObj)                   Mutex_unlock(*(pLockObj))
+S
+N#endif
 N
 N/*!
 N	\brief 	This function call the pEntry callback from a different context
@@ -8831,93 +7700,6 @@ N Close the Doxygen group.
 N @}
 N
 N */
-N/*!
-N ******************************************************************************
-N
-N    \defgroup   configuration_mem_mgm             Configuration - Memory Management
-N
-N    This section declare in which memory management model the SimpleLink driver
-N    will run:
-N        -# Static
-N        -# Dynamic
-N
-N    This section IS NOT REQUIRED in case Static model is selected.
-N
-N    The default memory model is Static
-N
-N
-N    @{
-N
-N *****************************************************************************
-N*/
-N
-N/*!
-N    \brief      Defines whether the SimpleLink driver is working in dynamic
-N                memory model or not
-N
-N                When defined, the SimpleLink driver use dynamic allocations
-N                if dynamic allocation is selected malloc and free functions
-N                must be retrieved
-N
-N    \sa
-N
-N    \note       belongs to \ref configuration_sec
-N
-N    \warning
-N*/
-N/*
-N#define SL_MEMORY_MGMT_DYNAMIC 	1
-N#define SL_MEMORY_MGMT_STATIC  0
-N
-N#define SL_MEMORY_MGMT  SL_MEMORY_MGMT_DYNAMIC
-N*/
-N#ifdef SL_MEMORY_MGMT_DYNAMIC
-S
-S#ifdef SL_PLATFORM_MULTI_THREADED
-S
-S/*!
-S    \brief
-S    \sa
-S    \note           belongs to \ref configuration_sec
-S    \warning
-S*/
-S#define sl_Malloc(Size)                                 mem_Malloc(Size)
-S
-S/*!
-S    \brief
-S    \sa
-S    \note           belongs to \ref configuration_sec
-S    \warning
-S*/
-S#define sl_Free(pMem)                                   mem_Free(pMem)
-S
-S#else
-S#include <stdlib.h>
-S/*!
-S    \brief
-S    \sa
-S    \note           belongs to \ref configuration_sec
-S    \warning        
-S*/
-S#define sl_Malloc(Size)                                 malloc(Size)
-S
-S/*!
-S    \brief
-S    \sa
-S    \note           belongs to \ref configuration_sec
-S    \warning        
-S*/
-S#define sl_Free(pMem)                                   free(pMem)
-S#endif
-S                        
-N#endif
-N
-N/*!
-N
-N Close the Doxygen group.
-N @}
-N
-N*/
 N
 N/*!
 N ******************************************************************************
@@ -9231,7 +8013,7 @@ S}
 N#endif // __cplusplus
 N
 N#endif // __USER_H__
-L 259 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 259 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N
 N#ifdef    __cplusplus
 Sextern "C"
@@ -9270,11 +8052,11 @@ N
 N/*****************************************************************************/
 N/* Macro declarations for Host Driver version                                */
 N/*****************************************************************************/
-N#define SL_DRIVER_VERSION       "2.0.1.26"
-N#define SL_MAJOR_VERSION_NUM    2L
+N#define SL_DRIVER_VERSION   "3.0.1.39"
+N#define SL_MAJOR_VERSION_NUM    3L
 N#define SL_MINOR_VERSION_NUM    0L
 N#define SL_VERSION_NUM          1L
-N#define SL_SUB_VERSION_NUM      26L
+N#define SL_SUB_VERSION_NUM      39L
 N
 N/*****************************************************************************/
 N/* Macro declarations for predefined configurations                          */
@@ -9385,7 +8167,7 @@ N   objInclusion.h must be the last arrangement just before including the API he
 N   since it based on the other configurations to decide which object should be included
 N*/
 N#include "source/objInclusion.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/source/objInclusion.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/source/objInclusion.h" 1
 N/*
 N * objInclusion.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -9424,7 +8206,7 @@ N*/
 N
 N
 N#include <ti/drivers/net/wifi/simplelink.h>
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 1
 N/*
 N * simplelink.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -9537,7 +8319,7 @@ N The first step is to create a <b><i>user.h</i></b> file that will include your
 N adjustments. \n
 N The file should be located in the porting directory (the porting directory is in the same level as the source directory)\n
 N It is recommended to use the empty template provided as part of this driver or
-N file of other platform such as MSP432 or CC3220, from one of the wide range
+N file of other platform such as MSP432 or CC32xx, from one of the wide range
 N of example applications provided by Texas Instruments.
 N
 N \subsection    porting_step2   Step 2 - Select the capabilities set required for your application
@@ -9557,7 +8339,7 @@ N     -# SL_FULL     -   Provide access to all SimpleLink functionalities
 N
 N \subsection    porting_step3   Step 3 - Bind the device enable/disable output line
 N
-N The CC3120 has two external hardware lines that can be used to enable/disable the device.
+N The CC31xx has two external hardware lines that can be used to enable/disable the device.
 N - <b>nReset</b>
 N - <b>nHib</b> - provides mechanism to enter the device into the least current consumption mode. In
 N this mode the RTC value is kept.
@@ -9576,7 +8358,7 @@ N - <b>sl_DeviceEnablePreamble</b>
 N
 N \subsection    porting_step4   Step 4 - Writing your interface communication driver
 N
-N The SimpleLink CC3120 has two standard communication interfaces
+N The SimpleLink CC31xx has two standard communication interfaces
 N    - SPI
 N    - UART
 N
@@ -9721,11 +8503,11 @@ S
 S/*****************************************************************************/
 S/* Macro declarations for Host Driver version                                */
 S/*****************************************************************************/
-S#define SL_DRIVER_VERSION       "2.0.1.26"
-S#define SL_MAJOR_VERSION_NUM    2L
+S#define SL_DRIVER_VERSION   "3.0.1.39"
+S#define SL_MAJOR_VERSION_NUM    3L
 S#define SL_MINOR_VERSION_NUM    0L
 S#define SL_VERSION_NUM          1L
-S#define SL_SUB_VERSION_NUM      26L
+S#define SL_SUB_VERSION_NUM      39L
 S
 S/*****************************************************************************/
 S/* Macro declarations for predefined configurations                          */
@@ -10300,7 +9082,9 @@ S#endif //#if (defined(SL_RUNTIME_EVENT_REGISTERATION))
 S
 Stypedef _SlReturnVal_t (*_SlSpawnEntryFunc_t)(void* pValue);
 S
-S#define SL_SPAWN_FLAG_FROM_SL_IRQ_HANDLER    (0X1)
+S#define SL_SPAWN_FLAG_FROM_SL_IRQ_HANDLER    (0x1)
+S#define SL_SPAWN_FLAG_FROM_CMD_CTX           (0x2)
+S#define SL_SPAWN_FLAG_FROM_CMD_PROCESS       (0x3)
 S
 S#ifdef SL_PLATFORM_MULTI_THREADED
 S    #include "source/spawn.h"
@@ -10676,7 +9460,7 @@ S#endif /* __cplusplus */
 S
 N#endif    /*  __SIMPLELINK_H__ */
 N
-L 39 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/source/objInclusion.h" 2
+L 39 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/source/objInclusion.h" 2
 N
 N
 N#ifndef OBJINCLUSION_H_
@@ -10851,6 +9635,8 @@ N#define _SL_INC_sl_NetAppPing          __nap__ext
 N#define _SL_INC_sl_NetAppSet           __nap__ext
 N#define _SL_INC_sl_NetAppGet           __nap__ext
 N#define _SL_INC_sl_NetAppRecv          __nap__ext
+N#define _SL_INC_sl_NetAppArpFlush       __nap__ext
+N#define _SL_INC_sl_NetAppNdFlush        __nap__ext
 N
 N#define _SL_INC_sl_NetAppSend          __nap__ext
 N
@@ -10924,6 +9710,8 @@ N#define _SL_INC_sl_WlanDisconnect       __wln__ext
 N
 N#define _SL_INC_sl_WlanProfileAdd       __wln__ext
 N
+N#define _SL_INC_sl_WlanProfileUpdate    __wln__ext
+N
 N#define _SL_INC_sl_WlanProfileGet       __wln__ext
 N
 N#define _SL_INC_sl_WlanProfileDel       __wln__ext
@@ -10933,6 +9721,8 @@ N
 N#define _SL_INC_sl_WlanPolicyGet        __wln__ext
 N
 N#define _SL_INC_sl_WlanGetNetworkList   __wln__ext
+N
+N#define _SL_INC_sl_WlanGetExtNetworkList    __wln__ext
 N
 N#define _SL_INC_sl_WlanRxFilterAdd      __wln__ext
 N
@@ -10996,9 +9786,9 @@ S}
 N#endif /* __cplusplus */
 N
 N#endif /*OBJINCLUSION_H_  */
-L 408 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 408 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "trace.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/trace.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/trace.h" 1
 N/*
 N * trace.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -11239,9 +10029,9 @@ N
 N
 N#endif /*__SIMPLELINK_TRACE_H__*/
 N
-L 409 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 409 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "fs.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/fs.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/fs.h" 1
 N/*
 N * fs.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -11330,13 +10120,13 @@ N
 N#define SL_FS_INFO_OPEN_WRITE                    0x1000   /* File is opened for write */
 N#define SL_FS_INFO_OPEN_READ                     0x800    /* File is opened for read */
 N
-N#define SL_FS_INFO_MUST_COMMIT                   0x1      /* File is currently open with SL_FS_FILE_OPEN_FLAG_COMMIT_MODE */
-N#define SL_FS_INFO_BUNDLE_FILE                   0x2      /* File is currently open with SL_FS_FILE_OPEN_FLAG_BUNDLE_COMMIT_MODE */
+N#define SL_FS_INFO_MUST_COMMIT                   0x1      /* File is currently open with SL_FS_WRITE_MUST_COMMIT */
+N#define SL_FS_INFO_BUNDLE_FILE                   0x2      /* File is currently open with SL_FS_WRITE_BUNDLE_FILE */
 N
-N#define SL_FS_INFO_PENDING_COMMIT                0x4      /* File is currently closed with SL_FS_FILE_OPEN_FLAG_COMMIT_MODE */
-N#define SL_FS_INFO_PENDING_BUNDLE_COMMIT         0x8      /* File is currently closed with SL_FS_FILE_OPEN_FLAG_BUNDLE_COMMIT_MODE */
+N#define SL_FS_INFO_PENDING_COMMIT                0x4      /* File that was open with SL_FS_WRITE_MUST_COMMIT is closed */
+N#define SL_FS_INFO_PENDING_BUNDLE_COMMIT         0x8      /* File that was open with SL_FS_WRITE_BUNDLE_FILE is closed */
 N
-N#define SL_FS_INFO_NOT_FAILSAFE                  0x20     /* File was created with SL_FS_FILE_OPEN_FLAG_FAILSAFE */
+N#define SL_FS_INFO_NOT_FAILSAFE                  0x20     /* File was not created with SL_FS_CREATE_FAILSAFE */
 N#define SL_FS_INFO_NOT_VALID                     0x100    /* No valid image exists for the file */
 N#define SL_FS_INFO_SYS_FILE                      0x40     /* File is system file */
 N#define SL_FS_INFO_SECURE                        0x10     /* File is secured */
@@ -11366,7 +10156,7 @@ N#define     SL_FS_CREATE_PUBLIC_READ             ((_u32)0x40<<SL_NUM_OF_MAXSIZE
 N
 N#define     SL_FS_CREATE_MAX_SIZE( MaxFileSize ) ((((_u32)MaxFileSize + 255) / 256 ) & SL_FS_OPEN_MAXSIZE_BIT_MASK )
 N
-N/* write flags */
+N/* open for write flags */
 N#define    SL_FS_WRITE_MUST_COMMIT               ((_u32)0x80<<SL_NUM_OF_MAXSIZE_BIT)        /* The file is locked for changes */
 N#define    SL_FS_WRITE_BUNDLE_FILE               ((_u32)0x100<<SL_NUM_OF_MAXSIZE_BIT)       /* The file is locked for changes as part of Bundle */
 N#define    SL_FS_WRITE_ENCRYPTED                 ((_u32)0x200<<SL_NUM_OF_MAXSIZE_BIT)       /* This indicates the start of a secured content write session */
@@ -12152,9 +10942,9 @@ N#endif /*  __cplusplus */
 N
 N#endif /*  __FS_H__ */
 N
-L 410 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 410 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "sl_socket.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/sl_socket.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/sl_socket.h" 1
 N/*
 N * sl_socket.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -12537,6 +11327,61 @@ N                                         */
 N    SlSockSSLCertInfo_t SecurePeerCertinfo;
 N} SlSockSSLConnectionParams_t;
 N
+N
+N
+N
+Ntypedef enum
+N{
+N    SL_SOCK_TX_RATE_1M         = 1,
+N    SL_SOCK_TX_RATE_2M         = 2,
+N    SL_SOCK_TX_RATE_5_5M       = 3,
+N    SL_SOCK_TX_RATE_11M        = 4,
+N    SL_SOCK_TX_RATE_6M         = 6,
+N    SL_SOCK_TX_RATE_9M         = 7,
+N    SL_SOCK_TX_RATE_12M        = 8,
+N    SL_SOCK_TX_RATE_18M        = 9,
+N    SL_SOCK_TX_RATE_24M        = 10,
+N    SL_SOCK_TX_RATE_36M        = 11,
+N    SL_SOCK_TX_RATE_48M        = 12,
+N    SL_SOCK_TX_RATE_54M        = 13,
+N    SL_SOCK_TX_RATE_MCS_0      = 14,
+N    SL_SOCK_TX_RATE_MCS_1      = 15,
+N    SL_SOCK_TX_RATE_MCS_2      = 16,
+N    SL_SOCK_TX_RATE_MCS_3      = 17,
+N    SL_SOCK_TX_RATE_MCS_4      = 18,
+N    SL_SOCK_TX_RATE_MCS_5      = 19,
+N    SL_SOCK_TX_RATE_MCS_6      = 20,
+N    SL_SOCK_TX_RATE_MCS_7      = 21,
+N    SL_SOCK_TX_MAX_NUM_RATES   = 0xFF
+N}slSockTransceiverTXRateTable_e;
+N
+N
+Ntypedef enum 
+N{
+N    SL_SOCK_RX_RATE_1M       =  0,
+N    SL_SOCK_RX_RATE_2M       =  1,
+N    SL_SOCK_RX_RATE_5_5M     =  2,
+N    SL_SOCK_RX_RATE_11M      =  3,
+N    SL_SOCK_RX_RATE_6M       =  4,
+N    SL_SOCK_RX_RATE_9M       =  5,
+N    SL_SOCK_RX_RATE_12M      =  6,
+N    SL_SOCK_RX_RATE_18M      =  7,
+N    SL_SOCK_RX_RATE_24M      =  8,
+N    SL_SOCK_RX_RATE_36M      =  9,
+N    SL_SOCK_RX_RATE_48M      =  10,
+N    SL_SOCK_RX_RATE_54M      =  11,
+N    SL_SOCK_RX_RATE_MCS0     =  12, /* 6.5Mbps */
+N    SL_SOCK_RX_RATE_MCS1     =  13, /* 13Mbps */
+N    SL_SOCK_RX_RATE_MCS2     =  14, /* 19.5Mbps */
+N    SL_SOCK_RX_RATE_MCS3     =  15, /* 26Mbps */
+N    SL_SOCK_RX_RATE_MCS4     =  16, /* 39Mbps */
+N    SL_SOCK_RX_RATE_MCS5     =  17, /* 52Mbps */
+N    SL_SOCK_RX_RATE_MCS6     =  18, /* 58.5Mbps */
+N    SL_SOCK_RX_RATE_MCS7     =  19, /* 65Mbps */
+N    SL_SOCK_RX_RATE_MCS7_SGI =  20, /* 65Mbps+10% */
+N
+N}SlSockTransceiverRXRates_e;
+N
 Ntypedef enum
 N{
 N  SL_BSD_SECURED_PRIVATE_KEY_IDX = 0,
@@ -12629,16 +11474,16 @@ N} SlFdSet_t;
 N
 Ntypedef struct
 N{
-N    _u8   Rate;               /* Recevied Rate  */
-X    unsigned char   Rate;                
-N    _u8   Channel;            /* The received channel*/
-X    unsigned char   Channel;             
-N    _i8   Rssi;               /* The computed RSSI value in db of current frame */
-X    signed char   Rssi;                
-N    _u8   Padding;            /* pad to align to 32 bits */
-X    unsigned char   Padding;             
-N    _u32  Timestamp;          /* Timestamp in microseconds */
-X    unsigned long  Timestamp;           
+N    _u8    Rate;               /* Received Rate, refer to slSockTransceiverRXRateTable_e  */
+X    unsigned char    Rate;                
+N    _u8    Channel;            /* The received channel*/
+X    unsigned char    Channel;             
+N    _i8    Rssi;               /* The computed RSSI value in db of current frame */
+X    signed char    Rssi;                
+N    _u8    Padding;            /* pad to align to 32 bits */
+X    unsigned char    Padding;             
+N    _u32   Timestamp;          /* Timestamp in microseconds */
+X    unsigned long   Timestamp;           
 N}SlTransceiverRxOverHead_t;
 N
 N
@@ -12671,7 +11516,7 @@ N                                   - SL_SOCK_RAW (raw protocols atop the networ
 N                                   - when used with AF_RF:
 N                                      - SL_SOCK_DGRAM - L2 socket
 N                                      - SL_SOCK_RAW - L1 socket - bypass WLAN CCA (Clear Channel Assessment)
-N
+N                                        The Protocol parameter is used to set the channel number.				     
 N    \param[in] Protocol         specifies a particular transport to be used with 
 N                                the socket. \n
 N                                The most common are 
@@ -12929,7 +11774,7 @@ N            3. There are not enough resources and SL_POOL_IS_EMPTY error will r
 N            In this case, MAX_CONCURRENT_ACTIONS can be increased (result in memory increase) or try
 N            again later to issue the command.
 N
-N            In case all the user sockets are open, sl_Select will exhibit the behaviour mentioned in (2)
+N            In case all the user sockets are open, sl_Select will exhibit the behavior mentioned in (2)
 N            This is due to the fact sl_select supports multiple callers by utilizing one user socket internally.
 N            User who wish to ensure multiple select calls at any given time, must reserve one socket out of the 16 given.
 N   
@@ -12942,48 +11787,6 @@ N_i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *e
 Xsigned short sl_Select(signed short nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *exceptsds, struct SlTimeval_t *timeout);
 N#endif
 N
-N/*!
-N    \cond DOXYGEN_IGNORE
-N*/
-N
-N/*!
-N    \brief Select's SlFdSet_t SET function
-N   
-N    Sets current socket descriptor on SlFdSet_t container
-N*/
-Nvoid SL_SOCKET_FD_SET(_i16 fd, SlFdSet_t *fdset);
-Xvoid SL_SOCKET_FD_SET(signed short fd, SlFdSet_t *fdset);
-N
-N/*!
-N    \brief Select's SlFdSet_t CLR function
-N   
-N    Clears current socket descriptor on SlFdSet_t container
-N*/
-Nvoid SL_SOCKET_FD_CLR(_i16 fd, SlFdSet_t *fdset);
-Xvoid SL_SOCKET_FD_CLR(signed short fd, SlFdSet_t *fdset);
-N
-N
-N/*!
-N    \brief Select's SlFdSet_t ISSET function
-N   
-N    Checks if current socket descriptor is set (TRUE/FALSE)
-N
-N    \return            Returns TRUE if set, FALSE if unset
-N
-N*/
-N_i16  SL_SOCKET_FD_ISSET(_i16 fd, SlFdSet_t *fdset);
-Xsigned short  SL_SOCKET_FD_ISSET(signed short fd, SlFdSet_t *fdset);
-N
-N/*!
-N    \brief Select's SlFdSet_t ZERO function
-N   
-N    Clears all socket descriptors from SlFdSet_t
-N*/
-Nvoid SL_SOCKET_FD_ZERO(SlFdSet_t *fdset);
-N
-N/*!
-N    \endcond
-N*/
 N
 N
 N/*!
@@ -13075,6 +11878,11 @@ N                                                SL_SECURE_ALPN_H2C
 N                                                SL_SECURE_ALPN_H2_14    
 N                                                SL_SECURE_ALPN_H2_16    
 N                                                SL_SECURE_ALPN_FULL_LIST
+N                                  - <b>SL_SO_SECURE_EXT_CLIENT_CHLNG_RESP</b> \n
+N                                                 Set with no parameter to indicate that the client uses external signature using netapp request.\n
+N                                                 needs netapp request handler\n
+N                                  - <b>SL_SO_SECURE_DOMAIN_NAME_VERIFICATION </b>\n
+N                                                 Set a domain name, to check in ssl client connection.
 N                                - <b>SL_IPPROTO_IP</b> 
 N                                - <b>SL_IP_MULTICAST_TTL</b> \n
 N                                                Set the time-to-live value of outgoing multicast packets for this socket. \n
@@ -13122,19 +11930,14 @@ N                                                The values are based on SlTxInh
 N                                                This options takes <b>_u32</b> as parameter 
 N                                - <b>SL_SO_PHY_TX_TIMEOUT</b> \n  
 N                                                RAW socket, set WLAN Tx – changes the TX timeout (lifetime) of transceiver frames. \n   
-N                                                Value in Ms, maximum value is 10ms    \n
+N                                                Value in Ms, maximum value is 100ms    \n
 N                                                This options takes <b>_u32</b> as parameter 
 N                                - <b>SL_SO_PHY_ALLOW_ACKS </b> \n  
 N                                                RAW socket, set WLAN Tx – Enable\Disable sending ACKs in transceiver mode \n  
 N                                                0 = disabled / 1 = enabled    \n
 N                                                This options takes <b>_u32</b> as parameter 
 N                                - <b>SL_SO_LINGER</b> \n
-N                                                Socket lingers on close pending remaining send/receive packetst\n
-N                                - <b>SL_SO_SECURE_EXT_CLIENT_CHLNG_RESP</b> \n
-N                                                Set with no parameter to indicate that the client uses external signature using netapp requesrt.\n
-N                                                needs netapp request handler\n
-N                                - <b>SL_SO_SECURE_DOMAIN_NAME_VERIFICATION </b>\n
-N                                                Set a domain name, to check in ssl client connection.
+N                                                Socket lingers on close pending remaining send/receive packets\n
 N
 N    \param[in] optval           Specifies a value for the option
 N    \param[in] optlen           Specifies the length of the 
@@ -13240,6 +12043,7 @@ N     \code
 N        sl_SetSockOpt(SockID,SL_SOL_SOCKET,SL_SO_SECURE_FILES_DH_KEY_FILE_NAME,"myDHinServerMode.der",strlen("myDHinServerMode.der"));
 N     \endcode
 N     <br>
+N    
 N
 N    - SL_IP_MULTICAST_TTL:
 N     \code
@@ -13573,6 +12377,7 @@ N                                transmission. On this version, this parameter i
 N                                supported for TCP.
 N                                For transceiver mode, the SL_WLAN_RAW_RF_TX_PARAMS macro can be used to determine
 N                                transmission parameters (channel,rate,tx_power,preamble)
+N                                -rate need to be define using slSockTransceiverTXRateTable_e
 N    
 N    
 N    \return                     Zero on success, or negative error code on failure
@@ -13723,6 +12528,48 @@ N
 N#define sl_Ntohs sl_Htons   /* Reorder the bytes of a 16-bit unsigned value from network order to processor orde. */
 N#endif
 N
+N/*!
+N    \cond DOXYGEN_IGNORE
+N*/
+N
+N/*!
+N    \brief Select's SlFdSet_t SET function
+N
+N    Sets current socket descriptor on SlFdSet_t container
+N*/
+Nvoid SL_SOCKET_FD_SET(_i16 fd, SlFdSet_t *fdset);
+Xvoid SL_SOCKET_FD_SET(signed short fd, SlFdSet_t *fdset);
+N
+N/*!
+N    \brief Select's SlFdSet_t CLR function
+N
+N    Clears current socket descriptor on SlFdSet_t container
+N*/
+Nvoid SL_SOCKET_FD_CLR(_i16 fd, SlFdSet_t *fdset);
+Xvoid SL_SOCKET_FD_CLR(signed short fd, SlFdSet_t *fdset);
+N
+N
+N/*!
+N    \brief Select's SlFdSet_t ISSET function
+N
+N    Checks if current socket descriptor is set (TRUE/FALSE)
+N
+N    \return            Returns TRUE if set, FALSE if unset
+N
+N*/
+N_i16  SL_SOCKET_FD_ISSET(_i16 fd, SlFdSet_t *fdset);
+Xsigned short  SL_SOCKET_FD_ISSET(signed short fd, SlFdSet_t *fdset);
+N
+N/*!
+N    \brief Select's SlFdSet_t ZERO function
+N
+N    Clears all socket descriptors from SlFdSet_t
+N*/
+Nvoid SL_SOCKET_FD_ZERO(SlFdSet_t *fdset);
+N
+N/*!
+N    \endcond
+N*/
 N
 N/*!
 N
@@ -13739,9 +12586,9 @@ N
 N#endif /* __SOCKET_H__ */
 N
 N
-L 411 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 411 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "netapp.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/netapp.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/netapp.h" 1
 N/*
 N * netapp.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -13825,6 +12672,9 @@ N    SL_NETAPP_EVENT_HTTP_TOKEN_POST,
 N    SL_NETAPP_EVENT_IPV4_LOST,
 N    SL_NETAPP_EVENT_DHCP_IPV4_ACQUIRE_TIMEOUT,
 N    SL_NETAPP_EVENT_IPV6_LOST,
+N    SL_NETAPP_EVENT_RESERVED1,
+N    SL_NETAPP_EVENT_RESERVED2,
+N    SL_NETAPP_EVENT_RESERVED3,
 N    SL_NETAPP_EVENT_MAX
 N} SlNetAppEventId_e;
 N
@@ -13921,6 +12771,8 @@ N#define SL_NETAPP_HTTP_DEVICE_CERTIFICATE_FILENAME          (10)
 N#define SL_NETAPP_HTTP_CA_CERTIFICATE_FILE_NAME             (11)
 N#define SL_NETAPP_HTTP_TEMP_REGISTER_MDNS_SERVICE_NAME      (12)
 N#define SL_NETAPP_HTTP_TEMP_UNREGISTER_MDNS_SERVICE_NAME    (13)
+N#define SL_NETAPP_HTTP_TIMEOUT                              (14)
+N
 N                                                     
 N#define SL_NETAPP_MDNS_CONT_QUERY_OPT                       (1)
 N#define SL_NETAPP_MDNS_QEVETN_MASK_OPT                      (2)
@@ -14671,7 +13523,8 @@ N                                        - SL_NETAPP_MDNS_OPTIONS_IS_NOT_PERSIST
 N                                        - SL_NETAPP_MDNS_OPTIONS_ADD_SERVICE_BIT   bit 31  - for internal use if the service should be added or deleted (set means ADD).
 N
 N        \return    Zero on success, or negative error code on failure 
-N        \sa          sl_NetAppMDNSRegisterService
+N        \par       Persistent   - <b>Optionally persistent</b>        
+N        \sa        sl_NetAppMDNSRegisterService
 N        \note        
 N        \warning 
 N        The size of the service length should be smaller than 255.
@@ -14715,6 +13568,8 @@ N                                    (according to type of the service IPP,FTP..
 N
 N        \return    Zero on success, or negative error code on failure
 N
+N        \par    Persistent   - <b>Optionally persistent</b>        
+N
 N        \sa        sl_NetAppMDNSUnRegisterService
 N
 N        \warning   1) Temporary -  there is an allocation on stack of internal buffer.
@@ -14739,7 +13594,7 @@ N    <br>
 N
 N    - Update text for existing service:
 N    \code
-N        Please Note! Update is for text only! Importent to apply the same persistent flag options as original service registration.\n
+N        Please Note! Update is for text only! Important to apply the same persistent flag options as original service registration.\n
 N
 N        Options = SL_NETAPP_MDNS_OPTION_UPDATE_TEXT | SL_NETAPP_MDNS_OPTIONS_IS_NOT_PERSISTENT;
 N        sl_NetAppMDNSRegisterService(AddService,sizeof(AddService),"Service 5;payper=A4;size=10",strlen("Service 5;payper=A4;size=10"),1000,120,Options);
@@ -14859,8 +13714,9 @@ N                                    - SL_NETAPP_HTTP_DEVICE_CERTIFICATE_FILENAM
 N                                    - SL_NETAPP_HTTP_CA_CERTIFICATE_FILE_NAME
 N                                    - SL_NETAPP_HTTP_TEMP_REGISTER_MDNS_SERVICE_NAME
 N                                    - SL_NETAPP_HTTP_TEMP_UNREGISTER_MDNS_SERVICE_NAME
+N                                    - SL_NETAPP_HTTP_TIMEOUT
 N                                - For SL_NETAPP_DHCP_SERVER_ID:
-N                                    - SL_NETAPP_DHCP_SERVER_BASIC_OPT
+N                                    - SL_NETAPP_DHCP_SRV_BASIC_OPT
 N                                - For SL_NETAPP_MDNS_ID:
 N                                    - SL_NETAPP_MDNS_CONT_QUERY_OPT
 N                                    - SL_NETAPP_MDNS_QEVETN_MASK_OPT
@@ -14877,9 +13733,11 @@ N
 N    \par Persistent                 
 N    \par
 N                                <b>Reset</b>:                
-N                                    - SL_NETAPP_DHCP_SERVER_BASIC_OPT \n
+N                                    - SL_NETAPP_DEVICE_DOMAIN
+N                                    - SL_NETAPP_DHCP_SRV_BASIC_OPT \n
 N    \par
 N                                <b>Non- Persistent</b>:                    
+N                                    - SL_NETAPP_HTTP_TIMEOUT
 N                                    - SL_NETAPP_HTTP_TEMP_REGISTER_MDNS_SERVICE_NAME
 N                                    - SL_NETAPP_HTTP_TEMP_UNREGISTER_MDNS_SERVICE_NAME \n
 N    \par
@@ -14894,13 +13752,14 @@ N                                    - SL_NETAPP_HTTP_SECONDARY_PORT_NUMBER
 N                                    - SL_NETAPP_HTTP_SECONDARY_PORT_ENABLE
 N                                    - SL_NETAPP_HTTP_PRIMARY_PORT_SECURITY_MODE
 N                                    - SL_NETAPP_HTTP_PRIVATE_KEY_FILENAME
-N                                    - SL_NETAPP_HTTP_DEVICE_CERTIFICATE_FILE_NAME
-N                                    - SL_NETAPP_HTTP_CA_CERTIFICATE_FILENAME
+N                                    - SL_NETAPP_HTTP_DEVICE_CERTIFICATE_FILENAME
+N                                    - SL_NETAPP_HTTP_CA_CERTIFICATE_FILE_NAME
 N                                    - SL_NETAPP_MDNS_CONT_QUERY_OPT
 N                                    - SL_NETAPP_MDNS_QEVETN_MASK_OPT
 N                                    - SL_NETAPP_MDNS_TIMING_PARAMS_OPT 
-N                                    - SL_NETAPP_DEV_CONF_OPT_DEVICE_URN
-N                                    - SL_NETAPP_DEV_CONF_OPT_DOMAIN_NAME
+N                                    - SL_NETAPP_DEVICE_URN
+N                                    - SL_NETAPP_DEVICE_ID
+N                                    - SL_NETAPP_DNS_CLIENT_ID
 N
 N    \return    Zero on success, or negative value if an error occurred.
 N    \sa        sl_NetAppGet
@@ -14956,8 +13815,10 @@ N        SlNetAppDnsClientTime_t time;
 N         time.MaxResponseTime = 2000;
 N        time.NumOfRetries = 30;
 N        sl_NetAppSet (SL_NETAPP_DNS_CLIENT_ID, SL_NETAPP_DNS_CLIENT_TIME, sizeof(time), (_u8 *)&time);
+N
 N    \endcode
 N    <br>
+N	
 N
 N    - Start MDNS continuous querys: <br>
 N    In a continuous mDNS query mode, the device keeps sending queries to the network according to a specific service name. 
@@ -15117,7 +13978,8 @@ N        _u8 pOptionLen  = sizeof(time);
 N        sl_NetAppGet (SL_NETAPP_DNS_CLIENT_ID, SL_NETAPP_DNS_CLIENT_TIME, &pOptionLen, (_u8 *)&time); 
 N    \endcode
 N    <br>
-N
+N	
+N    
 N    - Getting active applications: <br>
 N      Get active applications for active role. return value is mask of the active application (similar defines as sl_NetAppStart\sl_NetAppStop):
 N    \code
@@ -15166,13 +14028,13 @@ N    \param[in,out]  *DataLen   Max buffer size (in) / Actual data received (out
 N    \param[out]     *pData     Data received
 N    \param[in,out]  *Flags     Can have the following values:
 N                               - SL_NETAPP_REQUEST_RESPONSE_FLAGS_CONTINUATION (out) 
-N                               - More data is pending in the network procesor. Application should continue reading the data by calling sl_NetAppRecv again
+N                               - More data is pending in the network processor. Application should continue reading the data by calling sl_NetAppRecv again
 N
 N    \return         Zero on success, or negative error code on failure
 N
 N    \sa             sl_NetAppSend 
 N    \note    
-N    \warning        handle is received in the sl_NetAppRequestHandler callback. Handle is valid untill all data is receive from the network processor.
+N    \warning        handle is received in the sl_NetAppRequestHandler callback. Handle is valid until all data is receive from the network processor.
 N*/
 N#if _SL_INCLUDE_FUNC(sl_NetAppRecv)
 X#if (1)
@@ -15194,9 +14056,9 @@ N#endif /*  __cplusplus */
 N
 N#endif    /*  __NETAPP_H__ */
 N
-L 412 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 412 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "wlan.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/wlan.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/wlan.h" 1
 N/*
 N * wlan.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -15308,6 +14170,7 @@ N
 N    SL_WLAN_EVENT_RXFILTER,
 N    SL_WLAN_EVENT_PROVISIONING_STATUS,
 N    SL_WLAN_EVENT_PROVISIONING_PROFILE_ADDED,
+N    SL_WLAN_EVENT_RESERVED,
 N    SL_WLAN_EVENT_MAX
 N
 N} SlWlanEventId_e;
@@ -15412,7 +14275,7 @@ N#define SL_WLAN_PROVISIONING_CMD_START_MODE_APSC_EXTERNAL_CONFIGURATION        
 N#define SL_WLAN_PROVISIONING_CMD_STOP                                                (4)
 N#define SL_WLAN_PROVISIONING_CMD_ABORT_EXTERNAL_CONFIRMATION                         (5)
 N
-N/* Provisining API Flags */
+N/* Provisioning API Flags */
 N#define SL_WLAN_PROVISIONING_CMD_FLAG_EXTERNAL_CONFIRMATION                          (0x00000001)
 N
 N/* to be used only in provisioning stop command */
@@ -15481,8 +14344,8 @@ N#define SL_WLAN_AP_OPT_PASSWORD                       (7)
 N#define SL_WLAN_GENERAL_PARAM_OPT_COUNTRY_CODE        (9)
 N#define SL_WLAN_GENERAL_PARAM_OPT_STA_TX_POWER        (10)
 N#define SL_WLAN_GENERAL_PARAM_OPT_AP_TX_POWER         (11)
-N#define SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH (32) 
-N#define SL_WLAN_GENERAL_PARAM_OPT_SUSPEND_PROFILES    (33)
+N
+N
 N
 N#define SL_WLAN_P2P_OPT_DEV_NAME                      (12)
 N#define SL_WLAN_P2P_OPT_DEV_TYPE                      (13)
@@ -15497,11 +14360,15 @@ N#define SL_WLAN_AP_ACCESS_LIST_NUM_ENTRIES            (24)
 N#define SL_WLAN_AP_ACCESS_LIST_MODE                   (25)
 N#define SL_WLAN_AP_OPT_MAX_STA_AGING                  (26)
 N
-N#define SL_WLAN_RX_FILTER_STATE                       (27)
-N#define SL_WLAN_RX_FILTER_REMOVE                      (28)
-N#define SL_WLAN_RX_FILTER_STORE                       (29)
-N#define SL_WLAN_RX_FILTER_UPDATE_ARGS                 (30)
-N#define SL_WLAN_RX_FILTER_SYS_STATE                   (31)
+N#define SL_WLAN_RX_FILTER_STATE                        (27)
+N#define SL_WLAN_RX_FILTER_REMOVE                       (28)
+N#define SL_WLAN_RX_FILTER_STORE                        (29)
+N#define SL_WLAN_RX_FILTER_UPDATE_ARGS                  (30)
+N#define SL_WLAN_RX_FILTER_SYS_STATE                    (31)
+N#define SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH  (32) 
+N#define SL_WLAN_GENERAL_PARAM_OPT_SUSPEND_PROFILES     (33)
+N
+N
 N
 N/* SmartConfig CIPHER options */
 N#define SL_WLAN_SMART_CONFIG_CIPHER_SFLASH            (0)      /* password is not delivered by the application. The Simple Manager should
@@ -15716,7 +14583,8 @@ N{
 N    ROLE_STA      = 0,
 N    ROLE_RESERVED = 1,
 N    ROLE_AP       = 2,
-N    ROLE_P2P      = 3
+N    ROLE_P2P      = 3,
+N    ROLE_RESERVED2 = 4
 N}SlWlanMode_e;
 N
 Ntypedef struct
@@ -15913,11 +14781,36 @@ N    _i8 Rssi;
 X    signed char Rssi;
 N    _i16 SecurityInfo;
 X    signed short SecurityInfo;
-N    _i8 Channel;
-X    signed char Channel;
+N    _u8 Channel;
+X    unsigned char Channel;
 N    _i8 Reserved[1];
 X    signed char Reserved[1];
 N}SlWlanNetworkEntry_t;
+N
+Ntypedef struct
+N{
+N    _u8 Ssid[SL_WLAN_SSID_MAX_LENGTH];
+X    unsigned char Ssid[(32)];
+N    _u8 Bssid[SL_WLAN_BSSID_LENGTH];
+X    unsigned char Bssid[(6)];
+N    _u8 SsidLen;
+X    unsigned char SsidLen;
+N    _i8 Rssi;
+X    signed char Rssi;
+N    _i16 SecurityInfo;
+X    signed short SecurityInfo;
+N    _u8 Channel;
+X    unsigned char Channel;
+N    _i8 Reserved[1];
+X    signed char Reserved[1];
+N    /* country info extended area */
+N    _u8  CountryStr[2];
+X    unsigned char  CountryStr[2];
+N    _u16 Supported_2_4G_Channels;
+X    unsigned short Supported_2_4G_Channels;
+N    _u32 Supported_5_0G_Channels;
+X    unsigned long Supported_5_0G_Channels;
+N}SlWlanExtNetworkEntry_t;
 N
 Ntypedef struct
 N{
@@ -16157,8 +15050,8 @@ N    _u32 FrameLength[SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS]; /*  Binary V
 X    unsigned long FrameLength[(2)];  
 N
 N    /* Buffer for port filter. number of argument may be up to SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS */
-N    _u16 Port[SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS]; /*  Binary Values for comparison */
-X    unsigned short Port[(2)];  
+N    _u32 Port[SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS]; /*  Binary Values for comparison */
+X    unsigned long Port[(2)];  
 N
 N    /* Buffer for Ether filter. number of argument may be up to SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS (according to host endianity) */
 N    _u32 EtherType[SL_WLAN_RX_FILTER_NUM_OF_FILTER_HEADER_ARGS]; /*  Binary Values for comparison */
@@ -16208,7 +15101,7 @@ N/* defines the Header rule. The header rule defines the compare function on the
 N   For example destMacAddre is between ( 12:6::78:77,  12:6::78:90 ) */
 Ntypedef struct 
 N{
-N    SlWlanRxFilterRuleHeaderArgs_t              Args; /* Filter arguemnts */
+N    SlWlanRxFilterRuleHeaderArgs_t              Args; /* Filter arguments */
 N    SlWlanRxFilterRuleHeaderField_t             Field; /* Packet HDR field which will be compared to the argument */
 N    SlWlanRxFilterRuleHeaderCompareFunction_t   CompareFunc; /*  type of the comparison function */
 N    _u8                                         Padding[2];
@@ -16292,13 +15185,13 @@ N    SlWlanRxFilterTriggerConnectionStates_t ConnectionState; /* Trigger only wi
 N    SlWlanRxFilterTriggerRoles_t            Role; /* Trigger only with specific role */
 N    _u32                                    CounterVal;  /* Value for the counter if set */
 X    unsigned long                                    CounterVal;   
-N    SlWlanRxFilterTriggerCompareFunction_t  CompareFunction; /* The compare function reffers to the counter if set */
+N    SlWlanRxFilterTriggerCompareFunction_t  CompareFunction; /* The compare function refers to the counter if set */
 N    _u8                                     Padding[3];
 X    unsigned char                                     Padding[3];
 N} SlWlanRxFilterTrigger_t;
 N
 N/* The actions are executed only if the filter is matched,\n
-N *  In case of false match the packet is transfered to the HOST. \n
+N *  In case of false match the packet is transferred to the HOST. \n
 N *  The action is composed of bit field structure, up to 2 actions can be defined per filter.\n  */
 Ntypedef _u8 SlWlanRxFilterActionType_t;
 Xtypedef unsigned char SlWlanRxFilterActionType_t;
@@ -16510,6 +15403,7 @@ N                                   CertIndex (not supported), EapMethod.
 N    \param[out]     pPriority      Profile priority
 N
 N    \return         Profile security type is returned (0 or positive number) on success, or negative error code on failure
+N                    SL_ERROR_WLAN_GET_PROFILE_INVALID_INDEX is return is profile index does not exist
 N
 N    \sa             sl_WlanProfileAdd , sl_WlanProfileDel
 N    \note           belongs to \ref ext_api
@@ -16556,7 +15450,7 @@ N    \param[in]      ValLen    An optional value length, in bytes
 N    \return         Zero on success or negative error code on failure.
 N    \par Persistent 
 N            All parameters are <b>System Persistent</b>\n
-N            Note that for SL_WLAN_POLICY_SCAN - only the interval will be saved.
+N            Note that for SL_WLAN_POLICY_SCAN - Interval and Policy will be System persistent, but the hidden SSID option will not be persistent
 N        
 N    \sa             sl_WlanPolicyGet
 N    \note           belongs to \ref ext_api
@@ -16597,7 +15491,7 @@ N
 N
 N    <b>SL_WLAN_POLICY_SCAN:</b><br> defines system scan time interval. \nDefault interval is 10 minutes.
 N    After settings scan interval, an immediate scan is activated.\n The next scan will be based on the interval settings. 
-N    For AP scan, minimun interval is 10 seconds.
+N    For AP scan, minimum interval is 10 seconds.
 N
 N    -  With hidden SSID: For example, setting scan interval to 1 minute interval use including hidden ssid: 
 N    \code
@@ -16684,7 +15578,7 @@ N                        - SL_WLAN_POLICY_PM, SL_WLAN_POLICY_P2P
 N    \param[out]     pPolicy       argument may be set to any value 
 N    \param[out]     pVal         The returned values, depends on each policy type, will be stored in the allocated buffer pointed by pVal
 N                    with a maximum buffer length set by the calling function and pointed to by argument *pValLen
-N    \param[out]     pValLen        actual value lenght
+N    \param[out]     pValLen        actual value length
 N    \return         Zero on success, or negative error code on failure
 N
 N    \sa             sl_WlanPolicySet
@@ -16738,7 +15632,7 @@ N    length = sizeof(PmPolicyParams);
 N    ret = sl_WlanPolicyGet(SL_POLICY_PM ,&Policy,&PmPolicyParams,(_u8*)&length);
 N    if (Policy ==  SL_WLAN_LONG_SLEEP_INTERVAL_POLICY )
 N    {
-N        printf("Connection Policy is set to LONG SLEEP INTERVAL POLICY with inteval = %d ",PmPolicyParams.MaxSleepTimeMs);
+N        printf("Connection Policy is set to LONG SLEEP INTERVAL POLICY with interval = %d ",PmPolicyParams.MaxSleepTimeMs);
 N    }
 N    \endcode
 N    <br>
@@ -16911,9 +15805,9 @@ N                                            0xFF: stay in current role (relevan
 N    \param[in]  InactivityTimeoutSec -      The period of time (in seconds) the system waits before it automatically
 N                                            stops the provisioning process when no activity is detected.
 N                                            set to 0 in order to stop provisioning. Minimum InactivityTimeoutSec is 30 seconds.
-N    \param[in]  pSmartConfigKey             Smart Config key: public key for smart config process (relevent for smart config only)
+N    \param[in]  pSmartConfigKey             Smart Config key: public key for smart config process (relevant for smart config only)
 N    \param[in]  Flags                       Can have the following values:
-N                                                   - SL_WLAN_PROVISIONING_CMD_FLAG_EXTERNAL_CONFIRMATION - Confirmation phase will be completed externaly by host (e.g. via cloud assist)
+N                                                   - SL_WLAN_PROVISIONING_CMD_FLAG_EXTERNAL_CONFIRMATION - Confirmation phase will be completed externally by host (e.g. via cloud assist)
 N
 N
 N    \return     Zero on success, or negative error code on failure
@@ -17029,7 +15923,7 @@ N                                      Set Max AP stations - 1..4 - Note: can be
 N                                      max_stations - 1 characters \n
 N                                      This options takes <b>_u8</b> buffer as parameter
 N                              - <b>SL_WLAN_AP_OPT_MAX_STA_AGING</b> \n
-N                                      Set Max station aging time - default is 60 seconds \n
+N                                      Set Max station ageing time - default is 60 seconds \n
 N                                      max_stations - 2 characters \n
 N                                      This options takes <b>_u16</b> buffer as parameter
 N                              - <b>SL_WLAN_AP_ACCESS_LIST_MODE</b> \n
@@ -17072,10 +15966,6 @@ N                              - <b>SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS</b>
 N                                      Set scan parameters: RSSI threshold and channel mask.
 N                              - <b>SL_WLAN_GENERAL_PARAM_OPT_SUSPEND_PROFILES</b>
 N                                      Set suspended profiles mask (set bits 2 and 4 to suspend profiles 2 and 4).
-N                               - <b>SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH</b>
-N                                      This option enables to skip server authentication and is valid for one
-N                                      use, when manually connection to an enterprise network
-N                                      
 N
 N                          - <b>SL_WLAN_CFG_P2P_PARAM_ID</b>
 N                              - <b>SL_WLAN_P2P_OPT_DEV_TYPE</b> \n
@@ -17113,15 +16003,15 @@ N
 N    \return    Zero on success, or negative error code on failure
 N
 N    \par Persistent
-N                        <b>System Persistent</b>:        
-N                                - SL_WLAN_CFG_GENERAL_PARAM_ID
-N                                - SL_WLAN_CFG_P2P_PARAM_ID
-N                                
+N                        <b>System Persistent</b>:     
+N                              - SL_WLAN_CFG_GENERAL_PARAM_ID
+N                              - SL_WLAN_CFG_P2P_PARAM_ID
+N
 N                        <b>Reset</b>:
-N                                - SL_WLAN_CFG_AP_ID
-N                                
+N                              - SL_WLAN_CFG_AP_ID
+N
 N                        <b>Non- Persistent</b>:
-N                                  - SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH
+N                              - SL_WLAN_GENERAL_PARAM_DISABLE_ENT_SERVER_AUTH
 N    \sa
 N    \note
 N    \warning
@@ -17281,9 +16171,13 @@ N
 N    - SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS:
 N    \code
 N        SlWlanScanParamCommand_t ScanParamConfig;
+N        _u16 Option = SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS;
+N        _u16 OptionLen = sizeof(ScanParamConfig);
+N        // 2.4G channels bits order:  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 
+N        
 N        ScanParamConfig.RssiThreshold = -70;
 N        ScanParamConfig.ChannelsMask = 0x1FFF;
-N        sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID,SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS,sizeof(ScanParamConfig),(_u8* ) &ScanParamConfig);
+N        sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID, &Option, &OptionLen, (_u8 *)&ScanParamConfig);
 N    \endcode
 N    <br>
 N
@@ -17295,8 +16189,9 @@ N    \endcode
 N    <br>
 N    - SL_WLAN_RX_FILTER_STORE: 
 N    \code
-N     sl_WlanSet(SL_WLAN_RX_FILTERS_ID, SL_WLAN_RX_FILTER_STORE, 0, NULL);
+N         sl_WlanSet(SL_WLAN_RX_FILTERS_ID, SL_WLAN_RX_FILTER_STORE, 0, NULL);
 N    \endcode
+N     
 N*/
 N#if _SL_INCLUDE_FUNC(sl_WlanSet)
 X#if (1)
@@ -17646,9 +16541,9 @@ N#endif /*  __cplusplus */
 N
 N#endif    /*  __WLAN_H__ */
 N
-L 413 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 413 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "device.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/device.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/device.h" 1
 N/*
 N * device.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -17827,17 +16722,16 @@ N
 N/*
 N    Declare the different IDs for sl_DeviceGet and sl_DeviceSet
 N */  
-N#define SL_DEVICE_GENERAL                          (1)
-N#define SL_DEVICE_IOT                                (4)
-N#define SL_DEVICE_STATUS                          (2)
+N#define SL_DEVICE_GENERAL  (1)
+N#define SL_DEVICE_IOT      (4)
+N#define SL_DEVICE_STATUS   (2)
 N
 N/*
 N    Declare the different Options for SL_DEVICE_GENERAL in sl_DeviceGet and sl_DeviceSet
 N */  
-N#define SL_DEVICE_GENERAL_DATE_TIME (11)
+N#define SL_DEVICE_GENERAL_DATE_TIME  (11)
 N#define SL_DEVICE_GENERAL_PERSISTENT (5)
-N#define SL_DEVICE_GENERAL_VERSION   (12)
-N
+N#define SL_DEVICE_GENERAL_VERSION    (12)
 N/*
 N    Declare the different Options for SL_DEVICE_IOT in sl_DeviceGet and sl_DeviceSet
 N*/  
@@ -18098,10 +16992,11 @@ N    \param[in] pValues       configurations values
 N    
 N    \return    Zero on success, or a negative value if an error occurred
 N    \par Persistent
-N        SL_DEVICE_GENERAL_DATE_TIME - Non-Persistent (Kept during hibernate)
+N        SL_DEVICE_GENERAL_DATE_TIME - System Persistent (kept during hibernate only, See Note for details) \n
 N        SL_DEVICE_GENERAL_PERSISTENT - Persistent
 N    \sa         
-N    \note 
+N    \note   Persistency for SL_DEVICE_GENERAL_DATE_TIME -  The original setted value will be kept as System Persistence.\n
+N            The updated date and time though, will be kept during hibernate only.
 N    \warning     
 N    \par   Examples:
 N
@@ -18391,7 +17286,8 @@ N                                         - baudrate     - up to 711 Kbps
 N                                         - flow control - enable/disable 
 N                                         - comm port    - the comm port number
 N    
-N    \return         On success zero is returned, otherwise - Failed.   
+N    \return         On success zero is returned, otherwise - Failed.  
+N    \par Persistent  Non- Persistent
 N    \sa
 N    \note           Belongs to \ref basic_api
 N
@@ -18418,9 +17314,9 @@ N
 N#endif  /*  __DEVICE_H__ */
 N
 N
-L 414 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 414 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "netcfg.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/netcfg.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/netcfg.h" 1
 N/*
 N * netcfg.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -18494,6 +17390,7 @@ N
 N#define SL_MAC_ADDR_LEN                              (6)
 N#define SL_IPV6_ADDR_LEN                             (16)
 N#define SL_IPV4_VAL(add_3,add_2,add_1,add_0)         ((((_u32)add_3 << 24) & 0xFF000000) | (((_u32)add_2 << 16) & 0xFF0000) | (((_u32)add_1 << 8) & 0xFF00) | ((_u32)add_0 & 0xFF) )
+N#define SL_IPV6_VAL(add_1,add_2)                     ((((_u32)add_1 << 16) & 0xFFFF0000) | (((_u32)add_2 ) & 0x0000FFFF) )
 N#define SL_IPV4_BYTE(val,index)                      ( (val >> (index*8)) & 0xFF )
 N
 N
@@ -18514,7 +17411,6 @@ N
 N#define    SL_NETCFG_IF_STATE                        (0)
 N#define SL_NETCFG_ADDR_DHCP                          (1)
 N#define SL_NETCFG_ADDR_DHCP_LLA                      (2)
-N#define SL_NETCFG_ADDR_RELEASE_IP                    (3)
 N#define SL_NETCFG_ADDR_STATIC                        (4)
 N#define SL_NETCFG_ADDR_STATELESS                     (5)
 N#define SL_NETCFG_ADDR_STATEFUL                      (6)
@@ -18543,6 +17439,7 @@ N    SL_NETCFG_IPV6_ADDR_LOCAL                   = 9,
 N    SL_NETCFG_IPV6_ADDR_GLOBAL                  = 10,
 N    SL_NETCFG_IPV4_DHCP_CLIENT                  = 11,
 N    SL_NETCFG_IPV4_DNS_CLIENT                   = 12,
+N    SL_NETCFG_RESERVED                          = 13,
 N    MAX_SETTINGS = 0xFF
 N}SlNetCfg_e;
 N
@@ -18651,7 +17548,6 @@ N    \param[in] ConfigOpt  Configurations option:
 N                                            - SL_NETCFG_IF_STATE            
 N                                            - SL_NETCFG_ADDR_DHCP           
 N                                            - SL_NETCFG_ADDR_DHCP_LLA       
-N                                            - SL_NETCFG_ADDR_RELEASE_IP     
 N                                            - SL_NETCFG_ADDR_STATIC          
 N                                            - SL_NETCFG_ADDR_STATELESS      
 N                                            - SL_NETCFG_ADDR_STATEFUL       
@@ -18662,15 +17558,15 @@ N    \param[in] pValues    Configurations values
 N    \par                  Persistent                 
 N    \par 
 N                          <b>Reset</b>:                
-N                                            - SL_IPV4_AP_P2P_GO_STATIC_ENABLE
 N                                            - SL_NETCFG_MAC_ADDRESS_SET
+N                                            - SL_NETCFG_IPV4_AP_ADDR_MODE
 N    \par
 N                          <b>Non- Persistent</b>:                 
 N                                            - SL_NETCFG_AP_STATION_DISCONNECT
 N    \par
 N                          <b>System Persistent</b>: 
 N                                            - SL_NETCFG_IPV4_STA_ADDR_MODE
-N                                            - SL_NETCFG_IF_STATE
+N                                            - SL_NETCFG_IF
 N                                            - SL_NETCFG_IPV6_ADDR_LOCAL
 N                                            - SL_NETCFG_IPV6_ADDR_GLOBAL
 N
@@ -18700,6 +17596,7 @@ N    \endcode
 N    <br>
 N
 N    - <b>SL_NETCFG_IPV4_STA_ADDR_MODE</b><br>:
+N        Setting/Releasing a DHCP/DHCP LLA /STATIC STA IP address
 N    
 N    - SL_NETCFG_ADDR_STATIC: <br>
 N    Setting a static IP address to the device working in STA mode or P2P client.
@@ -18871,7 +17768,7 @@ N    \endcode
 N    <br>
 N
 N    - SL_NETCFG_AP_STATION_DISCONNECT:<br>
-N    Disconnet AP station by mac address.
+N    Disconnect AP station by mac address.
 N    The AP connected stations list can be read by sl_NetCfgGet with options: SL_AP_STATIONS_NUM_CONNECTED, SL_AP_STATIONS_INFO_LIST
 N    \code
 N        _u8  ap_sta_mac[6] = { 0x00, 0x22, 0x33, 0x44, 0x55, 0x66 };     
@@ -18880,7 +17777,7 @@ N    \endcode
 N    <br>
 N
 N    - SL_NETCFG_IPV4_DNS_CLIENT:<br>
-N    Set secondary DNS address (DHCP and static configuration) not persistent
+N    Set additional IPv4 DNS address 
 N    \code                                                                        
 N        _i32 Status;
 N        SlNetCfgIpV4DnsClientArgs_t DnsOpt;
@@ -18888,9 +17785,10 @@ N        DnsOpt.DnsSecondServerAddr  =  SL_IPV4_VAL(8,8,8,8); ;
 N        Status = sl_NetCfgSet(SL_NETCFG_IPV4_DNS_CLIENT,0,sizeof(SlNetCfgIpV4DnsClientArgs_t),(unsigned char *)&DnsOpt);
 N        if( Status )
 N        {
-N            // error
+N            // error 
 N        }
 N    \endcode
+N    <br>
 N
 N*/
 N#if _SL_INCLUDE_FUNC(sl_NetCfgSet)
@@ -19017,7 +17915,7 @@ N    \endcode
 N    <br>
 N
 N    - SL_NETCFG_AP_STATIONS_NUM_CONNECTED: <br>
-N      Get AP numbber of connected stations.   
+N      Get AP number of connected stations.   
 N    \code
 N        _u8 num_ap_connected_sta;
 N        _u16 len = sizeof(num_ap_connected_sta);
@@ -19056,7 +17954,7 @@ N    \endcode
 N    <br>
 N
 N    - SL_NETCFG_IPV4_DNS_CLIENT: <br>
-N      Set secondary DNS address (DHCP and static configuration) 
+N    Get secondary DNS address (DHCP and static configuration) 
 N    \code                                                               
 N        _u16 ConfigOpt = 0;
 N        _i32 Status;
@@ -19068,6 +17966,8 @@ N        {
 N            // error 
 N        }
 N    \endcode
+N    <br>
+N
 N
 N    - SL_NETCFG_IPV4_DHCP_CLIENT: <br>
 N      Get DHCP Client info 
@@ -19105,9 +18005,9 @@ N#endif /*  __cplusplus */
 N
 N#endif    /*  __NETCFG_H__ */
 N
-L 415 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 415 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "netutil.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/netutil.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/netutil.h" 1
 N/*
 N * netutil.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -19195,11 +18095,21 @@ N/*****************************************************************************/
 N/* Structure/Enum declarations                                               */
 N/*****************************************************************************/
 N
-N/* Defines the size of the buffer that will be alocated */
+Ntypedef struct
+N{
+N	_u8   *pOutputValues;
+X	unsigned char   *pOutputValues;
+N	_u16  *pOutputLen;
+X	unsigned short  *pOutputLen;
+N	_i16   Status;
+X	signed short   Status;
+N}_SlNetUtilCmdData_t;
+N
+N/* Defines the size of the buffer that will be allocated */
 N/* (on the stack) by the sl_UtilsCmd API.               */
 N#define SL_NETUTIL_CMD_BUFFER_SIZE                        (256)
 N
-N/* Enumaration of Signature types */
+N/* Enumeration of Signature types */
 N#define SL_NETUTIL_CRYPTO_SIG_SHAwDSA                     (0)
 N#define SL_NETUTIL_CRYPTO_SIG_MD2wRSA                     (1)
 N#define SL_NETUTIL_CRYPTO_SIG_MD5wRSA                     (2)
@@ -19293,7 +18203,7 @@ N    SlNetUtilCryptoEcCustomCurveParam_t  CustomCurveParams; /* parameters for c
 N} SlNetUtilCryptoEcCurveParams_u;
 N
 N
-N/* “curve-type” definitions */
+N/* ?curve-type? definitions */
 N#define SL_NETUTIL_CRYPTO_EC_CURVE_TYPE_NAMED             (1)  /* ECC Named Curve type */
 N#define SL_NETUTIL_CRYPTO_EC_CURVE_TYPE_CUSTOM            (2)  /* ECC Custom curve type */
 N
@@ -19489,7 +18399,7 @@ N                                            Key pair is not persistent over pow
 N                                    - <b>SL_NETUTIL_CRYPTO_CMD_SIGN_MSG</b>  \n
 N                                            Signs with a digital signature a data buffer using ECDSA algorithm. \n
 N                                    - <b>SL_NETUTIL_CRYPTO_CMD_VERIFY_MSG</b>  \n
-N                                    Verify a digital signature given with a data buffer using ECDSA algorithm. \n
+N                                             Verify a digital signature given with a data buffer using ECDSA algorithm. \n
 N    \param[in]      pAttrib         Pointer to the buffer holding the Attribute values
 N    \param[in]      AttribLen       Length of the Attribute-values 
 N    \param[in]      pInputValues    Pointer to the buffer holding the input-value
@@ -19499,9 +18409,9 @@ N    \param[in,out]  pOutputLen      Length of the output-value \n
 N                                    On input - provides the length of the buffer that the application allocates, and
 N                                    will hold the output\n
 N                                    On output - provides the actual length of the received output-values
-N    \return    Zero on success, or negative error code on failure
-N    \sa       sl_NetUtilGet sl_NetUtilSet  
-N    \note
+N    \return     Zero on success, or negative error code on failure
+N    \sa         sl_NetUtilGet sl_NetUtilSet  
+N    \note       The host driver API sl_NetUtilCmd is not valid for use with the CC3220R device.
 N    \warning
 N    \par   Examples
 N
@@ -19619,6 +18529,11 @@ N                           (uint8_t *)&verifyResult , &resultLen);
 N    \endcode
 N    <br>
 N
+N   \endcode
+N
+N   
+N
+N
 N*/
 N#if _SL_INCLUDE_FUNC(sl_NetUtilCmd)
 X#if (1)
@@ -19645,9 +18560,9 @@ N
 N#endif  /*  __NETUTIL_H__ */
 N
 N
-L 416 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 416 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "errors.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/errors.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/errors.h" 1
 N/*
 N * errors.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -19702,6 +18617,8 @@ N
 N/* BSD SOCKET ERRORS CODES */
 N
 N#define SL_ERROR_BSD_SOC_ERROR                                          (-1L)   /* Failure */
+N#define SL_ERROR_BSD_EINTR                                              (-4L)   /* Interrupted system call */
+N#define SL_ERROR_BSD_E2BIG                                              (-7L)   /* length too big */
 N#define SL_ERROR_BSD_INEXE                                              (-8L)   /* socket command in execution  */
 N#define SL_ERROR_BSD_EBADF                                              (-9L)   /* Bad file number */
 N#define SL_ERROR_BSD_ENSOCK                                             (-10L)  /* The system limit on the total number of open socket, has been reached */
@@ -19745,6 +18662,10 @@ N#define SL_ERROR_BSD_ESEC_HANDSHAKE_FAILURE                             (-340L)
 N#define SL_ERROR_BSD_ESEC_NO_CERTIFICATE                                (-341L) /* ssl/tls alerts */
 N#define SL_ERROR_BSD_ESEC_BAD_CERTIFICATE                               (-342L) /* ssl/tls alerts */
 N#define SL_ERROR_BSD_ESEC_UNSUPPORTED_CERTIFICATE                       (-343L) /* ssl/tls alerts */
+N#define SL_ERROR_BSD_ESEC_CERTIFICATE_REVOKED                           (-344L) /* ssl/tls alerts */
+N#define SL_ERROR_BSD_ESEC_CERTIFICATE_EXPIRED                           (-345L) /* ssl/tls alerts */
+N#define SL_ERROR_BSD_ESEC_CERTIFICATE_UNKNOWN                           (-346L) /* ssl/tls alerts */
+N
 N#define SL_ERROR_BSD_ESEC_ILLEGAL_PARAMETER                             (-347L) /* ssl/tls alerts */
 N#define SL_ERROR_BSD_ESEC_ACCESS_DENIED                                 (-349L) /* ssl/tls alerts */
 N#define SL_ERROR_BSD_ESEC_DECODE_ERROR                                  (-350L) /* ssl/tls alerts */
@@ -19760,7 +18681,7 @@ N#define SL_ERROR_BSD_ESEC_CERTIFICATE_UNOBTAINABLE                      (-411L)
 N#define SL_ERROR_BSD_ESEC_UNRECOGNIZED_NAME                             (-412L) /* ssl/tls alerts */
 N#define SL_ERROR_BSD_ESEC_BAD_CERTIFICATE_STATUS_RESPONSE               (-413L) /* ssl/tls alerts */
 N#define SL_ERROR_BSD_ESEC_BAD_CERTIFICATE_HASH_VALUE                    (-414L) /* ssl/tls alerts */
-N/* propierty secure */
+N/* propriety secure */
 N#define SL_ERROR_BSD_ESECGENERAL                                        (-450L) /* error secure level general error */
 N#define SL_ERROR_BSD_ESECDECRYPT                                        (-451L) /* error secure level, decrypt recv packet fail */
 N#define SL_ERROR_BSD_ESECCLOSED                                         (-452L) /* secure layrer is closed by other size , tcp is still connected  */
@@ -20122,7 +19043,7 @@ N/* NETCFG ERRORS CODES*/
 N#define SL_ERROR_STATIC_ADDR_SUBNET_ERROR                               (-8193L)
 N#define SL_ERROR_INCORRECT_IPV6_STATIC_LOCAL_ADDR                       (-8194L) /*  Ipv6 Local address perfix is wrong */
 N#define SL_ERROR_INCORRECT_IPV6_STATIC_GLOBAL_ADDR                      (-8195L) /*  Ipv6 Global address perfix is wrong */
-N#define SL_ERROR_IPV6_LOCAL_ADDR_SHOULD_BE_SET_FIRST                    (-8195L) /*  Attempt to set ipv6 global address before ipv6 local address is set */
+N#define SL_ERROR_IPV6_LOCAL_ADDR_SHOULD_BE_SET_FIRST                    (-8196L) /* Attempt to set ipv6 global address before ipv6 local address is set */
 N
 N
 N/* FS ERRORS CODES*/
@@ -20213,7 +19134,7 @@ N#define SL_ERROR_FS_FILE_ALREADY_EXISTS                                 (-10326
 N#define SL_ERROR_FS_PROGRAM_FAILURE                                     (-10327L)
 N#define SL_ERROR_FS_NO_ENTRIES_AVAILABLE                                (-10328L)
 N#define SL_ERROR_FS_FILE_ACCESS_IS_DIFFERENT                            (-10329L)
-N#define SL_ERROR_FS_UNVALID_FILE_MODE                                   (-10330L)
+N#define SL_ERROR_FS_INVALID_FILE_MODE                                   (-10330L)
 N#define SL_ERROR_FS_FAILED_READ_NVFILE                                  (-10331L)
 N#define SL_ERROR_FS_FAILED_INIT_STORAGE                                 (-10332L)
 N#define SL_ERROR_FS_FILE_HAS_NO_FAILSAFE                                (-10333L)
@@ -20368,14 +19289,19 @@ N
 N/* The event link was not found in the list */
 N#define SL_RET_CODE_EVENT_LINK_NOT_FOUND                                (-2019L)
 N
+N/* In case there are no free buffers for async event which arrived
+N   during command context. In this case user needs to increase
+N   MAX_CONCURRENT_ACTIONS at user.h */
+N#define SL_RET_CODE_NO_FREE_ASYNC_BUFFERS_ERROR                         (-2020L)
+N
 N#ifdef  __cplusplus
 S}
 N#endif /*  __cplusplus */
 N
 N#endif  /*  __ERROR_H__ */
-L 417 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 417 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#include "eventreg.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/eventreg.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/eventreg.h" 1
 N/*
 N * eventreg.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -20534,7 +19460,7 @@ N#endif /* __cplusplus */
 N
 N
 N#endif /* EVENTREG_H_ */
-L 418 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 418 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N
 N/*!
 N    \cond DOXYGEN_IGNORE
@@ -20995,11 +19921,13 @@ N#endif //#if (defined(SL_RUNTIME_EVENT_REGISTERATION))
 N
 Ntypedef _SlReturnVal_t (*_SlSpawnEntryFunc_t)(void* pValue);
 N
-N#define SL_SPAWN_FLAG_FROM_SL_IRQ_HANDLER    (0X1)
+N#define SL_SPAWN_FLAG_FROM_SL_IRQ_HANDLER    (0x1)
+N#define SL_SPAWN_FLAG_FROM_CMD_CTX           (0x2)
+N#define SL_SPAWN_FLAG_FROM_CMD_PROCESS       (0x3)
 N
 N#ifdef SL_PLATFORM_MULTI_THREADED
 N    #include "source/spawn.h"
-L 1 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/source/spawn.h" 1
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/source/spawn.h" 1
 N/*
 N * spawn.h - CC31xx/CC32xx Host Driver Implementation
 N *
@@ -21048,7 +19976,8 @@ N
 Nextern void* _SlInternalSpawnTaskEntry();
 Nextern _i16 _SlInternalSpawn(_SlSpawnEntryFunc_t pEntry , void* pValue , _u32 flags);
 Xextern signed short _SlInternalSpawn(_SlSpawnEntryFunc_t pEntry , void* pValue , unsigned long flags);
-N
+Nextern _u8 _SlInternalIsItSpawnThread(_u32 ThreadId);
+Xextern unsigned char _SlInternalIsItSpawnThread(unsigned long ThreadId);
 N#undef sl_Spawn
 N#define sl_Spawn(pEntry,pValue,flags)               _SlInternalSpawn(pEntry,pValue,flags)
 N
@@ -21062,7 +19991,7 @@ S}
 N#endif /* __cplusplus */
 N
 N#endif
-L 880 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
+L 882 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/simplelink.h" 2
 N#else
 S    #include "source/nonos.h"
 N#endif
@@ -21454,7 +20383,3644 @@ N#endif /* __cplusplus */
 N
 N#endif    /*  __SIMPLELINK_H__ */
 N
-L 39 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 2
+L 38 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 2
+N#include <ti/net/slnetsock.h>
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/net/slnetsock.h" 1
+N/*
+N * Copyright (c) 2017-2018, Texas Instruments Incorporated
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N /*!
+N
+N
+N  \page SlNetSock_overview SlNetSock
+N
+N  \section intro_sec Introduction
+N
+NSlNetSock provides a standard BSD API for TCP and UDP transport
+Nlayers, and a lower-level SlNetSock API for basic and extended
+Nusage. Supported use cases include:
+N
+N - Support of multi interface (WiFi NS, Ethernet NDK)
+N - Selecting which interfaces the host will use, one or more.
+N - Support of different types of sockets (TCP, TLS, UDP, RAW, RF, etc.)
+N - BSD and proprietary errors
+N
+N The SlNetSock API's lead to easier portability to microcontrollers,
+N without compromising the capabilities and robustness of the final
+N application.
+N
+N
+N \section modules_sec Module Names
+N TI's SlNetSock layer is divided into the following software modules:
+N     -# \ref SlNetSock  - Controls standard client/server sockets options and capabilities
+N     -# \ref SlNetIf    - Controls standard stack/interface options and capabilities
+N     -# \ref SlNetUtils - Provides sockets related commands and configuration
+N     -# \ref SlNetErr   - Provide BSD and proprietary errors
+N
+NIn addition, SlNetSock provides a standard BSD API, built atop the
+NSlNet* APIs.  The BSD headers are placed in ti/net/bsd directory,
+Nwhich users should place on their include path.
+N
+NAlso, there is a light
+N\subpage porting_guide "SL Interface Porting Guide"
+Nwith information available for adding SlNetSock support for other stacks.
+N
+N  \page porting_guide SL Interface Porting Guide
+N
+N \section Introduction
+N
+NThe generic SlNetSock layer sits between the application/service and
+Nthe interface stack.  This guide describes the details of adding a network stack into the SlNetSock environment.
+N
+NThe porting steps for adding new interface:
+N    -# Create slnetifxxx file for the new interface
+N    -# Select the capabilities set
+N    -# Adding the interface to your application/service
+N    -# Add the relevant functions to your application/service
+N    -# Test your code to validate the correctness of your porting
+N
+N  \subsection porting_step1   Step 1 - slnetifxxx.c and slnetifxxx.h file for your interface
+N
+N - Create slnetifxxx file (replace xxx with your interface/stack
+N   name).  Likely you will copy from an existing port.
+N
+N - Implement the needed API's.
+N
+NEach interface needs to provide a set of API's to work with the
+Ninterface.  Some are mandatory, others are optional (but recommended).
+N
+N - Mandatory API's:
+N  - \ref SlNetIf_Config_t.sockCreate            "sockCreate"
+N  - \ref SlNetIf_Config_t.sockClose             "sockClose"
+N  - \ref SlNetIf_Config_t.sockSelect            "sockSelect"
+N  - \ref SlNetIf_Config_t.sockSetOpt            "sockSetOpt"
+N  - \ref SlNetIf_Config_t.sockGetOpt            "sockGetOpt"
+N  - \ref SlNetIf_Config_t.sockRecvFrom          "sockRecvFrom"
+N  - \ref SlNetIf_Config_t.sockSendTo            "sockSendTo"
+N  - \ref SlNetIf_Config_t.ifGetIPAddr           "ifGetIPAddr"
+N  - \ref SlNetIf_Config_t.ifGetConnectionStatus "ifGetConnectionStatus"
+N
+N - The non-mandatory API's set:
+N  - \ref SlNetIf_Config_t.sockShutdown          "sockShutdown"
+N  - \ref SlNetIf_Config_t.sockAccept            "sockAccept"
+N  - \ref SlNetIf_Config_t.sockBind              "sockBind"
+N  - \ref SlNetIf_Config_t.sockListen            "sockListen"
+N  - \ref SlNetIf_Config_t.sockConnect           "sockConnect"
+N  - \ref SlNetIf_Config_t.sockGetPeerName       "sockGetPeerName"
+N  - \ref SlNetIf_Config_t.sockGetLocalName      "sockGetLocalName"
+N  - \ref SlNetIf_Config_t.sockRecv              "sockRecv"
+N  - \ref SlNetIf_Config_t.sockSend              "sockSend"
+N  - \ref SlNetIf_Config_t.sockstartSec          "sockstartSec"
+N  - \ref SlNetIf_Config_t.utilGetHostByName     "utilGetHostByName"
+N  - \ref SlNetIf_Config_t.ifLoadSecObj          "ifLoadSecOjb"
+N  - \ref SlNetIf_Config_t.ifCreateContext       "ifCreateContext"
+N
+N
+N  \note The list of API's and more data can be found in ::SlNetIf_Config_t structure in SlNetIf module \n \n
+N
+N \subsection    porting_step2   Step 2 - Select the capabilities set
+N
+N The capabilities prototype should be declared in your slnetifxxx.h and implemented in your slnetifxxx.c
+N
+N Each mandatory API's must be set, additional API's can be set or must
+N be set to NULL.
+N
+N An example config declaration for TI's SimpleLink CC31XX/CC32xx
+N
+N \code
+N SlNetIfConfig SlNetIfConfigWiFi =
+N {
+N    SlNetIfWifi_socket,              // Callback function sockCreate in slnetif module
+N    SlNetIfWifi_close,               // Callback function sockClose in slnetif module
+N    NULL,                            // Callback function sockShutdown in slnetif module
+N    SlNetIfWifi_accept,              // Callback function sockAccept in slnetif module
+N    SlNetIfWifi_bind,                // Callback function sockBind in slnetif module
+N    SlNetIfWifi_listen,              // Callback function sockListen in slnetif module
+N    SlNetIfWifi_connect,             // Callback function sockConnect in slnetif module
+N    NULL,                            // Callback function sockGetPeerName in slnetif module
+N    NULL,                            // Callback function sockGetLocalName in slnetif module
+N    SlNetIfWifi_select,              // Callback function sockSelect in slnetif module
+N    SlNetIfWifi_setSockOpt,          // Callback function sockSetOpt in slnetif module
+N    SlNetIfWifi_getSockOpt,          // Callback function sockGetOpt in slnetif module
+N    SlNetIfWifi_recv,                // Callback function sockRecv in slnetif module
+N    SlNetIfWifi_recvFrom,            // Callback function sockRecvFrom in slnetif module
+N    SlNetIfWifi_send,                // Callback function sockSend in slnetif module
+N    SlNetIfWifi_sendTo,              // Callback function sockSendTo in slnetif module
+N    SlNetIfWifi_sockstartSec,        // Callback function sockstartSec in slnetif module
+N    SlNetIfWifi_getHostByName,       // Callback function utilGetHostByName in slnetif module
+N    SlNetIfWifi_getIPAddr,           // Callback function ifGetIPAddr in slnetif module
+N    SlNetIfWifi_getConnectionStatus, // Callback function ifGetConnectionStatus in slnetif module
+N    SlNetIfWifi_loadSecObj,          // Callback function ifLoadSecObj in slnetif module
+N    NULL                             // Callback function ifCreateContext in slnetif module
+N };
+N \endcode
+N
+N In the example above the following API's are not supported by the interface,
+N and are set to NULL:
+N - sockShutdown
+N - sockGetPeerName
+N - sockGetLocalName
+N - utilGetHostByName
+N - ifCreateContext
+N
+N \subsection    porting_step3   Step 3 - Adding the interface to your application/service
+N
+N \b Include the new file in the board header file in the application.
+N
+N \subsection    porting_step4   Step 4 - Add the relevant functions to your application/service
+N
+N  After configuring the capabilities of the interface, Adding the interface to the SlNetSock
+N  is required.
+N
+N  Use ::SlNetIf_add in order to add the interface and set his ID, Name, function list and priority.
+N  Later on you need to use the BSD API's or SlNetSock API's for socket handling.
+N
+N \subsection    porting_step5   Step 5 - Test your code to validate the correctness of your porting
+N
+N After porting the layer into your setup, validate that your code work as expected
+N
+N*/
+N
+N/*****************************************************************************/
+N/* Include files                                                             */
+N/*****************************************************************************/
+N
+N#ifndef __SL_NET_SOCK_H__
+N#define __SL_NET_SOCK_H__
+N
+N#include <stdint.h>
+N
+N#ifdef    __cplusplus
+Sextern "C" {
+N#endif
+N
+N
+N/*!
+N    \defgroup SlNetSock SlNetSock group
+N
+N    \short Controls standard client/server sockets options and capabilities
+N
+N*/
+N/*!
+N
+N    \addtogroup SlNetSock
+N    @{
+N
+N*/
+N
+N/*****************************************************************************/
+N/* Macro declarations                                                        */
+N/*****************************************************************************/
+N
+N#define SLNETSOCK_MAX_CONCURRENT_SOCKETS                                    (32)  /**< Declares the maximum sockets that can be opened */
+N
+N/* Address families.  */
+N#define SLNETSOCK_AF_UNSPEC                                                 (0)   /**< Unspecified address family      */
+N#define SLNETSOCK_AF_INET                                                   (2)   /**< IPv4 socket (UDP, TCP, etc)     */
+N#define SLNETSOCK_AF_INET6                                                  (3)   /**< IPv6 socket (UDP, TCP, etc)     */
+N#define SLNETSOCK_AF_RF                                                     (6)   /**< Data include RF parameter, All layer by user (Wifi could be disconnected) */
+N#define SLNETSOCK_AF_PACKET                                                 (17)  /**< Network bypass                  */
+N
+N/* Protocol families, same as address families. */
+N#define SLNETSOCK_PF_UNSPEC                                                 SLNETSOCK_AF_UNSPEC
+N#define SLNETSOCK_PF_INET                                                   SLNETSOCK_AF_INET
+N#define SLNETSOCK_PF_INET6                                                  SLNETSOCK_AF_INET6
+N
+N/* Define argument types specifies the socket type.  */
+N#define SLNETSOCK_SOCK_STREAM                                               (1)   /**< TCP Socket                      */
+N#define SLNETSOCK_SOCK_DGRAM                                                (2)   /**< UDP Socket                      */
+N#define SLNETSOCK_SOCK_RAW                                                  (3)   /**< Raw socket                      */
+N#define SLNETSOCK_SOCK_RX_MTR                                               (4)   /**< RX Metrics socket               */
+N#define SLNETSOCK_SOCK_MAC_WITH_CCA                                         (5)
+N#define SLNETSOCK_SOCK_MAC_WITH_NO_CCA                                      (6)
+N#define SLNETSOCK_SOCK_BRIDGE                                               (7)
+N#define SLNETSOCK_SOCK_ROUTER                                               (8)
+N
+N/* Define some BSD protocol constants.  */
+N#define SLNETSOCK_PROTO_TCP                                                 (6)   /**< TCP Raw Socket                  */
+N#define SLNETSOCK_PROTO_UDP                                                 (17)  /**< UDP Raw Socket                  */
+N#define SLNETSOCK_PROTO_RAW                                                 (255) /**< Raw Socket                      */
+N#define SLNETSOCK_PROTO_SECURE                                              (100) /**< Secured Socket Layer (SSL,TLS)  */
+N
+N/* bind any addresses */
+N#define SLNETSOCK_INADDR_ANY                                                (0)
+N#define SLNETSOCK_IN6ADDR_ANY                                               (0)
+N
+N
+N/* socket options */
+N
+N/* possible values for the level parameter in slNetSock_setOpt / slNetSock_getOpt */
+N#define SLNETSOCK_LVL_SOCKET                                                (1)   /**< Define the socket option category. */
+N#define SLNETSOCK_LVL_IP                                                    (2)   /**< Define the IP option category.     */
+N#define SLNETSOCK_LVL_PHY                                                   (3)   /**< Define the PHY option category.    */
+N
+N/* possible values for the option parameter in slNetSock_setOpt / slNetSock_getOpt */
+N
+N/* socket level options (SLNETSOCK_LVL_SOCKET) */
+N#define SLNETSOCK_OPSOCK_RCV_BUF                                            (8)   /**< Setting TCP receive buffer size (window size) - This options takes SlNetSock_Winsize_t struct as parameter                 */
+N#define SLNETSOCK_OPSOCK_RCV_TIMEO                                          (20)  /**< Enable receive timeout - This options takes SlNetSock_Timeval_t struct as parameter                                        */
+N#define SLNETSOCK_OPSOCK_KEEPALIVE                                          (9)   /**< Connections are kept alive with periodic messages - This options takes SlNetSock_Keepalive_t struct as parameter           */
+N#define SLNETSOCK_OPSOCK_KEEPALIVE_TIME                                     (37)  /**< keepalive time out - This options takes <b>uint32_t</b> as parameter                                                       */
+N#define SLNETSOCK_OPSOCK_LINGER                                             (13)  /**< Socket lingers on close pending remaining send/receive packets - This options takes SlNetSock_linger_t struct as parameter */
+N#define SLNETSOCK_OPSOCK_NON_BLOCKING                                       (24)  /**< Enable/disable nonblocking mode - This options takes SlNetSock_Nonblocking_t struct as parameter                           */
+N#define SLNETSOCK_OPSOCK_NON_IP_BOUNDARY                                    (39)  /**< connectionless socket disable rx boundary - This options takes SlNetSock_NonIpBoundary_t struct as parameter               */
+N#define SLNETSOCK_OPSOCK_ERROR                                              (58)  /**< Socket level error code                                                                                                    */
+N#define SLNETSOCK_OPSOCK_SLNETSOCKSD                                        (59)  /**< Used by the BSD layer in order to retrieve the slnetsock sd                                                                */
+N
+N/* IP level options (SLNETSOCK_LVL_IP) */
+N#define SLNETSOCK_OPIP_MULTICAST_TTL                                        (61)  /**< Specify the TTL value to use for outgoing multicast packet. - This options takes <b>uint8_t</b> as parameter                                                      */
+N#define SLNETSOCK_OPIP_ADD_MEMBERSHIP                                       (65)  /**< Join IPv4 multicast membership - This options takes SlNetSock_IpMreq_t struct as parameter                                                                        */
+N#define SLNETSOCK_OPIP_DROP_MEMBERSHIP                                      (66)  /**< Leave IPv4 multicast membership - This options takes SlNetSock_IpMreq_t struct as parameter                                                                       */
+N#define SLNETSOCK_OPIP_HDRINCL                                              (67)  /**< Raw socket IPv4 header included - This options takes <b>uint32_t</b> as parameter                                                                                 */
+N#define SLNETSOCK_OPIP_RAW_RX_NO_HEADER                                     (68)  /**< Proprietary socket option that does not includeIPv4/IPv6 header (and extension headers) on received raw sockets - This options takes <b>uint32_t</b> as parameter */
+N#define SLNETSOCK_OPIP_RAW_IPV6_HDRINCL                                     (69)  /**< Transmitted buffer over IPv6 socket contains IPv6 header - This options takes <b>uint32_t</b> as parameter                                                        */
+N#define SLNETSOCK_OPIPV6_ADD_MEMBERSHIP                                     (70)  /**< Join IPv6 multicast membership - This options takes SlNetSock_IpV6Mreq_t struct as parameter                                                                      */
+N#define SLNETSOCK_OPIPV6_DROP_MEMBERSHIP                                    (71)  /**< Leave IPv6 multicast membership - This options takes SlNetSock_IpV6Mreq_t struct as parameter                                                                     */
+N#define SLNETSOCK_OPIPV6_MULTICAST_HOPS                                     (72)  /**< Specify the hops value to use for outgoing multicast packet.                                                                                                      */
+N
+N/* PHY level options (SLNETSOCK_LVL_PHY) */
+N#define SLNETSOCK_OPPHY_CHANNEL                                             (28)  /**< This option is available only when transceiver started - This options takes <b>uint32_t</b> as channel number parameter            */
+N#define SLNETSOCK_OPPHY_RATE                                                (100) /**< WLAN Transmit rate - This options takes <b>uint32_t</b> as parameter based on SlWlanRateIndex_e                                    */
+N#define SLNETSOCK_OPPHY_TX_POWER                                            (101) /**< TX Power level - This options takes <b>uint32_t</b> as parameter                                                                   */
+N#define SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX                                    (102) /**< Number of frames to transmit - This options takes <b>uint32_t</b> as parameter                                                     */
+N#define SLNETSOCK_OPPHY_PREAMBLE                                            (103) /**< Preamble for transmission - This options takes <b>uint32_t</b> as parameter                                                        */
+N#define SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD                                (104) /**< TX Inhibit Threshold (CCA) - This options takes <b>uint32_t</b> as parameter based on SlNetSockTxInhibitThreshold_e                */
+N#define SLNETSOCK_OPPHY_TX_TIMEOUT                                          (105) /**< TX timeout for Transceiver frames (lifetime) in miliseconds (max value is 100ms) - This options takes <b>uint32_t</b> as parameter */
+N#define SLNETSOCK_OPPHY_ALLOW_ACKS                                          (106) /**< Enable sending ACKs in transceiver mode - This options takes <b>uint32_t</b> as parameter                                          */
+N
+N/*!
+N    \brief The SlNetSockTxInhibitThreshold_e enumerations is used in SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD PHY level option
+N*/
+Ntypedef enum
+N{
+N    SLNETSOCK_TX_INHIBIT_THRESHOLD_MIN     = 1,
+N    SLNETSOCK_TX_INHIBIT_THRESHOLD_LOW     = 2,
+N    SLNETSOCK_TX_INHIBIT_THRESHOLD_DEFAULT = 3,
+N    SLNETSOCK_TX_INHIBIT_THRESHOLD_MED     = 4,
+N    SLNETSOCK_TX_INHIBIT_THRESHOLD_HIGH    = 5,
+N    SLNETSOCK_TX_INHIBIT_THRESHOLD_MAX     = 6
+N} SlNetSockTxInhibitThreshold_e;
+N
+N/*!
+N    \brief  The SlNetSockSecAttrib_e enumerations are used to declare security
+N            attribute objects in SlNetSock_secAttribSet().
+N
+N    \sa     SlNetSock_secAttribSet()
+N*/
+Ntypedef enum
+N{
+N     SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY               = 0,
+N     SLNETSOCK_SEC_ATTRIB_LOCAL_CERT                = 1,
+N     SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA              = 2,
+N     SLNETSOCK_SEC_ATTRIB_DH_KEY                    = 3,
+N     SLNETSOCK_SEC_ATTRIB_METHOD                    = 4,
+N     SLNETSOCK_SEC_ATTRIB_CIPHERS                   = 5,
+N     SLNETSOCK_SEC_ATTRIB_ALPN                      = 6,
+N     SLNETSOCK_SEC_ATTRIB_EXT_CLIENT_CHLNG_RESP     = 7,
+N     SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME               = 8,
+N
+N     /*!
+N            @c SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE is
+N            currently only supported on CC3x20 devices.
+N
+N            The certificate store is a file, provided by TI,
+N            containing a list of known and trusted root CAs by TI.
+N            For more information, see the CC3x20 documentation.
+N
+N            The certificate store is used only in client mode. Servers
+N            use a proprietary root CA to authenticate clients, and
+N            therefore cannot use the certificate store.
+N
+N            Using this attribute allows using root CA which isn't a
+N            part of the provided certificate store.
+N     */
+N
+N     SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE = 9
+N} SlNetSockSecAttrib_e;
+N
+N/* available values for SLNETSOCK_SEC_ATTRIB_METHOD */
+N#define SLNETSOCK_SEC_METHOD_SSLV3                                          (0)   /**< security method SSL v3                            */
+N#define SLNETSOCK_SEC_METHOD_TLSV1                                          (1)   /**< security method TLS v1                            */
+N#define SLNETSOCK_SEC_METHOD_TLSV1_1                                        (2)   /**< security method TLS v1_1                          */
+N#define SLNETSOCK_SEC_METHOD_TLSV1_2                                        (3)   /**< security method TLS v1_2                          */
+N#define SLNETSOCK_SEC_METHOD_SSLv3_TLSV1_2                                  (4)   /**< use highest possible version from SSLv3 - TLS 1.2 */
+N#define SLNETSOCK_SEC_METHOD_DLSV1                                          (5)   /**< security method DTL v1                            */
+N
+N/* available values for SLNETSOCK_SEC_ATTRIB_CIPHERS. The value is bitmap! */
+N#define SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_SHA                       (1 << 0)
+N#define SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_MD5                       (1 << 1)
+N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_CBC_SHA                   (1 << 2)
+N#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_256_CBC_SHA               (1 << 3)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA             (1 << 4)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_RC4_128_SHA                 (1 << 5)
+N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_128_CBC_SHA256                (1 << 6)
+N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_CBC_SHA256                (1 << 7)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256          (1 << 8)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256        (1 << 9)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA           (1 << 10)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA           (1 << 11)
+N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_128_GCM_SHA256                (1 << 12)
+N#define SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_GCM_SHA384                (1 << 13)
+N#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256            (1 << 14)
+N#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384            (1 << 15)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256          (1 << 16)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384          (1 << 17)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256        (1 << 18)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384        (1 << 19)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256  (1 << 20)
+N#define SLNETSOCK_SEC_CIPHER_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256    (1 << 21)
+N#define SLNETSOCK_SEC_CIPHER_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256      (1 << 22)
+N#define SLNETSOCK_SEC_CIPHER_FULL_LIST                                      (0xFFFFFFFF)
+N
+N/* available values for SLNETSOCK_SEC_ATTRIB_ALPN */
+N#define SLNETSOCK_SEC_ALPN_H1                                               (1 << 0)
+N#define SLNETSOCK_SEC_ALPN_H2                                               (1 << 1)
+N#define SLNETSOCK_SEC_ALPN_H2C                                              (1 << 2)
+N#define SLNETSOCK_SEC_ALPN_H2_14                                            (1 << 3)
+N#define SLNETSOCK_SEC_ALPN_H2_16                                            (1 << 4)
+N#define SLNETSOCK_SEC_ALPN_FULL_LIST                                        ((SLNETSOCK_SEC_ALPN_H2_16 << 1 ) - 1)
+N
+N/* available values for the flags of the SlNetSock_startSec function */
+N#define SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY                           (1 << 0) /**< Sends the command that will start the security session for a specific socket descriptor */
+N#define SLNETSOCK_SEC_BIND_CONTEXT_ONLY                                     (1 << 1) /**< Binds the security context to a specific socket descriptor */
+N#define SLNETSOCK_SEC_IS_SERVER                                             (1 << 2) /**< Used to define if the socket is client/server socket       */
+N
+N/* available values for the flags of the SlNetSock_create function */
+N
+N#define SLNETSOCK_CREATE_IF_STATE_ENABLE                                    (1 << 0) /**< Creation of the socket will be on enabled state      */
+N#define SLNETSOCK_CREATE_IF_STATUS_CONNECTED                                (1 << 1) /**< Creation of the socket will be on status connected   */
+N#define SLNETSOCK_CREATE_ALLOW_PARTIAL_MATCH                                (1 << 2) /**< Creation of the socket will be on the interface with
+N                                                                                        the highest priority if the other flags will fail    */
+N
+N/* Definitions for shutting down some or all parts of a full duplex connection */
+N#define SLNETSOCK_SHUT_RD                                                   (0) /**< Further receptions will be disallowed                   */
+N#define SLNETSOCK_SHUT_WR                                                   (1) /**< Further transmissions will be disallowed                */
+N#define SLNETSOCK_SHUT_RDWR                                                 (2) /**< Further receptions and transmissions will be disallowed */
+N
+N/* Length of address string representation  */
+N#define SLNETSOCK_INET6_ADDRSTRLEN                                          (46)
+N#define SLNETSOCK_INET_ADDRSTRLEN                                           (16)
+N
+N/* flags used in send/recv and friends.
+N *
+N * Note these flags must not exceed 24-bits.  The implementation will
+N * OR the 8-bits of security flags into the remaining high 8 bits of
+N * 32-bit flag variables.
+N */
+N#define SLNETSOCK_MSG_OOB         (0x0001)
+N#define SLNETSOCK_MSG_PEEK        (0x0002)
+N#define SLNETSOCK_MSG_WAITALL     (0x0004)
+N#define SLNETSOCK_MSG_DONTWAIT    (0x0008)
+N#define SLNETSOCK_MSG_DONTROUTE   (0x0010)
+N#define SLNETSOCK_MSG_NOSIGNAL    (0x0020)
+N
+N
+N/*****************************************************************************/
+N/* Structure/Enum declarations                                               */
+N/*****************************************************************************/
+N
+N/*!
+N    \brief Internet address
+N*/
+Ntypedef struct SlNetSock_InAddr_t
+N{
+N#ifndef s_addr
+N    uint32_t s_addr;  /* Internet address 32 bits */
+N#else
+S/*!
+S    \brief Different representations for in addr for different hosts.
+S*/
+S    union S_un
+S    {
+S        uint32_t S_addr;
+S        struct
+S        {
+S            uint8_t s_b1,s_b2,s_b3,s_b4;
+S        } S_un_b;
+S        struct
+S        {
+S            uint16_t s_w1,s_w2;
+S        } S_un_w;
+S    } S_un;
+N#endif
+N} SlNetSock_InAddr_t;
+N
+N/*!
+N    \brief IpV6 or Ipv6 EUI64
+N*/
+Ntypedef struct SlNetSock_In6Addr_t
+N{
+N    union
+N    {
+N        uint8_t  _S6_u8[16];
+N        uint16_t _S6_u16[8];
+N        uint32_t _S6_u32[4];
+N    } _S6_un;
+N} SlNetSock_In6Addr_t;
+N
+N/*!
+N    \brief The SlNetSock_Keepalive_t structure is used in #SLNETSOCK_OPSOCK_KEEPALIVE socket level option
+N*/
+Ntypedef struct SlNetSock_Keepalive_t
+N{
+N    uint32_t keepaliveEnabled;      /**< 0 = disabled;1 = enabled; default = 1 */
+N} SlNetSock_Keepalive_t;
+N
+N/*!
+N    \brief The SlNetSock_NonIpBoundary_t structure is used in #SLNETSOCK_OPSOCK_NON_IP_BOUNDARY socket level option
+N*/
+Ntypedef struct SlNetSock_NonIpBoundary_t
+N{
+N    int32_t nonIpBoundaryEnabled;   /**< 0 = keep IP boundary; 1 = don`t keep ip boundary; default = 0; */
+N} SlNetSock_NonIpBoundary_t;
+N
+N/*!
+N    \brief The SlNetSock_Winsize_t structure is used in #SLNETSOCK_OPSOCK_RCV_BUF socket level option
+N*/
+Ntypedef struct SlNetSock_Winsize_t
+N{
+N    uint32_t winSize;               /**< receive window size for tcp sockets   */
+N} SlNetSock_Winsize_t;
+N
+N/*!
+N    \brief The SlNetSock_Nonblocking_t structure is used in #SLNETSOCK_OPSOCK_NON_BLOCKING socket level option
+N*/
+Ntypedef struct SlNetSock_Nonblocking_t
+N{
+N    uint32_t nonBlockingEnabled;    /**< 0 = disabled, 1 = enabled, default = 1*/
+N} SlNetSock_Nonblocking_t;
+N
+N/*!
+N    \brief Secure socket attribute context
+N*/
+Ntypedef struct SlNetSock_SecAttribNode_t
+N{
+N    SlNetSockSecAttrib_e              attribName;    /**< Security attribute name          */
+N    uint8_t                          *attribBuff;    /**< Security attribute buffer        */
+N    uint16_t                          attribBuffLen; /**< Security attribute buffer length */
+N    struct SlNetSock_SecAttribNode_t *next;
+N} SlNetSock_SecAttribNode_t;
+N
+N/*!
+N    \brief Secure socket attribute handler
+N*/
+Ntypedef SlNetSock_SecAttribNode_t * SlNetSockSecAttrib_t;
+N
+N/*!
+N    \brief Secure ALPN structure
+N*/
+Ntypedef struct SlNetSock_SecureALPN_t
+N{
+N    uint32_t secureALPN;
+N} SlNetSock_SecureALPN_t;
+N
+N/*!
+N    \brief Secure Mask structure
+N*/
+Ntypedef struct SlNetSock_SecureMask_t
+N{
+N    uint32_t secureMask;
+N} SlNetSock_SecureMask_t;
+N
+N/*!
+N    \brief Secure Method structure
+N*/
+Ntypedef struct SlNetSock_SecureMethod_t
+N{
+N    uint8_t secureMethod;
+N} SlNetSock_SecureMethod_t;
+N
+N/*!
+N    \brief The SlNetSock_IpMreq_t structure is used in #SLNETSOCK_OPIP_ADD_MEMBERSHIP and #SLNETSOCK_OPIP_DROP_MEMBERSHIP IP level option
+N*/
+Ntypedef struct SlNetSock_IpMreq_t
+N{
+N    SlNetSock_InAddr_t imr_multiaddr;     /**< The IPv4 multicast address to join  */
+N    uint32_t           imr_interface;     /**< The interface to use for this group */
+N} SlNetSock_IpMreq_t;
+N
+N/*!
+N    \brief The SlNetSock_IpV6Mreq_t structure is used in #SLNETSOCK_OPIPV6_ADD_MEMBERSHIP and #SLNETSOCK_OPIPV6_DROP_MEMBERSHIP IP level option
+N*/
+Ntypedef struct SlNetSock_IpV6Mreq_t
+N{
+N    SlNetSock_In6Addr_t ipv6mr_multiaddr; /**< IPv6 multicast address of group                       */
+N    uint32_t            ipv6mr_interface; /**< should be 0 to choose the default multicast interface */
+N} SlNetSock_IpV6Mreq_t;
+N
+N/*!
+N    \brief The SlNetSock_linger_t structure is used in #SLNETSOCK_OPSOCK_LINGER socket level option
+N*/
+Ntypedef struct SlNetSock_linger_t
+N{
+N    uint32_t l_onoff;                    /**< 0 = disabled; 1 = enabled; default = 0; */
+N    uint32_t l_linger;                   /**< linger time in seconds; default = 0;    */
+N} SlNetSock_linger_t;
+N
+N/*!
+N    \brief The SlNetSockTime_t is used for setting/getting time in seconds
+N*/
+Ntypedef int32_t SlNetSockTime_t;
+N/*!
+N    \brief The SlNetSockuseconds_t is used for setting/getting time in micro-seconds
+N*/
+Ntypedef int32_t SlNetSockuseconds_t;
+N
+N/*!
+N    \brief The SlNetSock_Timeval_t structure is used in #SLNETSOCK_OPSOCK_RCV_TIMEO socket level option
+N*/
+Ntypedef struct SlNetSock_Timeval_t
+N{
+N    SlNetSockTime_t      tv_sec;         /**< Seconds      */
+N    SlNetSockuseconds_t  tv_usec;        /**< Microseconds */
+N} SlNetSock_Timeval_t;
+N
+N/*!
+N    \brief The SlNetSocklen_t is used for declaring the socket length parameter
+N*/
+Ntypedef uint16_t SlNetSocklen_t;
+N
+N/*!
+N    \brief IpV4 socket address
+N*/
+Ntypedef struct SlNetSock_Addr_t
+N{
+N    uint16_t sa_family;                  /**< Address family (e.g. AF_INET)          */
+N    uint8_t  sa_data[14];                /**< Protocol- specific address information */
+N} SlNetSock_Addr_t;
+N
+N/*!
+N    \brief SlNetSock IPv6 address, Internet style
+N*/
+Ntypedef struct SlNetSock_AddrIn6_t
+N{
+N    uint16_t            sin6_family;     /**< SLNETSOCK_AF_INET6             */
+N    uint16_t            sin6_port;       /**< Transport layer port.          */
+N    uint32_t            sin6_flowinfo;   /**< IPv6 flow information.         */
+N    SlNetSock_In6Addr_t sin6_addr;       /**< IPv6 address.                  */
+N    uint32_t            sin6_scope_id;   /**< set of interfaces for a scope. */
+N} SlNetSock_AddrIn6_t;
+N
+N/*!
+N    \brief SlNetSock IPv4 address, Internet style
+N*/
+Ntypedef struct SlNetSock_AddrIn_t
+N{
+N    uint16_t           sin_family;       /**< Internet Protocol (AF_INET). */
+N    uint16_t           sin_port;         /**< Address port (16 bits).      */
+N    SlNetSock_InAddr_t sin_addr;         /**< Internet address (32 bits).  */
+N    int8_t             sin_zero[8];      /**< Not used.                    */
+N} SlNetSock_AddrIn_t;
+N
+N/* ss_family + pad must be large enough to hold max of
+N * _SlNetSock_AddrIn6_t or _SlNetSock_AddrIn_t
+N */
+N/*!
+N    \brief Generic socket address type to hold either IPv4 or IPv6 address
+N*/
+Ntypedef struct SlNetSock_SockAddrStorage_t
+N{
+N    uint16_t ss_family;
+N    uint8_t  pad[26];
+N} SlNetSock_SockAddrStorage_t;
+N
+N/*!
+N    \brief The SlNetSock_SdSet_t structure holds the sd array for SlNetSock_select function
+N*/
+Ntypedef struct SlNetSock_SdSet_t         /**< The select socket array manager */
+N{
+N    uint32_t sdSetBitmap[(SLNETSOCK_MAX_CONCURRENT_SOCKETS + (uint8_t)31)/(uint8_t)32]; /* Bitmap of SOCKET Descriptors */
+X    uint32_t sdSetBitmap[((32) + (uint8_t)31)/(uint8_t)32];  
+N} SlNetSock_SdSet_t;
+N
+N
+N/*!
+N    \brief The SlNetSock_TransceiverRxOverHead_t structure holds the data for Rx transceiver mode using a raw socket when using SlNetSock_recv function
+N*/
+Ntypedef struct SlNetSock_TransceiverRxOverHead_t
+N{
+N    uint8_t  rate;                       /**< Received Rate                                  */
+N    uint8_t  channel;                    /**< The received channel                           */
+N    int8_t   rssi;                       /**< The computed RSSI value in db of current frame */
+N    uint8_t  padding;                    /**< pad to align to 32 bits                        */
+N    uint32_t timestamp;                  /**< Timestamp in microseconds                      */
+N} SlNetSock_TransceiverRxOverHead_t;
+N
+N
+N/*****************************************************************************/
+N/* Function prototypes                                                       */
+N/*****************************************************************************/
+N
+N/*!
+N
+N    \brief Initialize the SlNetSock module
+N
+N    \param[in] flags            Reserved
+N
+N    \return                     Zero on success, or negative error code on failure
+N*/
+Nint32_t SlNetSock_init(int32_t flags);
+N
+N/*!
+N
+N    \brief Create an endpoint for communication
+N
+N    SlNetSock_create() creates a new socket of a certain socket type,
+N    identified by an integer number, and allocates system resources to it.\n
+N    This function is called by the application layer to obtain a socket descriptor (handle).
+N
+N    \param[in] domain           Specifies the protocol family of the created socket.
+N                                For example:
+N                                   - #SLNETSOCK_AF_INET for network protocol IPv4
+N                                   - #SLNETSOCK_AF_INET6 for network protocol IPv6
+N                                   - #SLNETSOCK_AF_RF for starting transceiver mode.
+N                                        Notes:
+N                                        - sending and receiving any packet overriding 802.11 header
+N                                        - for optimized power consumption the socket will be started in TX
+N                                            only mode until receive command is activated
+N    \param[in] type             Specifies the socket type, which determines the semantics of communication over
+N                                the socket. The socket types supported by the system are implementation-dependent.
+N                                Possible socket types include:
+N                                   - #SLNETSOCK_SOCK_STREAM (reliable stream-oriented service or Stream Sockets)
+N                                   - #SLNETSOCK_SOCK_DGRAM  (datagram service or Datagram Sockets)
+N                                   - #SLNETSOCK_SOCK_RAW    (raw protocols atop the network layer)
+N                                   - when used with AF_RF:
+N                                      - #SLNETSOCK_SOCK_RX_MTR
+N                                      - #SLNETSOCK_SOCK_MAC_WITH_CCA
+N                                      - #SLNETSOCK_SOCK_MAC_WITH_NO_CCA
+N                                      - #SLNETSOCK_SOCK_BRIDGE
+N                                      - #SLNETSOCK_SOCK_ROUTER
+N    \param[in] protocol         Specifies a particular transport to be used with the socket.\n
+N                                The most common are
+N                                    - #SLNETSOCK_PROTO_TCP
+N                                    - #SLNETSOCK_PROTO_UDP
+N                                    - #SLNETSOCK_PROTO_RAW
+N                                    - #SLNETSOCK_PROTO_SECURE
+N    \param[in] ifBitmap         Specifies the interface(s) which the socket will be create on
+N                                according to the priority until one of them will return an answer.\n
+N                                Value 0 is used in order to choose automatic interfaces selection
+N                                according to the priority interface list.
+N                                Value can be combination of interfaces by OR'ing multiple interfaces bit identifiers
+N                                (SLNETIFC_IDENT_ defined in slnetif.h)
+N                                Note: interface identifier bit must be configured prior to this socket creation
+N                                using SlNetIf_add().
+N    \param[in] flags            Specifies flags.
+N                                   - #SLNETSOCK_CREATE_IF_STATE_ENABLE     - Creation of the socket will be on enabled state
+N                                   - #SLNETSOCK_CREATE_IF_STATUS_CONNECTED - Creation of the socket will be on status connected
+N                                   - #SLNETSOCK_CREATE_ALLOW_PARTIAL_MATCH - Creation of the socket will be on the interface with
+N                                                                            the highest priority if the other flags will fail
+N                                The value 0 may be used in order to run the default flags:
+N                                   - #SLNETSOCK_CREATE_IF_STATE_ENABLE
+N                                   - #SLNETSOCK_CREATE_IF_STATUS_CONNECTED
+N
+N    \return                     On success, socket descriptor (handle) that is used for consequent socket operations. \n
+N                                A successful return code should be a positive number\n
+N                                On error, a negative value will be returned specifying the error code.
+N                                   - #SLNETERR_BSD_EAFNOSUPPORT    - illegal domain parameter
+N                                   - #SLNETERR_BSD_EPROTOTYPE      - illegal type parameter
+N                                   - #SLNETERR_BSD_EACCES          - permission denied
+N                                   - #SLNETERR_BSD_ENSOCK          - exceeded maximal number of socket
+N                                   - #SLNETERR_BSD_ENOMEM          - memory allocation error
+N                                   - #SLNETERR_BSD_EINVAL          - error in socket configuration
+N                                   - #SLNETERR_BSD_EPROTONOSUPPORT - illegal protocol parameter
+N                                   - #SLNETERR_BSD_EOPNOTSUPP      - illegal combination of protocol and type parameters
+N
+N    \slnetsock_init_precondition
+N
+N    \remark     Not all platforms support all options.
+N
+N    \remark     A @c protocol value of zero can be used to select the default protocol from the selected @c domain and @c type.
+N
+N    \sa         SlNetSock_close()
+N*/
+Nint16_t SlNetSock_create(int16_t domain, int16_t type, int16_t protocol, uint32_t ifBitmap, int16_t flags);
+N
+N
+N/*!
+N    \brief Gracefully close socket
+N
+N    Release resources allocated to a socket.
+N
+N    \param[in] sd               Socket descriptor (handle), received in SlNetSock_create()
+N
+N    \return                     Zero on success, or negative error code on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \remark     In the case of TCP, the connection is terminated.
+N
+N    \sa                         SlNetSock_create()
+N*/
+Nint32_t SlNetSock_close(int16_t sd);
+N
+N
+N/*!
+N    \brief Shutting down parts of a full-duplex connection
+N
+N    Shuts down parts of a full-duplex connection according to how parameter.\n
+N
+N    \param[in] sd               Socket descriptor (handle), received in SlNetSock_create
+N    \param[in] how              Specifies which part of a full-duplex connection to shutdown. \n
+N                                The options are
+N                                    - #SLNETSOCK_SHUT_RD   - further receptions will be disallowed
+N                                    - #SLNETSOCK_SHUT_WR   - further transmissions will be disallowed
+N                                    - #SLNETSOCK_SHUT_RDWR - further receptions and transmissions will be disallowed
+N
+N    \return                     Zero on success, or negative error code on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \sa                         SlNetSock_create()
+N    \sa                         SlNetSock_connect()
+N    \sa                         SlNetSock_accept()
+N*/
+Nint32_t SlNetSock_shutdown(int16_t sd, int16_t how);
+N
+N
+N/*!
+N    \brief Accept a connection on a socket
+N
+N    The SlNetSock_accept function is used with connection-based socket types (#SLNETSOCK_SOCK_STREAM).
+N
+N    It extracts the first connection request on the queue of pending
+N    connections, creates a new connected socket, and returns a new file
+N    descriptor referring to that socket.
+N
+N    The newly created socket is not in the listening state. The
+N    original socket sd is unaffected by this call.
+N
+N    The argument sd is a socket that has been created with
+N    SlNetSock_create(), bound to a local address with
+N    SlNetSock_bind(), and is listening for connections after a
+N    SlNetSock_listen().
+N
+N    The argument \c addr is a pointer to a sockaddr structure. This
+N    structure is filled in with the address of the peer socket, as
+N    known to the communications layer.
+N
+N    The exact format of the address returned \c addr is determined by the socket's address family.
+N
+N    \c addrlen is a value-result argument: it should initially contain
+N    the size of the structure pointed to by addr, on return it will
+N    contain the actual length (in bytes) of the address returned.
+N
+N    \param[in]  sd              Socket descriptor (handle)
+N    \param[out] addr            The argument addr is a pointer
+N                                to a sockaddr structure. This
+N                                structure is filled in with the
+N                                address of the peer socket, as
+N                                known to the communications
+N                                layer. The exact format of the
+N                                address returned addr is
+N                                determined by the socket's
+N                                address\n
+N                                sockaddr:\n - code for the
+N                                address format.\n -
+N                                socket address, the length
+N                                depends on the code format
+N    \param[out] addrlen         The addrlen argument is a value-result
+N                                argument: it should initially contain the
+N                                size of the structure pointed to by addr
+N
+N    \return                     On success, a socket descriptor.\n
+N                                On a non-blocking accept a possible negative value is #SLNETERR_BSD_EAGAIN.\n
+N                                On failure, negative error code.\n
+N                                #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
+N
+N    \slnetsock_init_precondition
+N
+N    \sa                         SlNetSock_create()
+N    \sa                         SlNetSock_bind()
+N    \sa                         SlNetSock_listen()
+N*/
+Nint16_t SlNetSock_accept(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
+N
+N
+N/*!
+N    \brief Assign a name to a socket
+N
+N    This SlNetSock_bind function gives the socket the local address
+N    addr.  addr is addrlen bytes long.
+N
+N    Traditionally, this is called when a socket is created with
+N    socket, it exists in a name space (address family) but has no name
+N    assigned.
+N
+N    It is necessary to assign a local address before a #SLNETSOCK_SOCK_STREAM
+N    socket may receive connections.
+N
+N    \param[in] sd               Socket descriptor (handle)
+N    \param[in] addr             Specifies the destination
+N                                addrs\n sockaddr:\n - code for
+N                                the address format.\n - socket address,
+N                                the length depends on the code
+N                                format
+N    \param[in] addrlen          Contains the size of the structure pointed to by addr
+N
+N    \return                     Zero on success, or negative error code on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \sa                         SlNetSock_create()
+N    \sa                         SlNetSock_accept()
+N    \sa                         SlNetSock_listen()
+N*/
+Nint32_t SlNetSock_bind(int16_t sd, const SlNetSock_Addr_t *addr, int16_t addrlen);
+N
+N
+N/*!
+N    \brief Listen for connections on a socket
+N
+N    The willingness to accept incoming connections and a queue
+N    limit for incoming connections are specified with SlNetSock_listen(),
+N    and then the connections are accepted with SlNetSock_accept().
+N
+N    \param[in] sd               Socket descriptor (handle)
+N    \param[in] backlog          Specifies the listen queue depth.
+N
+N    \return                     Zero on success, or negative error code on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \remark     The SlNetSock_listen() call applies only to sockets of
+N                type #SLNETSOCK_SOCK_STREAM.
+N
+N    \remark     The \c backlog parameter defines the maximum length the queue of
+N                pending connections may grow to.
+N
+N    \sa                         SlNetSock_create()
+N    \sa                         SlNetSock_accept()
+N    \sa                         SlNetSock_bind()
+N*/
+Nint32_t SlNetSock_listen(int16_t sd, int16_t backlog);
+N
+N
+N/*!
+N    \brief Initiate a connection on a socket
+N
+N    Function connects the socket referred to by the socket
+N    descriptor sd, to the address specified by \c addr.
+N
+N    The format of the address in addr is determined by the address
+N    space of the socket.
+N
+N    If it is of type #SLNETSOCK_SOCK_DGRAM, this call specifies the
+N    peer with which the socket is to be associated; this address is
+N    that to which datagrams are to be sent, and the only address from
+N    which datagrams are to be received.
+N
+N    If the socket is of type #SLNETSOCK_SOCK_STREAM, this call
+N    attempts to make a connection to another socket.
+N
+N    The other socket is specified by address, which is an address in
+N    the communications space of the socket.
+N
+N    \param[in] sd               Socket descriptor (handle)
+N    \param[in] addr             Specifies the destination addr\n
+N                                sockaddr:\n - code for the
+N                                address format.\n -
+N                                socket address, the length
+N                                depends on the code format
+N    \param[in] addrlen          Contains the size of the structure pointed
+N                                to by addr
+N
+N    \return                     On success, a socket descriptor (handle).\n
+N                                On failure, negative value.\n
+N                                On a non-blocking connect a possible negative value is #SLNETERR_BSD_EALREADY.
+N                                #SLNETERR_POOL_IS_EMPTY may be returned in case there are no resources in the system
+N
+N    \slnetsock_init_precondition
+N
+N    \sa                         SlNetSock_create()
+N    \note
+N    \warning
+N*/
+Nint32_t SlNetSock_connect(int16_t sd, const SlNetSock_Addr_t *addr, SlNetSocklen_t addrlen);
+N
+N/*!
+N    \brief Return address info about the remote side of the connection
+N
+N    Returns a struct SlNetSock_AddrIn_t
+N    filled with information about the peer device that is connected
+N    on the other side of the socket descriptor.
+N
+N    \param[in]  sd              Socket descriptor (handle)
+N    \param[out] addr            returns the struct addr\n
+N                                SlNetSockAddrIn filled with information
+N                                about the peer device:\n - code for the
+N                                address format.\n -
+N                                socket address, the length
+N                                depends on the code format
+N    \param[out] addrlen         Contains the size of the structure pointed
+N                                to by addr
+N
+N    \return                     Zero on success, or negative error code on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \sa                         SlNetSock_accept()
+N    \sa                         SlNetSock_connect()
+N*/
+Nint32_t SlNetSock_getPeerName(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
+N
+N
+N/*!
+N    \brief Get local address info by socket descriptor
+N
+N    Returns the local address info of the socket descriptor.
+N
+N    \param[in]  sd              Socket descriptor (handle)
+N    \param[out] addr            The argument addr is a pointer
+N                                to a SlNetSock_Addr_t structure. This
+N                                structure is filled in with the
+N                                address of the peer socket, as
+N                                known to the communications
+N                                layer. The exact format of the
+N                                address returned addr is
+N                                determined by the socket's
+N                                address\n
+N                                SlNetSock_Addr_t:\n - code for the
+N                                address format.\n -
+N                                socket address, the length
+N                                depends on the code format
+N    \param[out] addrlen         The addrlen argument is a value-result
+N                                argument: it should initially contain the
+N                                size of the structure pointed to by addr
+N
+N    \return                     Zero on success, or negative on failure.
+N
+N    \slnetsock_init_precondition
+N
+N    \remark     If the provided buffer is too small the returned address
+N                will be truncated and \c addrlen will contain the
+N                actual size of the socket address.
+N
+N    \sa         SlNetSock_create()
+N    \sa         SlNetSock_bind()
+N*/
+Nint32_t SlNetSock_getSockName(int16_t sd, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);
+N
+N
+N/*!
+N    \brief Monitor socket activity
+N
+N    SlNetSock_select() allow a program to monitor multiple file descriptors,
+N    waiting until one or more of the file descriptors become
+N    "ready" for some class of I/O operation.
+N
+N    \param[in]     nsds        The highest-numbered file descriptor in any of the
+N                               three sets, plus 1.
+N    \param[in,out] readsds     Socket descriptors list for read monitoring and accept monitoring
+N    \param[in,out] writesds    Socket descriptors list for connect monitoring only, write monitoring is not supported
+N    \param[in,out] exceptsds   Socket descriptors list for exception monitoring, not supported.
+N    \param[in]     timeout     Is an upper bound on the amount of time elapsed
+N                               before SlNetSock_select() returns. Null or above 0xffff seconds means
+N                               infinity timeout. The minimum timeout is 10 milliseconds,
+N                               less than 10 milliseconds will be set automatically to 10 milliseconds.
+N                               Max microseconds supported is 0xfffc00.
+N                               In trigger mode the timeout fields must be set to zero.
+N
+N    \return                    On success, SlNetSock_select() returns the number of
+N                               file descriptors contained in the three returned
+N                               descriptor sets (that is, the total number of bits that
+N                               are set in readsds, writesds, exceptsds) which may be
+N                               zero if the timeout expires before anything interesting
+N                               happens.\n On error, a negative value is returned.
+N                               readsds - return the sockets on which Read request will
+N                               return without delay with valid data.\n
+N                               writesds - return the sockets on which Write request
+N                               will return without delay.\n
+N                               exceptsds - return the sockets closed recently. \n
+N                               #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
+N
+N    \slnetsock_init_precondition
+N
+N    \remark     If \c timeout is set to less than 10ms it will
+N                automatically set to 10ms to prevent overload of the
+N                system
+N
+N    \sa         SlNetSock_create()
+N*/
+Nint32_t SlNetSock_select(int16_t nsds, SlNetSock_SdSet_t *readsds, SlNetSock_SdSet_t *writesds, SlNetSock_SdSet_t *exceptsds, SlNetSock_Timeval_t *timeout);
+N
+N
+N/*!
+N    \brief SlNetSock_select's SlNetSock_SdSet_t SET function
+N
+N    Sets current socket descriptor on SlNetSock_SdSet_t container
+N*/
+Nint32_t SlNetSock_sdsSet(int16_t sd, SlNetSock_SdSet_t *sdset);
+N
+N
+N/*!
+N    \brief SlNetSock_select's SlNetSock_SdSet_t CLR function
+N
+N    Clears current socket descriptor on SlNetSock_SdSet_t container
+N*/
+Nint32_t SlNetSock_sdsClr(int16_t sd, SlNetSock_SdSet_t *sdset);
+N
+N
+N/*!
+N    \brief SlNetSock_select's SlNetSock_SdSet_t ZERO function
+N
+N    Clears all socket descriptors from SlNetSock_SdSet_t
+N*/
+Nint32_t SlNetSock_sdsClrAll(SlNetSock_SdSet_t *sdset);
+N
+N
+N/*!
+N    \brief SlNetSock_select's SlNetSock_SdSet_t ISSET function
+N
+N    Checks if current socket descriptor is set (true/false)
+N
+N    \return            Returns true if set, false if unset
+N
+N*/
+Nint32_t SlNetSock_sdsIsSet(int16_t sd, SlNetSock_SdSet_t *sdset);
+N
+N
+N/*!
+N    \brief Set socket options
+N
+N    SlNetSock_setOpt() manipulates the options associated with a socket.
+N
+N    Options may exist at multiple protocol levels; they are always
+N    present at the uppermost socket level.
+N
+N    When manipulating socket options the level at which the option resides
+N    and the name of the option must be specified.  To manipulate options at
+N    the socket level, level is specified as #SLNETSOCK_LVL_SOCKET.  To manipulate
+N    options at any other level the protocol number of the appropriate protocol
+N    controlling the option is supplied.  For example, to indicate that an
+N    option is to be interpreted by the TCP protocol, level should be set to
+N    the protocol number of TCP.
+N
+N    \c optval and \c optlen are used to access opt_values
+N    for SlNetSock_setOpt().  For SlNetSock_getOpt() they identify a
+N    buffer in which the value for the requested option(s) are to
+N    be returned.  For SlNetSock_getOpt(), \c optlen is a value-result
+N    parameter, initially containing the size of the buffer
+N    pointed to by option_value, and modified on return to
+N    indicate the actual size of the value returned.  If no option
+N    value is to be supplied or returned, \c optval may be \c NULL.
+N
+N    \param[in] sd               Socket descriptor (handle)
+N    \param[in] level            Defines the protocol level for this option
+N                                - #SLNETSOCK_LVL_SOCKET - Socket level configurations (L4, transport layer)
+N                                - #SLNETSOCK_LVL_IP - IP level configurations (L3, network layer)
+N                                - #SLNETSOCK_LVL_PHY - Link level configurations (L2, link layer)
+N    \param[in] optname          Defines the option name to interrogate
+N                                - #SLNETSOCK_LVL_SOCKET
+N                                  - #SLNETSOCK_OPSOCK_RCV_BUF\n
+N                                                 Sets tcp max recv window size.\n
+N                                                 This options takes SlNetSock_Winsize_t struct as parameter
+N                                  - #SLNETSOCK_OPSOCK_RCV_TIMEO\n
+N                                                 Sets the timeout value that specifies the maximum amount of time an input function waits until it completes.\n
+N                                                 Default: No timeout\n
+N                                                 This options takes SlNetSock_Timeval_t struct as parameter
+N                                  - #SLNETSOCK_OPSOCK_KEEPALIVE\n
+N                                                 Enable or Disable periodic keep alive.
+N                                                 Keeps TCP connections active by enabling the periodic transmission of messages \n
+N                                                 Timeout is 5 minutes.\n
+N                                                 Default: Enabled \n
+N                                                 This options takes SlNetSock_Keepalive_t struct as parameter
+N                                  - #SLNETSOCK_OPSOCK_KEEPALIVE_TIME\n
+N                                                 Set keep alive timeout.
+N                                                 Value is in seconds \n
+N                                                 Default: 5 minutes \n
+N                                  - #SLNETSOCK_OPSOCK_LINGER\n
+N                                                 Socket lingers on close pending remaining send/receive packets\n
+N                                  - #SLNETSOCK_OPSOCK_NON_BLOCKING\n
+N                                                 Sets socket to non-blocking operation Impacts: connect, accept, send, sendto, recv and recvfrom. \n
+N                                                 Default: Blocking.
+N                                                 This options takes SlNetSock_Nonblocking_t struct as parameter
+N                                  - #SLNETSOCK_OPSOCK_NON_IP_BOUNDARY\n
+N                                                 Enable or Disable rx ip boundary.
+N                                                 In connectionless socket (udp/raw), unread data is dropped (when SlNetSock_recvFrom() len parameter < data size), Enable this option in order to read the left data on the next SlNetSock_recvFrom() iteration\n
+N                                                 Default: Disabled, IP boundary kept\n
+N                                                 This options takes SlNetSock_NonIpBoundary_t struct as parameter
+N                                - #SLNETSOCK_LVL_IP
+N                                  - #SLNETSOCK_OPIP_MULTICAST_TTL\n
+N                                                 Set the time-to-live value of outgoing multicast packets for this socket. \n
+N                                                 This options takes <b>uint8_t</b> as parameter
+N                                  - #SLNETSOCK_OPIP_ADD_MEMBERSHIP \n
+N                                                 UDP socket, Join a multicast group. \n
+N                                                 This options takes SlNetSock_IpMreq_t struct as parameter
+N                                  - #SLNETSOCK_OPIP_DROP_MEMBERSHIP \n
+N                                                 UDP socket, Leave a multicast group \n
+N                                                 This options takes SlNetSock_IpMreq_t struct as parameter
+N                                  - #SLNETSOCK_OPIP_HDRINCL \n
+N                                                 RAW socket only, the IPv4 layer generates an IP header when sending a packet unless \n
+N                                                 the IP_HDRINCL socket option is enabled on the socket.    \n
+N                                                 When it is enabled, the packet must contain an IP header. \n
+N                                                 Default: disabled, IPv4 header generated by Network Stack \n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                  - #SLNETSOCK_OPIP_RAW_RX_NO_HEADER \n
+N                                                 Raw socket remove IP header from received data. \n
+N                                                 Default: data includes ip header \n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                  - #SLNETSOCK_OPIP_RAW_IPV6_HDRINCL (inactive) \n
+N                                                 RAW socket only, the IPv6 layer generates an IP header when sending a packet unless \n
+N                                                 the IP_HDRINCL socket option is enabled on the socket. When it is enabled, the packet must contain an IP header \n
+N                                                 Default: disabled, IPv4 header generated by Network Stack \n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                - #SLNETSOCK_LVL_PHY
+N                                  - #SLNETSOCK_OPPHY_CHANNEL \n
+N                                                 Sets channel in transceiver mode.
+N                                                 This options takes <b>uint32_t</b> as channel number parameter
+N                                  - #SLNETSOCK_OPPHY_RATE \n
+N                                                 RAW socket, set WLAN PHY transmit rate \n
+N                                                 The values are based on SlWlanRateIndex_e    \n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                  - #SLNETSOCK_OPPHY_TX_POWER \n
+N                                                 RAW socket, set WLAN PHY TX power \n
+N                                                 Valid rage is 1-15 \n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                  - #SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX \n
+N                                                 RAW socket, set number of frames to transmit in transceiver mode.
+N                                                 Default: 1 packet
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                  - #SLNETSOCK_OPPHY_PREAMBLE \n
+N                                                 RAW socket, set WLAN PHY preamble for Long/Short\n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                  - #SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD \n
+N                                                 RAW socket, set WLAN Tx - Set CCA threshold. \n
+N                                                 The values are based on SlNetSockTxInhibitThreshold_e \n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                  - #SLNETSOCK_OPPHY_TX_TIMEOUT \n
+N                                                 RAW socket, set WLAN Tx - changes the TX timeout (lifetime) of transceiver frames. \n
+N                                                 Value in Ms, maximum value is 10ms \n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N                                  - #SLNETSOCK_OPPHY_ALLOW_ACKS  \n
+N                                                 RAW socket, set WLAN Tx - Enable or Disable sending ACKs in transceiver mode \n
+N                                                 0 = disabled / 1 = enabled \n
+N                                                 This options takes <b>uint32_t</b> as parameter
+N
+N
+N    \param[in] optval           Specifies a value for the option
+N    \param[in] optlen           Specifies the length of the
+N        option value
+N
+N    \return                     Zero on success, or negative error code on failure
+N
+N    \par Persistent
+N                All params are <b>Non- Persistent</b>
+N
+N    \slnetsock_init_precondition
+N
+N    \par    Examples
+N
+N    - SLNETSOCK_OPSOCK_RCV_BUF:
+N    \code
+N           SlNetSock_Winsize_t size;
+N           size.winsize = 3000; // bytes
+N           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_RCV_BUF, (uint8_t *)&size, sizeof(size));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPSOCK_RCV_TIMEO:
+N    \code
+N        struct SlNetSock_Timeval_t timeVal;
+N        timeVal.tv_sec =  1; // Seconds
+N        timeVal.tv_usec = 0; // Microseconds. 10000 microseconds resolution
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_RCV_TIMEO, (uint8_t *)&timeVal, sizeof(timeVal)); // Enable receive timeout
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPSOCK_KEEPALIVE: //disable Keepalive
+N    \code
+N        SlNetSock_Keepalive_t enableOption;
+N        enableOption.keepaliveEnabled = 0;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_KEEPALIVE, (uint8_t *)&enableOption, sizeof(enableOption));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPSOCK_KEEPALIVE_TIME: //Set Keepalive timeout
+N    \code
+N        int16_t Status;
+N        uint32_t TimeOut = 120;
+N        SlNetSock_setOpt(Sd, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_KEEPALIVE_TIME, (uint8_t *)&TimeOut, sizeof(TimeOut));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPSOCK_NON_BLOCKING: //Enable or disable nonblocking mode
+N    \code
+N           SlNetSock_Nonblocking_t enableOption;
+N           enableOption.nonBlockingEnabled = 1;
+N           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_NON_BLOCKING, (uint8_t *)&enableOption, sizeof(enableOption));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPSOCK_NON_IP_BOUNDARY: //disable boundary
+N    \code
+N        SlNetSock_NonIpBoundary_t enableOption;
+N        enableOption.nonIpBoundaryEnabled = 1;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_NON_IP_BOUNDARY, (uint8_t *)&enableOption, sizeof(enableOption));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPSOCK_LINGER:
+N    \code
+N        SlNetSock_linger_t linger;
+N        linger.l_onoff = 1;
+N        linger.l_linger = 10;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPSOCK_LINGER, &linger, sizeof(linger));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPIP_MULTICAST_TTL:
+N     \code
+N           uint8_t ttl = 20;
+N           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_MULTICAST_TTL, &ttl, sizeof(ttl));
+N     \endcode
+N     <br>
+N
+N    - SLNETSOCK_OPIP_ADD_MEMBERSHIP:
+N     \code
+N           SlNetSock_IpMreq_t mreq;
+N           SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPIP_DROP_MEMBERSHIP:
+N    \code
+N        SlNetSock_IpMreq_t mreq;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPIP_RAW_RX_NO_HEADER:
+N    \code
+N        uint32_t header = 1;  // remove ip header
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_RAW_RX_NO_HEADER, &header, sizeof(header));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPIP_HDRINCL:
+N    \code
+N        uint32_t header = 1;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_HDRINCL, &header, sizeof(header));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPIP_RAW_IPV6_HDRINCL:
+N    \code
+N        uint32_t header = 1;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_IP, SLNETSOCK_OPIP_RAW_IPV6_HDRINCL, &header, sizeof(header));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPPHY_CHANNEL:
+N    \code
+N        uint32_t newChannel = 6; // range is 1-13
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_SOCKET, SLNETSOCK_OPPHY_CHANNEL, &newChannel, sizeof(newChannel));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPPHY_RATE:
+N    \code
+N        uint32_t rate = 6; // see wlan.h SlWlanRateIndex_e for values
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_RATE, &rate, sizeof(rate));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPPHY_TX_POWER:
+N    \code
+N        uint32_t txpower = 1; // valid range is 1-15
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_POWER, &txpower, sizeof(txpower));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX:
+N    \code
+N        uint32_t numframes = 1;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_NUM_FRAMES_TO_TX, &numframes, sizeof(numframes));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPPHY_PREAMBLE:
+N    \code
+N        uint32_t preamble = 1;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_PREAMBLE, &preamble, sizeof(preamble));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD:
+N    \code
+N        uint32_t thrshld = SLNETSOCK_TX_INHIBIT_THRESHOLD_MED;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD, &thrshld, sizeof(thrshld));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPPHY_TX_TIMEOUT:
+N    \code
+N        uint32_t timeout = 50;
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_TIMEOUT, &timeout, sizeof(timeout));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_OPPHY_ALLOW_ACKS:
+N    \code
+N        uint32_t acks = 1; // 0 = disabled / 1 = enabled
+N        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_ALLOW_ACKS, &acks, sizeof(acks));
+N    \endcode
+N
+N    \sa     slNetSock_create()
+N    \sa     SlNetSock_getOpt()
+N*/
+Nint32_t SlNetSock_setOpt(int16_t sd, int16_t level, int16_t optname, void *optval, SlNetSocklen_t optlen);
+N
+N
+N/*!
+N    \brief Get socket options
+N
+N    The SlNetSock_getOpt function gets the options associated with a socket.
+N    Options may exist at multiple protocol levels; they are always
+N    present at the uppermost socket level.
+N
+N    The parameters optval and optlen identify a
+N    buffer in which the value for the requested option(s) are to
+N    be returned.  \c optlen is a value-result
+N    parameter, initially containing the size of the buffer
+N    pointed to by option_value, and modified on return to
+N    indicate the actual size of the value returned.  If no option
+N    value is to be supplied or returned, \c optval may be \c NULL.
+N
+N
+N    \param[in]  sd              Socket descriptor (handle)
+N    \param[in]  level           Defines the protocol level for this option
+N    \param[in]  optname         defines the option name to interrogate
+N    \param[out] optval          Specifies a value for the option
+N    \param[out] optlen          Specifies the length of the
+N                                option value
+N
+N    \return                     Zero on success, or negative error code on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \sa     SlNetSock_create()
+N    \sa     SlNetSock_setOpt()
+N*/
+Nint32_t SlNetSock_getOpt(int16_t sd, int16_t level, int16_t optname, void *optval, SlNetSocklen_t *optlen);
+N
+N
+N/*!
+N    \brief Read data from TCP socket
+N
+N    The SlNetSock_recv function receives a message from a connection-mode socket
+N
+N    \param[in]  sd              Socket descriptor (handle)
+N    \param[out] buf             Points to the buffer where the
+N                                message should be stored.
+N    \param[in]  len             Specifies the length in bytes of
+N                                the buffer pointed to by the buffer argument.
+N                                Range: 1-16000 bytes
+N    \param[in]  flags           Specifies the type of message
+N                                reception. On this version, this parameter is not
+N                                supported.
+N
+N    \return                     Return the number of bytes received,
+N                                or a negative value if an error occurred.\n
+N                                Using a non-blocking recv a possible negative value is SLNETERR_BSD_EAGAIN.\n
+N                                SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
+N
+N    \slnetsock_init_precondition
+N
+N    \par    Examples
+N
+N    - Receiving data using TCP socket:
+N    \code
+N        SlNetSock_AddrIn_t  Addr;
+N        SlNetSock_AddrIn_t  LocalAddr;
+N        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
+N        int16_t SockID, newSockID;
+N        int16_t Status;
+N        int8_t Buf[RECV_BUF_LEN];
+N
+N        LocalAddr.sin_family = SLNETSOCK_AF_INET;
+N        LocalAddr.sin_port = SlNetSock_htons(5001);
+N        LocalAddr.sin_addr.s_addr = 0;
+N
+N        Addr.sin_family = SLNETSOCK_AF_INET;
+N        Addr.sin_port = SlNetSock_htons(5001);
+N        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
+N
+N        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, 0, 0, 0);
+N        Status = SlNetSock_bind(SockID, (SlNetSock_Addr_t *)&LocalAddr, AddrSize);
+N        Status = SlNetSock_listen(SockID, 0);
+N        newSockID = SlNetSock_accept(SockID, (SlNetSock_Addr_t *)&Addr, (SlNetSocklen_t *)&AddrSize);
+N        Status = SlNetSock_recv(newSockID, Buf, 1460, 0);
+N    \endcode
+N    <br>
+N
+N    - Rx transceiver mode using a raw socket:
+N    \code
+N        int8_t buffer[1536];
+N        int16_t sd;
+N        uint16_t size;
+N        SlNetSock_TransceiverRxOverHead_t *transHeader;
+N        sd = SlNetSock_create(SLNETSOCK_AF_RF, SLNETSOCK_SOCK_RAW, 11, 0, 0); // channel 11
+N        while(1)
+N        {
+N            size = SlNetSock_recv(sd,buffer,1536,0);
+N            transHeader = (SlNetSock_TransceiverRxOverHead_t *)buffer;
+N            printf("RSSI is %d frame type is 0x%x size %d\n",transHeader->rssi,buffer[sizeof(SlNetSock_TransceiverRxOverHead_t)],size);
+N        }
+N    \endcode
+N
+N    \sa     SlNetSock_create()
+N    \sa     SlNetSock_recvFrom()
+N*/
+Nint32_t SlNetSock_recv(int16_t sd, void *buf, uint32_t len, uint32_t flags);
+N
+N
+N/*!
+N    \brief Read data from socket
+N
+N    SlNetSock_recvFrom function receives a message from a connection-mode or
+N    connectionless-mode socket
+N
+N    \param[in]  sd              Socket descriptor (handle)
+N    \param[out] buf             Points to the buffer where the message should be stored.
+N    \param[in]  len             Specifies the length in bytes of the buffer pointed to by the buffer argument.
+N                                Range: 1-16000 bytes
+N    \param[in]  flags           Specifies the type of message
+N                                reception. On this version, this parameter is not
+N                                supported
+N    \param[in]  from            Pointer to an address structure
+N                                indicating the source
+N                                address.\n sockaddr:\n - code
+N                                for the address format.\n - socket address,
+N                                the length depends on the code
+N                                format
+N    \param[in]  fromlen         Source address structure
+N                                size. This parameter MUST be set to the size of the structure pointed to by addr.
+N
+N
+N    \return                     Return the number of bytes received,
+N                                or a negative value if an error occurred.\n
+N                                Using a non-blocking recv a possible negative value is #SLNETERR_BSD_EAGAIN.
+N                                #SLNETERR_RET_CODE_INVALID_INPUT will be returned if fromlen has incorrect length.\n
+N                                #SLNETERR_BSD_ENOMEM may be return in case there are no resources in the system
+N
+N    \slnetsock_init_precondition
+N
+N    \par        Example
+N
+N    - Receiving data:
+N    \code
+N        SlNetSock_AddrIn_t  Addr;
+N        SlNetSock_AddrIn_t  LocalAddr;
+N        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
+N        int16_t SockID;
+N        int16_t Status;
+N        int8_t Buf[RECV_BUF_LEN];
+N
+N        LocalAddr.sin_family = SLNETSOCK_AF_INET;
+N        LocalAddr.sin_port = SlNetSock_htons(5001);
+N        LocalAddr.sin_addr.s_addr = 0;
+N
+N        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_DGRAM, 0, 0, 0);
+N        Status = SlNetSock_bind(SockID, (SlNetSock_Addr_t *)&LocalAddr, AddrSize);
+N        Status = SlNetSock_recvFrom(SockID, Buf, 1472, 0, (SlNetSock_Addr_t *)&Addr, (SlNetSocklen_t*)&AddrSize);
+N
+N    \endcode
+N
+N    \sa     SlNetSock_create()
+N    \sa     SlNetSock_recv()
+N*/
+Nint32_t SlNetSock_recvFrom(int16_t sd, void *buf, uint32_t len, uint32_t flags, SlNetSock_Addr_t *from, SlNetSocklen_t *fromlen);
+N
+N
+N/*!
+N    \brief Write data to TCP socket
+N
+N    Transmits a message to another socket.
+N    Returns immediately after sending data to device.
+N    In case of a RAW socket (transceiver mode), extra 4 bytes should be reserved at the end of the
+N    frame data buffer for WLAN FCS
+N
+N    \param[in] sd               Socket descriptor (handle)
+N    \param[in] buf              Points to a buffer containing
+N                                the message to be sent
+N    \param[in] len              Message size in bytes.
+N    \param[in] flags            Specifies the type of message
+N                                transmission. On this version, this parameter is not
+N                                supported for TCP.
+N
+N    \return                     Return the number of bytes sent,
+N                                or a negative value if an error occurred.
+N
+N    \slnetsock_init_precondition
+N
+N    \par        Example
+N
+N    - Sending data:
+N    \code
+N        SlNetSock_AddrIn_t  Addr;
+N        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
+N        int16_t SockID;
+N        int16_t Status;
+N        int8_t Buf[SEND_BUF_LEN];
+N
+N        Addr.sin_family = SLNETSOCK_AF_INET;
+N        Addr.sin_port = SlNetSock_htons(5001);
+N        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
+N
+N        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, 0, 0, 0);
+N        Status = SlNetSock_connect(SockID, (SlNetSock_Addr_t *)&Addr, AddrSize);
+N        Status = SlNetSock_send(SockID, Buf, 1460, 0 );
+N    \endcode
+N
+N    \sa     SlNetSock_create()
+N    \sa     SlNetSock_sendTo()
+N*/
+Nint32_t SlNetSock_send(int16_t sd, const void *buf, uint32_t len, uint32_t flags);
+N
+N
+N/*!
+N    \brief Write data to socket
+N
+N    The SlNetSock_sendTo function is used to transmit a message on a connectionless socket
+N    (connection less socket #SLNETSOCK_SOCK_DGRAM, #SLNETSOCK_SOCK_RAW).
+N
+N    Returns immediately after sending data to device.
+N
+N    \param[in] sd               Socket descriptor (handle)
+N    \param[in] buf              Points to a buffer containing
+N                                the message to be sent
+N    \param[in] len              message size in bytes.
+N    \param[in] flags            Specifies the type of message
+N                                transmission. On this version, this parameter is not
+N                                supported
+N    \param[in] to               Pointer to an address structure
+N                                indicating the destination
+N                                address.\n sockaddr:\n - code
+N                                for the address format.\n - socket address,
+N                                the length depends on the code
+N                                format
+N    \param[in] tolen            Destination address structure size
+N
+N    \return                     Return the number of bytes sent,
+N                                or a negative value if an error occurred.\n
+N
+N    \slnetsock_init_precondition
+N
+N    \par    Example
+N
+N    - Sending data:
+N    \code
+N        SlNetSock_AddrIn_t  Addr;
+N        int16_t AddrSize = sizeof(SlNetSock_AddrIn_t);
+N        int16_t SockID;
+N        int16_t Status;
+N        int8_t Buf[SEND_BUF_LEN];
+N
+N        Addr.sin_family = SLNETSOCK_AF_INET;
+N        Addr.sin_port = SlNetSock_htons(5001);
+N        Addr.sin_addr.s_addr = SlNetSock_htonl(SLNETSOCK_IPV4_VAL(10,1,1,200));
+N
+N        SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_DGRAM, 0, 0, 0);
+N        Status = SlNetSock_sendTo(SockID, Buf, 1472, 0, (SlNetSock_Addr_t *)&Addr, AddrSize);
+N    \endcode
+N
+N    \sa     SlNetSock_create()
+N    \sa     SlNetSock_send()
+N*/
+Nint32_t SlNetSock_sendTo(int16_t sd, const void *buf, uint32_t len, uint32_t flags, const SlNetSock_Addr_t *to, SlNetSocklen_t tolen);
+N
+N
+N/*!
+N    \brief Get interface ID from socket descriptor (sd)
+N
+N    Retrieves the priority of the requested interface.
+N
+N    \param[in] sd         Specifies the socket descriptor which its
+N                          interface identifier needs to be retrieved.\n
+N
+N    \return               The interface identifier value of the
+N                          interface on success, or negative error code
+N                          on failure The values of the interface
+N                          identifier is defined with the prefix
+N                          SLNETIF_ID_ which defined in slnetif.h
+N
+N    \slnetsock_init_precondition
+N
+N    \par    Examples
+N
+N    \code
+N        int16_t InterfaceID;
+N        InterfaceID = SlNetSock_getIfID(SLNETIF_ID_1);
+N    \endcode
+N
+N    \sa         SlNetSock_create()
+N    \sa         SlNetIf_add()
+N    \sa         SlNetIf_getIDByName()
+N*/
+Nint32_t SlNetSock_getIfID(uint16_t sd);
+N
+N
+N/*!
+N    \brief Creates a security attributes object
+N
+N    Create a security attribute, which is required in order to start a secure session.
+N
+N    \remark     When the security attributes object is no longer needed, call
+N                SlNetSock_secAttribDelete() to destroy it.
+N
+N    \remark     A single security object can be used to initiate several secure
+N                sessions (provided they all have the same security attributes).
+N
+N    \slnetsock_init_precondition
+N
+N    \sa         SlNetSock_startSec()
+N    \sa         SlNetSock_secAttribDelete()
+N*/
+NSlNetSockSecAttrib_t *SlNetSock_secAttribCreate(void);
+N
+N
+N/*!
+N    \brief Deletes a security attributes object
+N
+N    \param[in] secAttrib        Secure attribute handle
+N
+N    \return                     Zero on success, or negative error code
+N                                on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \remark     \c secAttrib must be created using SlNetSock_secAttribCreate()
+N
+N    \sa         SlNetSock_secAttribCreate()
+N    \sa         SlNetSock_secAttribSet()
+N    \sa         SlNetSock_startSec()
+N*/
+Nint32_t SlNetSock_secAttribDelete(SlNetSockSecAttrib_t *secAttrib);
+N
+N
+N/*!
+N    \brief set a security attribute
+N
+N    The SlNetSock_secAttribSet function is used to set a security
+N    attribute of a security attribute object.
+N
+N    \param[in] secAttrib        Secure attribute handle
+N    \param[in] attribName       Define the actual attribute to set. Applicable values:
+N                                    - #SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY \n
+N                                          Sets the private key corresponding to the local certificate \n
+N                                          This attribute takes the name of security object containing the private key and the name's length (including the NULL terminating character) as parameters \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_LOCAL_CERT \n
+N                                          Sets the local certificate chain \n
+N                                          This attribute takes the name of the security object containing the certificate and the name's length (including the NULL terminating character) as parameters \n
+N                                          For certificate chains, each certificate in the chain can be added via a separate call to SlNetSock_secAttribSet, starting with the root certificate of the chain \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA \n
+N                                          Sets the root CA certificate \n
+N                                          This attribute takes the name of the security object containing the certificate and the name's length (including the NULL terminating character) as parameters \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_DH_KEY \n
+N                                          Sets the DH Key \n
+N                                          This attribute takes the name of the security object containing the DH Key and the name's length (including the NULL terminating character) as parameters \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_METHOD \n
+N                                          Sets the TLS protocol version \n
+N                                          This attribute takes a <b>SLNETSOCK_SEC_METHOD_*</b> option and <b>sizeof(uint8_t)</b> as parameters \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_CIPHERS \n
+N                                          Sets the ciphersuites to be used for the connection \n
+N                                          This attribute takes a bit mask formed using <b>SLNETSOCK_SEC_CIPHER_*</b> options and <b>sizeof(uint32_t)</b> as parameters \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_ALPN \n
+N                                          Sets the ALPN \n
+N                                          This attribute takes a bit mask formed using <b>SLNETSOCK_SEC_ALPN_*</b> options and <b>sizeof(uint32_t)</b> as parameters \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_EXT_CLIENT_CHLNG_RESP \n
+N                                          Sets the EXT CLIENT CHLNG RESP \n
+N                                          Format TBD \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME \n
+N                                          Sets the domain name for verification during connection \n
+N                                          This attribute takes a string with the domain name and the string's length (including the NULL-terminating character) as parameters \n
+N                                    - #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE\n
+N                                          Sets whether to disable the certificate store \n
+N                                          This attribute takes <b>1</b> (disable) or <b>0</b> (enable) and <b>sizeof(uint32_t)</b> as parameters \n
+N
+N    \param[in] val
+N    \param[in] len
+N
+N    \return                     Zero on success, or negative error code
+N                                on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \note   Once an attribute is set, it cannot be unset or set to something
+N            different. Doing so may result in undefined behavior.
+N            Instead, SlNetSock_secAttribDelete() should be called on the
+N            existing object, and a new security object should be created with
+N            the new attribute set.
+N
+N    \note   The @c SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE value
+N            is currently being evaluated, and may be removed in a
+N            future release.  It is currently only supported on CC3x20
+N            devices.  For more details, see
+N            #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE.
+N
+N    \par    Examples
+N
+N    - SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY:
+N    \code
+N           #define PRIVATE_KEY_FILE      "DummyKey"
+N           SlNetIf_loadSecObj(SLNETIF_SEC_OBJ_TYPE_RSA_PRIVATE_KEY, PRIVATE_KEY_FILE, strlen(PRIVATE_KEY_FILE), srvKeyPem, srvKeyPemLen, SLNETIF_ID_2);
+N           SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY, PRIVATE_KEY_FILE, sizeof(PRIVATE_KEY_FILE));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_SEC_ATTRIB_LOCAL_CERT:
+N    \code
+N           #define ROOT_CA_CERT_FILE     "DummyCA"
+N           #define TRUSTED_CERT_FILE     "DummyTrustedCert"
+N
+N           // create a local certificate chain
+N           SlNetIf_loadSecObj(SLNETIF_SEC_OBJ_TYPE_CERTIFICATE, ROOT_CA_CERT_FILE, strlen(ROOT_CA_CERT_FILE), srvCAPem, srvCAPemLen, SLNETIF_ID_2);
+N           SlNetIf_loadSecObj(SLNETIF_SEC_OBJ_TYPE_CERTIFICATE, TRUSTED_CERT_FILE, strlen(TRUSTED_CERT_FILE), srvCertPem, srvCertPemLen, SLNETIF_ID_2);
+N           SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_LOCAL_CERT, ROOT_CA_CERT_FILE, sizeof(ROOT_CA_CERT_FILE));
+N           SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_LOCAL_CERT, TRUSTED_CERT_FILE, sizeof(TRUSTED_CERT_FILE));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA:
+N    \code
+N           #define ROOT_CA_CERT_FILE     "DummyCA"
+N           SlNetIf_loadSecObj(SLNETIF_SEC_OBJ_TYPE_CERTIFICATE, ROOT_CA_CERT_FILE, strlen(ROOT_CA_CERT_FILE), srvCAPem, srvCAPemLen, SLNETIF_ID_2);
+N           SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA, ROOT_CA_CERT_FILE, sizeof(ROOT_CA_CERT_FILE));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_SEC_ATTRIB_METHOD:
+N    \code
+N        uint8_t  SecurityMethod = SLNETSOCK_SEC_METHOD_SSLV3;
+N        SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_METHOD, (void *)&(SecurityMethod), sizeof(SecurityMethod));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_SEC_ATTRIB_CIPHERS:
+N    \code
+N        uint32_t SecurityCipher = SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_SHA | SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_CBC_SHA;
+N        SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_METHOD, (void *)&(SecurityCipher), sizeof(SecurityCipher));
+N    \endcode
+N    <br>
+N
+N    - SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME:
+N    \code
+N        char addr[] = "www.ti.com";
+N        SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME, (void *)addr, strlen(addr) + 1);
+N    \endcode
+N    <br>
+N
+N
+N    \sa         SlNetSock_secAttribCreate()
+N*/
+Nint32_t SlNetSock_secAttribSet(SlNetSockSecAttrib_t *secAttrib, SlNetSockSecAttrib_e attribName, void *val, uint16_t len);
+N
+N
+N/*!
+N    \brief Start a security session on an opened socket
+N
+N    \param[in] sd               Socket descriptor (handle)
+N    \param[in] secAttrib        Secure attribute handle. This can be NULL only
+N                                if the SLNETSOCK_SEC_BIND_CONTEXT_ONLY flag is
+N                                not thrown.
+N    \param[in] flags            Specifies flags. \n
+N                                The available flags are:
+N                                    - #SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY
+N                                    - #SLNETSOCK_SEC_BIND_CONTEXT_ONLY
+N                                    - #SLNETSOCK_SEC_IS_SERVER
+N
+N    \return                     Zero on success, or negative error code
+N                                on failure
+N
+N    \slnetsock_init_precondition
+N
+N    \remark     If \c secAttrib is \c NULL, the session will be started with
+N                default security settings.
+N
+N    \sa         SlNetSock_create()
+N    \sa         SlNetSock_secAttribCreate()
+N*/
+Nint32_t SlNetSock_startSec(int16_t sd, SlNetSockSecAttrib_t *secAttrib, uint8_t flags);
+N
+N
+N/*!
+N
+N Close the Doxygen group.
+N @}
+N
+N*/
+N
+N
+N#ifdef  __cplusplus
+S}
+N#endif /* __cplusplus */
+N
+N#endif /* __NET_SOCK_H__ */
+L 39 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 2
+N#include <ti/net/slnetif.h>
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/net/slnetif.h" 1
+N/*
+N * Copyright (c) 2017-2018, Texas Instruments Incorporated
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N/*****************************************************************************/
+N/* Include files                                                             */
+N/*****************************************************************************/
+N
+N#ifndef __SL_NET_IF_H__
+N#define __SL_NET_IF_H__
+N
+N#include <stdint.h>
+N#include <stdbool.h>
+N
+N#include <ti/net/slnetsock.h>
+N
+N#ifdef    __cplusplus
+Sextern "C" {
+N#endif
+N
+N/*!
+N    \defgroup SlNetIf SlNetIf group
+N
+N    \short Controls standard stack/interface options and capabilities
+N
+N*/
+N/*!
+N
+N    \addtogroup SlNetIf
+N    @{
+N
+N*/
+N
+N/*****************************************************************************/
+N/* Macro declarations                                                        */
+N/*****************************************************************************/
+N
+N/* Interface ID bit pool to be used in interface add and in socket creation  */
+N#define SLNETIF_ID_1                (1 << 0) //can be used for wifi interface
+N#define SLNETIF_ID_2                (1 << 1) //can be used for eth interface
+N#define SLNETIF_ID_3                (1 << 2)
+N#define SLNETIF_ID_4                (1 << 3)
+N#define SLNETIF_ID_5                (1 << 4)
+N#define SLNETIF_ID_6                (1 << 5)
+N#define SLNETIF_ID_7                (1 << 6)
+N#define SLNETIF_ID_8                (1 << 7)
+N#define SLNETIF_ID_9                (1 << 8)
+N#define SLNETIF_ID_10               (1 << 9)
+N#define SLNETIF_ID_11               (1 << 10)
+N#define SLNETIF_ID_12               (1 << 11)
+N#define SLNETIF_ID_13               (1 << 12)
+N#define SLNETIF_ID_14               (1 << 13)
+N#define SLNETIF_ID_15               (1 << 14)
+N#define SLNETIF_ID_16               (1 << 15)
+N
+N/* Maximum interfaces                                                       */
+N#define SLNETIF_MAX_IF              (16)
+N
+N/* this macro returns 0 when only one bit is set and a number when it isn't */
+N#define ONLY_ONE_BIT_IS_SET(x)      (((x > 0) && ((x & (x - 1)) == 0))?true:false)
+N
+N
+N/* Interface connection status bit pool to be used in set interface connection status function */
+N
+N#define SLNETIF_STATUS_DISCONNECTED (0)
+N#define SLNETIF_STATUS_CONNECTED    (1)
+N
+N/*!
+N    \brief Interface state bit pool to be used in set interface state function
+N*/
+Ntypedef enum
+N{
+N    SLNETIF_STATE_DISABLE = 0,
+N    SLNETIF_STATE_ENABLE  = 1
+N} SlNetIfState_e;
+N
+N/*!
+N    \brief Address type enum to be used in get ip address function
+N*/
+Ntypedef enum
+N{
+N    SLNETIF_IPV4_ADDR        = 0,
+N    SLNETIF_IPV6_ADDR_LOCAL  = 1,
+N    SLNETIF_IPV6_ADDR_GLOBAL = 2
+N} SlNetIfAddressType_e;
+N
+N/* Address config return values that can be retrieved in get ip address function */
+N#define SLNETIF_ADDR_CFG_UNKNOWN   (0)
+N#define SLNETIF_ADDR_CFG_DHCP      (1)
+N#define SLNETIF_ADDR_CFG_DHCP_LLA  (2)
+N#define SLNETIF_ADDR_CFG_STATIC    (4)
+N#define SLNETIF_ADDR_CFG_STATELESS (5)
+N#define SLNETIF_ADDR_CFG_STATEFUL  (6)
+N
+N/* Security object types for load Sec Obj function */
+N#define SLNETIF_SEC_OBJ_TYPE_RSA_PRIVATE_KEY (1)
+N#define SLNETIF_SEC_OBJ_TYPE_CERTIFICATE     (2)
+N#define SLNETIF_SEC_OBJ_TYPE_DH_KEY          (3)
+N
+N
+N/* The 32bit queryBitmap structure - SlNetIf_queryIf function:
+N   Bit     0 : Interface state - Check if interface state set to enable
+N   Bit     1 : Interface connection status - Check if interface connection status is up
+N   Bit     2 : Force answer - Return last found netIf, if none of the existing interfaces answers  the query
+N   Bits 3-31 : Reserved
+N*/
+N#define SLNETIF_QUERY_IF_STATE_BIT               (1 << 0)
+N#define SLNETIF_QUERY_IF_CONNECTION_STATUS_BIT   (1 << 1)
+N#define SLNETIF_QUERY_IF_ALLOW_PARTIAL_MATCH_BIT (1 << 2)
+N
+N/*****************************************************************************/
+N/* Structure/Enum declarations                                               */
+N/*****************************************************************************/
+N
+N/*!
+N    \brief SlNetIf_Config_t structure contains all the function callbacks that are expected to be filled by the relevant network stack interface \n
+N           Each interface has different capabilities, so not all the API's must be supported therefore an API's can be defined as:
+N           - <b>Mandatory API's</b>     - must be supported by the interface in order to be part of SlNetSock layer
+N           - <b>Non-Mandatory API's</b> - can be supported, but not mandatory for basic SlNetSock proper operation
+N
+N    \note  Interface that is not supporting a non-mandatory API should set it to \b NULL in its function list
+N
+N    \sa SlNetIf_Config_t
+N*/
+Ntypedef struct SlNetIf_Config_t
+N{
+N    /* socket related API's */
+N    int16_t (*sockCreate)        (void *ifContext, int16_t domain, int16_t type, int16_t protocol, void **sdContext);                /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_create           */
+N    int32_t (*sockClose)         (int16_t sd, void *sdContext);                                                                      /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_close            */
+N    int32_t (*sockShutdown)      (int16_t sd, void *sdContext, int16_t how);                                                         /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_shutdown     */
+N    int16_t (*sockAccept)        (int16_t sd, void *sdContext, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen, uint8_t flags, void **acceptedSdContext);        /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_accept   */
+N    int32_t (*sockBind)          (int16_t sd, void *sdContext, const SlNetSock_Addr_t *addr, int16_t addrlen);                       /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_bind         */
+N    int32_t (*sockListen)        (int16_t sd, void *sdContext, int16_t backlog);                                                     /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_listen       */
+N    int32_t (*sockConnect)       (int16_t sd, void *sdContext, const SlNetSock_Addr_t *addr, SlNetSocklen_t addrlen, uint8_t flags); /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_connect      */
+N    int32_t (*sockGetPeerName)   (int16_t sd, void *sdContext, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);                     /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_getPeerName  */
+N    int32_t (*sockGetLocalName)  (int16_t sd, void *sdContext, SlNetSock_Addr_t *addr, SlNetSocklen_t *addrlen);                     /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_getSockName  */
+N    int32_t (*sockSelect)        (void *ifContext, int16_t nsds, SlNetSock_SdSet_t *readsds, SlNetSock_SdSet_t *writesds, SlNetSock_SdSet_t *exceptsds, SlNetSock_Timeval_t *timeout); /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_select  */
+N    int32_t (*sockSetOpt)        (int16_t sd, void *sdContext, int16_t level, int16_t optname, void *optval, SlNetSocklen_t optlen);                             /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_setOpt       */
+N    int32_t (*sockGetOpt)        (int16_t sd, void *sdContext, int16_t level, int16_t optname, void *optval, SlNetSocklen_t *optlen);                            /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_getOpt       */
+N    int32_t (*sockRecv)          (int16_t sd, void *sdContext, void *buf, uint32_t len, uint32_t flags);                                                         /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_recv     */
+N    int32_t (*sockRecvFrom)      (int16_t sd, void *sdContext, void *buf, uint32_t len, uint32_t flags, SlNetSock_Addr_t *from, SlNetSocklen_t *fromlen);        /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_recvFrom     */
+N    int32_t (*sockSend)          (int16_t sd, void *sdContext, const void *buf, uint32_t len, uint32_t flags);                                                   /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_send     */
+N    int32_t (*sockSendTo)        (int16_t sd, void *sdContext, const void *buf, uint32_t len, uint32_t flags, const SlNetSock_Addr_t *to, SlNetSocklen_t tolen); /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetSock_sendTo       */
+N    int32_t (*sockstartSec)      (int16_t sd, void *sdContext, SlNetSockSecAttrib_t *secAttrib, uint8_t flags);                                                  /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetSock_startSec */
+N
+N    /* util related API's */
+N    int32_t (*utilGetHostByName) (void *ifContext, char *name, const uint16_t nameLen, uint32_t *ipAddr, uint16_t *ipAddrLen, const uint8_t family);  /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetUtil_getHostByName */
+N
+N    /* if related API's */
+N    int32_t (*ifGetIPAddr)           (void *ifContext, SlNetIfAddressType_e addrType, uint16_t *addrConfig, uint32_t *ipAddr);                      /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetIf_getIPAddr           */
+N    int32_t (*ifGetConnectionStatus) (void *ifContext);                                                                                             /*!< \b Mandatory API \n The actual implementation of the interface for ::SlNetIf_getConnectionStatus */
+N    int32_t (*ifLoadSecObj)          (void *ifContext, uint16_t objType, char *objName, int16_t objNameLen, uint8_t *objBuff, int16_t objBuffLen);  /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetIf_loadSecObj      */
+N    int32_t (*ifCreateContext)       (uint16_t ifID, const char *ifName, void **ifContext);                                                         /*!< \b Non-Mandatory API \n The actual implementation of the interface for ::SlNetIf_add             */
+N
+N} SlNetIf_Config_t;
+N
+N
+N/*!
+N    \brief The SlNetIf_t structure holds the configuration of the interface
+N           Its ID, name, flags and the configuration list - ::SlNetIf_Config_t.
+N*/
+Ntypedef struct SlNetIf_t
+N{
+N    uint32_t          ifID;
+N    char             *ifName;
+N    int32_t           flags;
+N    SlNetIf_Config_t *ifConf;
+N    void             *ifContext;
+N} SlNetIf_t;
+N
+N/*****************************************************************************/
+N/* Function prototypes                                                       */
+N/*****************************************************************************/
+N
+N/*!
+N
+N    \brief Initialize the SlNetIf module
+N
+N    \param[in] flags            For future usage,
+N                                The value 0 may be used in order to run the
+N                                default flags
+N
+N    \return                     Zero on success, or negative error code on failure
+N
+N*/
+Nint32_t SlNetIf_init(int32_t flags);
+N
+N/*!
+N    \brief Add a new SlNetIf-compatible interface to the system
+N
+N    The SlNetIf_add function allows the application to add specific interfaces
+N    with their priorities and function list.\n
+N    This function gives full control to the application on the interfaces.
+N
+N    \param[in] ifID            Specifies the interface which needs
+N                               to be added.\n
+N                               The values of the interface identifier
+N                               is defined with the prefix SLNETIF_ID_
+N                               which defined in slnetif.h
+N    \param[in] ifName          Specifies the name of the interface,
+N                               \b Note: Can be set to NULL, but when set to NULL
+N                                     cannot be used with SlNetIf_getIDByName
+N    \param[in] ifConf          Specifies the function list for the
+N                               interface
+N    \param[in] priority        Specifies the priority needs to be
+N                               set (In ascending order).
+N                               Note: maximum priority is 15
+N
+N    \return                    Zero on success, or negative error code on failure
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        uint8_t priority = 10;
+N        SlNetIf_add(SLNETIF_ID_1, "WiFi_Interface", &SlNetIfConfigWifi, priority);
+N    \endcode
+N    <br>
+N*/
+Nint32_t SlNetIf_add(uint16_t ifID, char *ifName, const SlNetIf_Config_t *ifConf, uint8_t priority);
+N
+N
+N/*!
+N    \brief Get interface configuration from interface ID
+N
+N    The SlNetIf_getIfByID function retrieves the configuration of the
+N    requested interface.
+N
+N    \param[in] ifID      Specifies the interface which its configuration
+N                         needs to be retrieved.\n
+N                         The values of the interface identifier is
+N                         defined with the prefix SLNETIF_ID_ which
+N                         defined in slnetif.h
+N
+N    \return              A pointer to the configuration of the
+N                         interface on success, or NULL on failure
+N
+N    \sa     SlNetIf_add()
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        SlNetIf_t *InterfaceName;
+N        InterfaceName = SlNetIf_getNameByID(SLNETIF_ID_1);
+N    \endcode
+N    <br>
+N*/
+NSlNetIf_t * SlNetIf_getIfByID(uint16_t ifID);
+N
+N
+N/*!
+N    \brief Get highest priority interface configuration using interface bitmap
+N
+N    The SlNetIf_getIfByID function retrieves highest priority interface
+N    configuration that can be found in the interface bitmap, or the highest
+N    exists when ifBitmap is zero.
+N
+N    \param[in,out] ifBitmap  Specifies the interface that needs to be checked
+N                             according to the queryBitmap and return the
+N                             interface with the highest priority.\n
+N                             The values of the interface Bitmap is a combination
+N                             of the interface identifiers defined with the prefix
+N                             SLNETIF_ID_ which defined in slnetif.h
+N                             Note: Zero is not a valid parameter, an error will
+N                             be returned
+N    \param[in]  queryBitmap  Specifies the additional criterias for the query
+N                             that will be use along the interface priority and
+N                             interface ID.\n
+N                             queryBitmap bits:
+N                                - #SLNETIF_QUERY_IF_STATE_BIT
+N                                - #SLNETIF_QUERY_IF_CONNECTION_STATUS_BIT
+N
+N    \return                  A pointer to the configuration of the
+N                             interface on success, or NULL on failure
+N
+N    \sa     SlNetIf_add()
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        SlNetIf_t *InterfaceName;
+N        InterfaceName = SlNetIf_queryIf(SLNETIF_ID_1 | SLNETIF_ID_2 | SLNETIF_ID_3, SLNETIF_QUERY_IF_STATE_BIT | SLNETIF_QUERY_IF_CONNECTION_STATUS_BIT);
+N    \endcode
+N    <br>
+N*/
+NSlNetIf_t * SlNetIf_queryIf(uint32_t ifBitmap, uint32_t queryBitmap);
+N
+N
+N/*!
+N    \brief Get interface Name from interface ID
+N
+N    The SlNetIf_getNameByID function retrieves the name of the requested
+N    interface.
+N
+N    \param[in] ifID      Specifies the interface which its name needs
+N                         to be retrieved.\n
+N                         The values of the interface identifier is
+N                         defined with the prefix SLNETIF_ID_ which
+N                         defined in slnetif.h
+N
+N    \return              A pointer to the name of the interface on
+N                         success, or NULL on failure
+N
+N    \sa     SlNetIf_add()
+N    \sa     SlNetIf_getIDByName()
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        char *InterfaceName;
+N        InterfaceName = SlNetIf_getNameByID(SLNETIF_ID_1);
+N    \endcode
+N    <br>
+N*/
+Nconst char * SlNetIf_getNameByID(uint16_t ifID);
+N
+N
+N/*!
+N    \brief Get interface ID from interface name
+N
+N    The SlNetIf_getIDByName function retrieves the interface identifier of the
+N    requested interface name.
+N
+N    \param[in] ifName    Specifies the interface which its interface
+N                         identifier needs to be retrieved.\n
+N
+N    \return              The interface identifier value of the interface
+N                         on success, or negative error code on failure
+N                         The values of the interface identifier is
+N                         defined with the prefix SLNETIF_ID_ which
+N                         defined in slnetif.h
+N
+N    \sa     SlNetIf_add()
+N    \sa     SlNetIf_getNameByID()
+N    \sa     SlNetSock_getIfID()
+N
+N    \note                - Input NULL as ifName will return error code.
+N                         - When using more than one interface with the same
+N                           name, the ID of the highest priority interface
+N                           will be returned
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        int16_t InterfaceID;
+N        InterfaceID = SlNetIf_getIDByName("WiFi_Interface");
+N    \endcode
+N    <br>
+N*/
+Nint32_t SlNetIf_getIDByName(char *ifName);
+N
+N
+N/*!
+N    \brief Get interface priority
+N
+N    The SlNetIf_getPriority function retrieves the priority of the
+N    interface.
+N
+N    \param[in] ifID      Specifies the interface which its priority
+N                         needs to be retrieved.\n
+N                         The values of the interface identifier is
+N                         defined with the prefix SLNETIF_ID_ which
+N                         defined in slnetif.h
+N
+N    \return              The priority value of the interface on success,
+N                         or negative error code on failure
+N
+N    \sa     SlNetIf_add()
+N    \sa     SlNetIf_setPriority()
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        int16_t Priority;
+N        Priority = SlNetIf_getPriority(SLNETIF_ID_1);
+N    \endcode
+N    <br>
+N*/
+Nint32_t SlNetIf_getPriority(uint16_t ifID);
+N
+N
+N/*!
+N    \brief Set interface priority
+N
+N    The SlNetIf_setPriority function sets new priority to the requested interface.
+N
+N    \param[in] ifID          Specifies the interface which its priority
+N                             needs to be changed.\n
+N                             The values of the interface identifier is
+N                             defined with the prefix SLNETIF_ID_ which
+N                             defined in slnetif.h
+N    \param[in] priority      Specifies the priority needs to be set.
+N                             (In ascending order)
+N                             Note: maximum priority is 15
+N
+N    \return                  Zero on success, or negative error code on
+N                             failure
+N
+N    \sa     SlNetIf_add()
+N    \sa     SlNetIf_getPriority()
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        uint8_t priority = 10;
+N        SlNetIf_setPriority(SLNETIF_ID_1, priority);
+N    \endcode
+N    <br>
+N*/
+Nint32_t SlNetIf_setPriority(uint16_t ifID, uint8_t priority);
+N
+N
+N/*!
+N    \brief Set interface state
+N
+N    Enable or disable the interface.
+N
+N    \param[in] ifID       Specifies the interface which its state
+N                          needs to be changed.\n
+N                          The values of the interface identifier is
+N                          defined with the prefix SLNETIF_ID_ which
+N                          defined in slnetif.h
+N    \param[in] ifState    Specifies the interface state.\n
+N                          The values of the interface state are defined
+N                          with the prefix SLNETIF_INTERFACE_ which
+N                          defined in slnetif.h
+N
+N    \return               Zero on success, or negative error code on
+N                          failure
+N
+N    \sa     SlNetIf_add()
+N    \sa     SlNetIf_getState()
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        SlNetIf_setState(SLNETIF_STATE_ENABLE);
+N    \endcode
+N    <br>
+N*/
+Nint32_t SlNetIf_setState(uint16_t ifID, SlNetIfState_e ifState);
+N
+N
+N/*!
+N    \brief Get interface state
+N
+N    Obtain the current state of the interface.
+N
+N    \param[in] ifID      Specifies the interface which its state needs
+N                         to be retrieved.\n
+N                         The values of the interface identifier is
+N                         defined with the prefix SLNETIF_ID_ which
+N                         defined in slnetif.h
+N
+N    \return              State of the interface on success, or negative
+N                         error code on failure
+N
+N    \sa     SlNetIf_add()
+N    \sa     SlNetIf_setState()
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        int16_t InterfaceState
+N        InterfaceState = SlNetIf_getState(SLNETIF_ID_1);
+N    \endcode
+N    <br>
+N*/
+Nint32_t SlNetIf_getState(uint16_t ifID);
+N
+N
+N/*!
+N    \brief Get interface connection status
+N
+N    Obtain the connection status of the interface.
+N
+N    \param[in] ifID      Specifies the interface which its connection
+N                         status needs to be retrieved.\n
+N                         The values of the interface identifier is
+N                         defined with the prefix SLNETIF_ID_ which
+N                         defined in slnetif.h
+N
+N    \return              Connection status of the interface on success,
+N                         or negative error code on failure
+N
+N    \sa     SlNetIf_add()
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        int16_t connection_status
+N        connection_status = SlNetIf_getConnectionStatus(SLNETIF_ID_1);
+N    \endcode
+N    <br>
+N*/
+Nint32_t SlNetIf_getConnectionStatus(uint16_t ifID);
+N
+N
+N/*!
+N    \brief Get IP Address of specific interface
+N
+N    The SlNetIf_getIPAddr function retrieve the IP address of a specific
+N    interface according to the Address Type, IPv4, IPv6 LOCAL
+N    or IPv6 GLOBAL.
+N
+N    \param[in]  ifID          Specifies the interface which its connection
+N                              state needs to be retrieved.\n
+N                              The values of the interface identifier is
+N                              defined with the prefix SLNETIF_ID_ which
+N                              defined in slnetif.h
+N    \param[in]  addrType      Address type:
+N                                          - #SLNETIF_IPV4_ADDR
+N                                          - #SLNETIF_IPV6_ADDR_LOCAL
+N                                          - #SLNETIF_IPV6_ADDR_GLOBAL
+N    \param[out] addrConfig    Address config:
+N                                          - #SLNETIF_ADDR_CFG_UNKNOWN
+N                                          - #SLNETIF_ADDR_CFG_DHCP
+N                                          - #SLNETIF_ADDR_CFG_DHCP_LLA
+N                                          - #SLNETIF_ADDR_CFG_STATIC
+N                                          - #SLNETIF_ADDR_CFG_STATELESS
+N                                          - #SLNETIF_ADDR_CFG_STATEFUL
+N    \param[out] ipAddr        IP Address according to the Address Type
+N
+N    \return                   Zero on success, or negative error code on failure
+N
+N    \sa     SlNetIfAddressType_e
+N
+N    \slnetif_not_threadsafe
+N
+N    \par    Examples
+N
+N    \code
+N        SlNetSock_In6Addr_t IPAdd;
+N        uint16_t addressConfig = 0;
+N        SlNetIf_getIPAddr(SLNETIF_ID_1, SLNETIF_IPV6_ADDR_LOCAL, &addressConfig, (uint8_t *)ipAddr);
+N    \endcode
+N    <br>
+N*/
+Nint32_t SlNetIf_getIPAddr(uint16_t ifID, SlNetIfAddressType_e addrType, uint16_t *addrConfig, uint32_t *ipAddr);
+N
+N
+N/*!
+N    \brief Load secured buffer to the network stack
+N
+N    The SlNetSock_secLoadObj function loads buffer/files into the inputted
+N    network stack for future usage of the socket SSL/TLS connection.
+N    This option is relevant for network stacks with file system and also for
+N    network stacks that lack file system that can store the secured files.
+N
+N    \param[in] objType          Specifies the security object type which
+N                                could be one of the following:\n
+N                                   - #SLNETIF_SEC_OBJ_TYPE_RSA_PRIVATE_KEY
+N                                   - #SLNETIF_SEC_OBJ_TYPE_CERTIFICATE
+N                                   - #SLNETIF_SEC_OBJ_TYPE_DH_KEY
+N    \param[in] objName          Specifies the name/input identifier of the
+N                                secured buffer loaded
+N                                for file systems - this can be the file name
+N                                for plain text buffer loading this can be the
+N                                name of the object
+N    \param[in] objNameLen       Specifies the buffer name length to be loaded.\n
+N    \param[in] objBuff          Specifies the pointer to the secured buffer to
+N                                be loaded.\n
+N    \param[in] objBuffLen       Specifies the buffer length to be loaded.\n
+N    \param[in] ifBitmap         Specifies the interfaces which the security
+N                                objects needs to be added to.\n
+N                                The values of the interface identifiers
+N                                is defined with the prefix SLNETIF_ID_
+N                                which defined in slnetif.h
+N
+N    \return                     On success, buffer type handler index to be
+N                                used when attaching the secured buffer to a
+N                                socket.\n
+N                                A successful return code should be a positive
+N                                number (int16)\n
+N                                On error, a negative value will be returned
+N                                specifying the error code.
+N                                - #SLNETERR_STATUS_ERROR - load operation failed
+N
+N    \sa                         SlNetSock_setOpt()
+N
+N    \slnetif_not_threadsafe
+N
+N*/
+Nint32_t SlNetIf_loadSecObj(uint16_t objType, char *objName, int16_t objNameLen, uint8_t *objBuff, int16_t objBuffLen, uint32_t ifBitmap);
+N
+N/*!
+N
+N Close the Doxygen group.
+N @}
+N
+N*/
+N
+N#ifdef  __cplusplus
+S}
+N#endif /* __cplusplus */
+N
+N#endif /* __SL_NET_IF_H__ */
+L 40 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 2
+N#include <ti/net/slneterr.h>
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/net/slneterr.h" 1
+N/*
+N * Copyright (c) 2017-2018, Texas Instruments Incorporated
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N
+N/*****************************************************************************/
+N/* Include files                                                             */
+N/*****************************************************************************/
+N
+N#ifndef __SL_NET_ERR_H__
+N#define __SL_NET_ERR_H__
+N
+N
+N#ifdef __cplusplus
+Sextern "C" {
+N#endif
+N
+N/*!
+N    \defgroup SlNetErr SlNetErr group
+N
+N    \short Provide BSD and proprietary errors
+N
+N*/
+N/*!
+N
+N    \addtogroup SlNetErr
+N    @{
+N
+N*/
+N
+N/*****************************************************************************/
+N/* Macro declarations                                                        */
+N/*****************************************************************************/
+N
+N#define SLNETERR_RET_CODE_OK                                            (0L)     /**< Success                                                                 */
+N
+N#define SLNETERR_GENERAL_DEVICE                                         (-6L)    /**< General device error                                                    */
+N
+N/* BSD SOCKET ERRORS CODES */
+N
+N#define SLNETERR_BSD_SOC_ERROR                                          (-1L)    /**< Failure                                                                 */
+N#define SLNETERR_BSD_ENXIO                                              (-6L)    /**< No such device or address                                               */
+N#define SLNETERR_BSD_INEXE                                              (-8L)    /**< socket command in execution                                             */
+N#define SLNETERR_BSD_EBADF                                              (-9L)    /**< Bad file number                                                         */
+N#define SLNETERR_BSD_ENSOCK                                             (-10L)   /**< The system limit on the total number of open socket, has been reached   */
+N#define SLNETERR_BSD_EAGAIN                                             (-11L)   /**< Try again                                                               */
+N#define SLNETERR_BSD_EWOULDBLOCK                                        SLNETERR_BSD_EAGAIN
+N#define SLNETERR_BSD_ENOMEM                                             (-12L)   /**< Out of memory                                                           */
+N#define SLNETERR_BSD_EACCES                                             (-13L)   /**< Permission denied                                                       */
+N#define SLNETERR_BSD_EFAULT                                             (-14L)   /**< Bad address                                                             */
+N#define SLNETERR_BSD_ECLOSE                                             (-15L)   /**< close socket operation failed to transmit all queued packets            */
+N#define SLNETERR_BSD_EALREADY_ENABLED                                   (-21L)   /**< Transceiver - Transceiver already ON. there could be only one           */
+N#define SLNETERR_BSD_EINVAL                                             (-22L)   /**< Invalid argument                                                        */
+N#define SLNETERR_BSD_EAUTO_CONNECT_OR_CONNECTING                        (-69L)   /**< Transceiver - During connection, connected or auto mode started         */
+N#define SLNETERR_BSD_CONNECTION_PENDING                                 (-72L)   /**< Transceiver - Device is connected, disconnect first to open transceiver */
+N#define SLNETERR_BSD_EUNSUPPORTED_ROLE                                  (-86L)   /**< Transceiver - Trying to start when WLAN role is AP or P2P GO            */
+N#define SLNETERR_BSD_ENOTSOCK                                           (-88L)   /**< Socket operation on non-socket                                          */
+N#define SLNETERR_BSD_EDESTADDRREQ                                       (-89L)   /**< Destination address required                                            */
+N#define SLNETERR_BSD_EMSGSIZE                                           (-90L)   /**< Message too long                                                        */
+N#define SLNETERR_BSD_EPROTOTYPE                                         (-91L)   /**< Protocol wrong type for socket                                          */
+N#define SLNETERR_BSD_ENOPROTOOPT                                        (-92L)   /**< Protocol not available                                                  */
+N#define SLNETERR_BSD_EPROTONOSUPPORT                                    (-93L)   /**< Protocol not supported                                                  */
+N#define SLNETERR_BSD_ESOCKTNOSUPPORT                                    (-94L)   /**< Socket type not supported                                               */
+N#define SLNETERR_BSD_EOPNOTSUPP                                         (-95L)   /**< Operation not supported on transport endpoint                           */
+N#define SLNETERR_BSD_EAFNOSUPPORT                                       (-97L)   /**< Address family not supported by protocol                                */
+N#define SLNETERR_BSD_EADDRINUSE                                         (-98L)   /**< Address already in use                                                  */
+N#define SLNETERR_BSD_EADDRNOTAVAIL                                      (-99L)   /**< Cannot assign requested address                                         */
+N#define SLNETERR_BSD_ENETUNREACH                                        (-101L)  /**< Network is unreachable                                                  */
+N#define SLNETERR_BSD_ECONNABORTED                                       (-103L)  /**< Software caused connection abort                                        */
+N#define SLNETERR_BSD_ECONNRESET                                         (-104L)  /**< Connection reset by peer                                                */
+N#define SLNETERR_BSD_ENOBUFS                                            (-105L)  /**< No buffer space available                                               */
+N#define SLNETERR_BSD_EOBUFF                                             SLNETERR_BSD_ENOBUFS
+N#define SLNETERR_BSD_EISCONN                                            (-106L)  /**< Transport endpoint is already connected                                 */
+N#define SLNETERR_BSD_ENOTCONN                                           (-107L)  /**< Transport endpoint is not connected                                     */
+N#define SLNETERR_BSD_ESHUTDOWN                                          (-108L)  /**< Cannot send after transport endpoint shutdown                           */
+N#define SLNETERR_BSD_ETIMEDOUT                                          (-110L)  /**< Connection timed out                                                    */
+N#define SLNETERR_BSD_ECONNREFUSED                                       (-111L)  /**< Connection refused                                                      */
+N#define SLNETERR_BSD_EHOSTDOWN                                          (-112L)  /**< Host is down                                                            */
+N#define SLNETERR_BSD_EHOSTUNREACH                                       (-113L)  /**< No route to host                                                        */
+N#define SLNETERR_BSD_EALREADY                                           (-114L)  /**< Non blocking connect in progress, try again                             */
+N
+N/* ssl tls security start with -300 offset */
+N#define SLNETERR_ESEC_CLOSE_NOTIFY                                      (-300L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_UNEXPECTED_MESSAGE                                (-310L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_BAD_RECORD_MAC                                    (-320L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_DECRYPTION_FAILED                                 (-321L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_RECORD_OVERFLOW                                   (-322L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_DECOMPRESSION_FAILURE                             (-330L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_HANDSHAKE_FAILURE                                 (-340L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_NO_CERTIFICATE                                    (-341L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_BAD_CERTIFICATE                                   (-342L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_UNSUPPORTED_CERTIFICATE                           (-343L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_ILLEGAL_PARAMETER                                 (-347L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_ACCESS_DENIED                                     (-349L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_DECODE_ERROR                                      (-350L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_DECRYPT_ERROR1                                    (-351L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_EXPORT_RESTRICTION                                (-360L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_PROTOCOL_VERSION                                  (-370L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_INSUFFICIENT_SECURITY                             (-371L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_INTERNAL_ERROR                                    (-380L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_USER_CANCELLED                                    (-390L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_NO_RENEGOTIATION                                  (-400L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_UNSUPPORTED_EXTENSION                             (-410L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_CERTIFICATE_UNOBTAINABLE                          (-411L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_UNRECOGNIZED_NAME                                 (-412L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_BAD_CERTIFICATE_STATUS_RESPONSE                   (-413L)  /**< ssl/tls alerts */
+N#define SLNETERR_ESEC_BAD_CERTIFICATE_HASH_VALUE                        (-414L)  /**< ssl/tls alerts */
+N
+N
+N/* proprietary secure */
+N#define SLNETERR_ESEC_GENERAL                                           (-450L)  /**< error secure level general error                                               */
+N#define SLNETERR_ESEC_DECRYPT                                           (-451L)  /**< error secure level, decrypt recv packet fail                                   */
+N#define SLNETERR_ESEC_CLOSED                                            (-452L)  /**< secure layer is closed by other size, tcp is still connected                   */
+N#define SLNETERR_ESEC_SNO_VERIFY                                        (-453L)  /**< Connected without server verification                                          */
+N#define SLNETERR_ESEC_NO_CA_FILE                                        (-454L)  /**< error secure level CA file not found                                           */
+N#define SLNETERR_ESEC_MEMORY                                            (-455L)  /**< error secure level No memory  space available                                  */
+N#define SLNETERR_ESEC_BAD_CA_FILE                                       (-456L)  /**< error secure level bad CA file                                                 */
+N#define SLNETERR_ESEC_BAD_CERT_FILE                                     (-457L)  /**< error secure level bad Certificate file                                        */
+N#define SLNETERR_ESEC_BAD_PRIVATE_FILE                                  (-458L)  /**< error secure level bad private file                                            */
+N#define SLNETERR_ESEC_BAD_DH_FILE                                       (-459L)  /**< error secure level bad DH file                                                 */
+N#define SLNETERR_ESEC_T00_MANY_SSL_OPENED                               (-460L)  /**< MAX SSL Sockets are opened                                                     */
+N#define SLNETERR_ESEC_DATE_ERROR                                        (-461L)  /**< connected with certificate date verification error                             */
+N#define SLNETERR_ESEC_HAND_SHAKE_TIMED_OUT                              (-462L)  /**< connection timed out due to handshake time                                     */
+N#define SLNETERR_ESEC_TX_BUFFER_NOT_EMPTY                               (-463L)  /**< cannot start ssl connection while send buffer is full                          */
+N#define SLNETERR_ESEC_RX_BUFFER_NOT_EMPTY                               (-464L)  /**< cannot start ssl connection while recv buffer is full                          */
+N#define SLNETERR_ESEC_SSL_DURING_HAND_SHAKE                             (-465L)  /**< cannot use while in handshaking                                                */
+N#define SLNETERR_ESEC_NOT_ALLOWED_WHEN_LISTENING                        (-466L)  /**< the operation is not allowed when listening, do before listen                  */
+N#define SLNETERR_ESEC_CERTIFICATE_REVOKED                               (-467L)  /**< connected but on of the certificates in the chain is revoked                   */
+N#define SLNETERR_ESEC_UNKNOWN_ROOT_CA                                   (-468L)  /**< connected but the root CA used to validate the peer is unknown                 */
+N#define SLNETERR_ESEC_WRONG_PEER_CERT                                   (-469L)  /**< wrong peer cert (server cert) was received while trying to connect to server   */
+N#define SLNETERR_ESEC_TCP_DISCONNECTED_UNCOMPLETE_RECORD                (-470L)  /**< the other side disconnected the TCP layer and didn't send the whole ssl record */
+N#define SLNETERR_ESEC_HELLO_VERIFY_ERROR                                (-471L)  /**< Hello verification failed in DTLS                                              */
+N
+N#define SLNETERR_ESEC_BUFFER_E                                          (-632L)  /**< output buffer too small or input too large */
+N#define SLNETERR_ESEC_ALGO_ID_E                                         (-633L)  /**< setting algo id error                      */
+N#define SLNETERR_ESEC_PUBLIC_KEY_E                                      (-634L)  /**< setting public key error                   */
+N#define SLNETERR_ESEC_DATE_E                                            (-635L)  /**< setting date validity error                */
+N#define SLNETERR_ESEC_SUBJECT_E                                         (-636L)  /**< setting subject name error                 */
+N#define SLNETERR_ESEC_ISSUER_E                                          (-637L)  /**< setting issuer  name error                 */
+N#define SLNETERR_ESEC_CA_TRUE_E                                         (-638L)  /**< setting CA basic constraint true error     */
+N#define SLNETERR_ESEC_EXTENSIONS_E                                      (-639L)  /**< setting extensions error                   */
+N#define SLNETERR_ESEC_ASN_PARSE_E                                       (-640L)  /**< ASN parsing error, invalid input           */
+N#define SLNETERR_ESEC_ASN_VERSION_E                                     (-641L)  /**< ASN version error, invalid number          */
+N#define SLNETERR_ESEC_ASN_GETINT_E                                      (-642L)  /**< ASN get big int error, invalid data        */
+N#define SLNETERR_ESEC_ASN_RSA_KEY_E                                     (-643L)  /**< ASN key init error, invalid input          */
+N#define SLNETERR_ESEC_ASN_OBJECT_ID_E                                   (-644L)  /**< ASN object id error, invalid id            */
+N#define SLNETERR_ESEC_ASN_TAG_NULL_E                                    (-645L)  /**< ASN tag error, not null                    */
+N#define SLNETERR_ESEC_ASN_EXPECT_0_E                                    (-646L)  /**< ASN expect error, not zero                 */
+N#define SLNETERR_ESEC_ASN_BITSTR_E                                      (-647L)  /**< ASN bit string error, wrong id             */
+N#define SLNETERR_ESEC_ASN_UNKNOWN_OID_E                                 (-648L)  /**< ASN oid error, unknown sum id              */
+N#define SLNETERR_ESEC_ASN_DATE_SZ_E                                     (-649L)  /**< ASN date error, bad size                   */
+N#define SLNETERR_ESEC_ASN_BEFORE_DATE_E                                 (-650L)  /**< ASN date error, current date before        */
+N#define SLNETERR_ESEC_ASN_AFTER_DATE_E                                  (-651L)  /**< ASN date error, current date after         */
+N#define SLNETERR_ESEC_ASN_SIG_OID_E                                     (-652L)  /**< ASN signature error, mismatched oid        */
+N#define SLNETERR_ESEC_ASN_TIME_E                                        (-653L)  /**< ASN time error, unknown time type          */
+N#define SLNETERR_ESEC_ASN_INPUT_E                                       (-654L)  /**< ASN input error, not enough data           */
+N#define SLNETERR_ESEC_ASN_SIG_CONFIRM_E                                 (-655L)  /**< ASN sig error, confirm failure             */
+N#define SLNETERR_ESEC_ASN_SIG_HASH_E                                    (-656L)  /**< ASN sig error, unsupported hash type       */
+N#define SLNETERR_ESEC_ASN_SIG_KEY_E                                     (-657L)  /**< ASN sig error, unsupported key type        */
+N#define SLNETERR_ESEC_ASN_DH_KEY_E                                      (-658L)  /**< ASN key init error, invalid input          */
+N#define SLNETERR_ESEC_ASN_NTRU_KEY_E                                    (-659L)  /**< ASN ntru key decode error, invalid input   */
+N#define SLNETERR_ESEC_ASN_CRIT_EXT_E                                    (-660L)  /**< ASN unsupported critical extension         */
+N#define SLNETERR_ESEC_ECC_BAD_ARG_E                                     (-670L)  /**< ECC input argument of wrong type           */
+N#define SLNETERR_ESEC_ASN_ECC_KEY_E                                     (-671L)  /**< ASN ECC bad input                          */
+N#define SLNETERR_ESEC_ECC_CURVE_OID_E                                   (-672L)  /**< Unsupported ECC OID curve type             */
+N#define SLNETERR_ESEC_BAD_FUNC_ARG                                      (-673L)  /**< Bad function argument provided             */
+N#define SLNETERR_ESEC_NOT_COMPILED_IN                                   (-674L)  /**< Feature not compiled in                    */
+N#define SLNETERR_ESEC_UNICODE_SIZE_E                                    (-675L)  /**< Unicode password too big                   */
+N#define SLNETERR_ESEC_NO_PASSWORD                                       (-676L)  /**< no password provided by user               */
+N#define SLNETERR_ESEC_ALT_NAME_E                                        (-677L)  /**< alt name size problem, too big             */
+N#define SLNETERR_ESEC_ASN_NO_SIGNER_E                                   (-688L)  /**< ASN no signer to confirm failure           */
+N#define SLNETERR_ESEC_ASN_CRL_CONFIRM_E                                 (-689L)  /**< ASN CRL signature confirm failure          */
+N#define SLNETERR_ESEC_ASN_CRL_NO_SIGNER_E                               (-690L)  /**< ASN CRL no signer to confirm failure       */
+N#define SLNETERR_ESEC_ASN_OCSP_CONFIRM_E                                (-691L)  /**< ASN OCSP signature confirm failure         */
+N#define SLNETERR_ESEC_VERIFY_FINISHED_ERROR                             (-704L)  /**< verify problem on finished                 */
+N#define SLNETERR_ESEC_VERIFY_MAC_ERROR                                  (-705L)  /**< verify mac problem                         */
+N#define SLNETERR_ESEC_PARSE_ERROR                                       (-706L)  /**< parse error on header                      */
+N#define SLNETERR_ESEC_UNKNOWN_HANDSHAKE_TYPE                            (-707L)  /**< weird handshake type                       */
+N#define SLNETERR_ESEC_SOCKET_ERROR_E                                    (-708L)  /**< error state on socket                      */
+N#define SLNETERR_ESEC_SOCKET_NODATA                                     (-709L)  /**< expected data, not there                   */
+N#define SLNETERR_ESEC_INCOMPLETE_DATA                                   (-710L)  /**< don't have enough data to complete task    */
+N#define SLNETERR_ESEC_UNKNOWN_RECORD_TYPE                               (-711L)  /**< unknown type in record hdr                 */
+N#define SLNETERR_ESEC_INNER_DECRYPT_ERROR                               (-712L)  /**< error during decryption                    */
+N#define SLNETERR_ESEC_FATAL_ERROR                                       (-713L)  /**< recvd alert fatal error                    */
+N#define SLNETERR_ESEC_ENCRYPT_ERROR                                     (-714L)  /**< error during encryption                    */
+N#define SLNETERR_ESEC_FREAD_ERROR                                       (-715L)  /**< fread problem                              */
+N#define SLNETERR_ESEC_NO_PEER_KEY                                       (-716L)  /**< need peer's key                            */
+N#define SLNETERR_ESEC_NO_PRIVATE_KEY                                    (-717L)  /**< need the private key                       */
+N#define SLNETERR_ESEC_RSA_PRIVATE_ERROR                                 (-718L)  /**< error during rsa priv op                   */
+N#define SLNETERR_ESEC_NO_DH_PARAMS                                      (-719L)  /**< server missing DH params                   */
+N#define SLNETERR_ESEC_BUILD_MSG_ERROR                                   (-720L)  /**< build message failure                      */
+N#define SLNETERR_ESEC_BAD_HELLO                                         (-721L)  /**< client hello malformed                     */
+N#define SLNETERR_ESEC_DOMAIN_NAME_MISMATCH                              (-722L)  /**< peer subject name mismatch                 */
+N#define SLNETERR_ESEC_WANT_READ                                         (-723L)  /**< want read, call again                      */
+N#define SLNETERR_ESEC_NOT_READY_ERROR                                   (-724L)  /**< handshake layer not ready                  */
+N#define SLNETERR_ESEC_PMS_VERSION_ERROR                                 (-725L)  /**< pre m secret version error                 */
+N#define SLNETERR_ESEC_WANT_WRITE                                        (-727L)  /**< want write, call again                     */
+N#define SLNETERR_ESEC_BUFFER_ERROR                                      (-728L)  /**< malformed buffer input                     */
+N#define SLNETERR_ESEC_VERIFY_CERT_ERROR                                 (-729L)  /**< verify cert error                          */
+N#define SLNETERR_ESEC_VERIFY_SIGN_ERROR                                 (-730L)  /**< verify sign error                          */
+N#define SLNETERR_ESEC_LENGTH_ERROR                                      (-741L)  /**< record layer length error                  */
+N#define SLNETERR_ESEC_PEER_KEY_ERROR                                    (-742L)  /**< can't decode peer key                      */
+N#define SLNETERR_ESEC_ZERO_RETURN                                       (-743L)  /**< peer sent close notify                     */
+N#define SLNETERR_ESEC_SIDE_ERROR                                        (-744L)  /**< wrong client/server type                   */
+N#define SLNETERR_ESEC_NO_PEER_CERT                                      (-745L)  /**< peer didn't send key                       */
+N#define SLNETERR_ESEC_ECC_CURVETYPE_ERROR                               (-750L)  /**< Bad ECC Curve Type                         */
+N#define SLNETERR_ESEC_ECC_CURVE_ERROR                                   (-751L)  /**< Bad ECC Curve                              */
+N#define SLNETERR_ESEC_ECC_PEERKEY_ERROR                                 (-752L)  /**< Bad Peer ECC Key                           */
+N#define SLNETERR_ESEC_ECC_MAKEKEY_ERROR                                 (-753L)  /**< Bad Make ECC Key                           */
+N#define SLNETERR_ESEC_ECC_EXPORT_ERROR                                  (-754L)  /**< Bad ECC Export Key                         */
+N#define SLNETERR_ESEC_ECC_SHARED_ERROR                                  (-755L)  /**< Bad ECC Shared Secret                      */
+N#define SLNETERR_ESEC_NOT_CA_ERROR                                      (-757L)  /**< Not a CA cert error                        */
+N#define SLNETERR_ESEC_BAD_PATH_ERROR                                    (-758L)  /**< Bad path for opendir                       */
+N#define SLNETERR_ESEC_BAD_CERT_MANAGER_ERROR                            (-759L)  /**< Bad Cert Manager                           */
+N#define SLNETERR_ESEC_OCSP_CERT_REVOKED                                 (-760L)  /**< OCSP Certificate revoked                   */
+N#define SLNETERR_ESEC_CRL_CERT_REVOKED                                  (-761L)  /**< CRL Certificate revoked                    */
+N#define SLNETERR_ESEC_CRL_MISSING                                       (-762L)  /**< CRL Not loaded                             */
+N#define SLNETERR_ESEC_MONITOR_RUNNING_E                                 (-763L)  /**< CRL Monitor already running                */
+N#define SLNETERR_ESEC_THREAD_CREATE_E                                   (-764L)  /**< Thread Create Error                        */
+N#define SLNETERR_ESEC_OCSP_NEED_URL                                     (-765L)  /**< OCSP need an URL for lookup                */
+N#define SLNETERR_ESEC_OCSP_CERT_UNKNOWN                                 (-766L)  /**< OCSP responder doesn't know                */
+N#define SLNETERR_ESEC_OCSP_LOOKUP_FAIL                                  (-767L)  /**< OCSP lookup not successful                 */
+N#define SLNETERR_ESEC_MAX_CHAIN_ERROR                                   (-768L)  /**< max chain depth exceeded                   */
+N#define SLNETERR_ESEC_NO_PEER_VERIFY                                    (-778L)  /**< Need peer cert verify Error                */
+N#define SLNETERR_ESEC_UNSUPPORTED_SUITE                                 (-790L)  /**< unsupported cipher suite                   */
+N#define SLNETERR_ESEC_MATCH_SUITE_ERROR                                 (-791L)  /**< can't match cipher suite                   */
+N
+N
+N
+N/* WLAN ERRORS CODES*/
+N
+N#define SLNETERR_WLAN_KEY_ERROR                                         (-2049L)
+N#define SLNETERR_WLAN_INVALID_ROLE                                      (-2050L)
+N#define SLNETERR_WLAN_PREFERRED_NETWORKS_FILE_LOAD_FAILED               (-2051L)
+N#define SLNETERR_WLAN_CANNOT_CONFIG_SCAN_DURING_PROVISIONING            (-2052L)
+N#define SLNETERR_WLAN_INVALID_SECURITY_TYPE                             (-2054L)
+N#define SLNETERR_WLAN_PASSPHRASE_TOO_LONG                               (-2055L)
+N#define SLNETERR_WLAN_EAP_WRONG_METHOD                                  (-2057L)
+N#define SLNETERR_WLAN_PASSWORD_ERROR                                    (-2058L)
+N#define SLNETERR_WLAN_EAP_ANONYMOUS_LEN_ERROR                           (-2059L)
+N#define SLNETERR_WLAN_SSID_LEN_ERROR                                    (-2060L)
+N#define SLNETERR_WLAN_USER_ID_LEN_ERROR                                 (-2061L)
+N#define SLNETERR_WLAN_PREFERRED_NETWORK_LIST_FULL                       (-2062L)
+N#define SLNETERR_WLAN_PREFERRED_NETWORKS_FILE_WRITE_FAILED              (-2063L)
+N#define SLNETERR_WLAN_ILLEGAL_WEP_KEY_INDEX                             (-2064L)
+N#define SLNETERR_WLAN_INVALID_DWELL_TIME_VALUES                         (-2065L)
+N#define SLNETERR_WLAN_INVALID_POLICY_TYPE                               (-2066L)
+N#define SLNETERR_WLAN_PM_POLICY_INVALID_OPTION                          (-2067L)
+N#define SLNETERR_WLAN_PM_POLICY_INVALID_PARAMS                          (-2068L)
+N#define SLNETERR_WLAN_WIFI_NOT_CONNECTED                                (-2069L)
+N#define SLNETERR_WLAN_ILLEGAL_CHANNEL                                   (-2070L)
+N#define SLNETERR_WLAN_WIFI_ALREADY_DISCONNECTED                         (-2071L)
+N#define SLNETERR_WLAN_TRANSCEIVER_ENABLED                               (-2072L)
+N#define SLNETERR_WLAN_GET_NETWORK_LIST_EAGAIN                           (-2073L)
+N#define SLNETERR_WLAN_GET_PROFILE_INVALID_INDEX                         (-2074L)
+N#define SLNETERR_WLAN_FAST_CONN_DATA_INVALID                            (-2075L)
+N#define SLNETERR_WLAN_NO_FREE_PROFILE                                   (-2076L)
+N#define SLNETERR_WLAN_AP_SCAN_INTERVAL_TOO_LOW                          (-2077L)
+N#define SLNETERR_WLAN_SCAN_POLICY_INVALID_PARAMS                        (-2078L)
+N
+N#define SLNETERR_RXFL_OK                                                (0L)     /**< O.K                                                                                     */
+N#define SLNETERR_RXFL_RANGE_COMPARE_PARAMS_ARE_INVALID                  (-2079L)
+N#define SLNETERR_RXFL_RXFL_INVALID_PATTERN_LENGTH                       (-2080L) /**< requested length for L1/L4 payload matching must not exceed 16 bytes                    */
+N#define SLNETERR_RXFL_ACTION_USER_EVENT_ID_TOO_BIG                      (-2081L) /**< user action id for host event must not exceed SLNETERR_WLAN_RX_FILTER_MAX_USER_EVENT_ID */
+N#define SLNETERR_RXFL_OFFSET_TOO_BIG                                    (-2082L) /**< requested offset for L1/L4 payload matching must not exceed 1535 bytes                  */
+N#define SLNETERR_RXFL_STAT_UNSUPPORTED                                  (-2083L) /**< get rx filters statistics not supported                                                 */
+N#define SLNETERR_RXFL_INVALID_FILTER_ARG_UPDATE                         (-2084L) /**< invalid filter args request                                                             */
+N#define SLNETERR_RXFL_INVALID_SYSTEM_STATE_TRIGGER_FOR_FILTER_TYPE      (-2085L) /**< system state not supported for this filter type                                         */
+N#define SLNETERR_RXFL_INVALID_FUNC_ID_FOR_FILTER_TYPE                   (-2086L) /**< function id not supported for this filter type                                          */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_DO_NOT_EXIST_3                   (-2087L) /**< filter parent doesn't exist                                                             */
+N#define SLNETERR_RXFL_OUTPUT_OR_INPUT_BUFFER_LENGTH_TOO_SMALL           (-2088L) /**< ! The output buffer length is smaller than required for that operation                  */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_SOFTWARE_FILTER_NOT_FIT          (-2089L) /**< Node filter can't be child of software filter and vice_versa                            */
+N#define SLNETERR_RXFL_DEPENDENCY_IS_NOT_PERSISTENT                      (-2090L) /**< Dependency filter is not persistent                                                     */
+N#define SLNETERR_RXFL_RXFL_ALLOCATION_PROBLEM                           (-2091L)
+N#define SLNETERR_RXFL_SYSTEM_STATE_NOT_SUPPORTED_FOR_THIS_FILTER        (-2092L) /**< System state is not supported                                                           */
+N#define SLNETERR_RXFL_TRIGGER_USE_REG5_TO_REG8                          (-2093L) /**< Only counters 5 - 8 are allowed, for trigger                                            */
+N#define SLNETERR_RXFL_TRIGGER_USE_REG1_TO_REG4                          (-2094L) /**< Only counters 1 - 4 are allowed, for trigger                                            */
+N#define SLNETERR_RXFL_ACTION_USE_REG5_TO_REG8                           (-2095L) /**< Only counters 5 - 8 are allowed, for action                                             */
+N#define SLNETERR_RXFL_ACTION_USE_REG1_TO_REG4                           (-2096L) /**< Only counters 1 - 4 are allowed, for action                                             */
+N#define SLNETERR_RXFL_FIELD_SUPPORT_ONLY_EQUAL_AND_NOTEQUAL             (-2097L) /**< Rule compare function Id is out of range                                                */
+N#define SLNETERR_RXFL_WRONG_MULTICAST_BROADCAST_ADDRESS                 (-2098L) /**< The address should be of type multicast or broadcast                                    */
+N#define SLNETERR_RXFL_THE_FILTER_IS_NOT_OF_HEADER_TYPE                  (-2099L) /**< The filter should be of header type                                                     */
+N#define SLNETERR_RXFL_WRONG_COMPARE_FUNC_FOR_BROADCAST_ADDRESS          (-2100L) /**< The compare function is not suitable for broadcast address                              */
+N#define SLNETERR_RXFL_WRONG_MULTICAST_ADDRESS                           (-2101L) /**< The address should be of multicast type                                                 */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_IS_NOT_PERSISTENT                (-2102L) /**< The dependency filter is not persistent                                                 */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_IS_NOT_ENABLED                   (-2103L) /**< The dependency filter is not enabled                                                    */
+N#define SLNETERR_RXFL_FILTER_HAS_CHILDS                                 (-2104L) /**< The filter has childs and can't be removed                                              */
+N#define SLNETERR_RXFL_CHILD_IS_ENABLED                                  (-2105L) /**< Can't disable filter while the child is enabled                                         */
+N#define SLNETERR_RXFL_DEPENDENCY_IS_DISABLED                            (-2106L) /**< Can't enable filter in case its dependency filter is disabled                           */
+N#define SLNETERR_RXFL_MAC_SEND_MATCHDB_FAILED                           (-2107L)
+N#define SLNETERR_RXFL_MAC_SEND_ARG_DB_FAILED                            (-2108L)
+N#define SLNETERR_RXFL_MAC_SEND_NODEDB_FAILED                            (-2109L)
+N#define SLNETERR_RXFL_MAC_OPERTATION_RESUME_FAILED                      (-2110L)
+N#define SLNETERR_RXFL_MAC_OPERTATION_HALT_FAILED                        (-2111L)
+N#define SLNETERR_RXFL_NUMBER_OF_CONNECTION_POINTS_EXCEEDED              (-2112L) /**< Number of connection points exceeded                                                    */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_DEPENDENCY_ACTION_IS_DROP        (-2113L) /**< The dependent filter has Drop action, thus the filter can't be created                  */
+N#define SLNETERR_RXFL_FILTER_DO_NOT_EXISTS                              (-2114L) /**< The filter doesn't exists                                                               */
+N#define SLNETERR_RXFL_DEPEDENCY_NOT_ON_THE_SAME_LAYER                   (-2115L) /**< The filter and its dependency must be on the same layer                                 */
+N#define SLNETERR_RXFL_NUMBER_OF_ARGS_EXCEEDED                           (-2116L) /**< Number of arguments exceeded                                                            */
+N#define SLNETERR_RXFL_ACTION_NO_REG_NUMBER                              (-2117L) /**< Action require counter number                                                           */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_LAYER_DO_NOT_FIT                 (-2118L) /**< the filter and its dependency should be from the same layer                             */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_SYSTEM_STATE_DO_NOT_FIT          (-2119L) /**< The filter and its dependency system state don't fit                                    */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_DO_NOT_EXIST_2                   (-2120L) /**< The parent filter don't exist                                                           */
+N#define SLNETERR_RXFL_DEPENDENT_FILTER_DO_NOT_EXIST_1                   (-2121L) /**< The parent filter is null                                                               */
+N#define SLNETERR_RXFL_RULE_HEADER_ACTION_TYPE_NOT_SUPPORTED             (-2122L) /**< The action type is not supported                                                        */
+N#define SLNETERR_RXFL_RULE_HEADER_TRIGGER_COMPARE_FUNC_OUT_OF_RANGE     (-2123L) /**< The Trigger comparison function is out of range                                         */
+N#define SLNETERR_RXFL_RULE_HEADER_TRIGGER_OUT_OF_RANGE                  (-2124L) /**< The Trigger is out of range                                                             */
+N#define SLNETERR_RXFL_RULE_HEADER_COMPARE_FUNC_OUT_OF_RANGE             (-2125L) /**< The rule compare function is out of range                                               */
+N#define SLNETERR_RXFL_FRAME_TYPE_NOT_SUPPORTED                          (-2126L) /**< ASCII frame type string is illegal                                                      */
+N#define SLNETERR_RXFL_RULE_FIELD_ID_NOT_SUPPORTED                       (-2127L) /**< Rule field ID is out of range                                                           */
+N#define SLNETERR_RXFL_RULE_HEADER_FIELD_ID_ASCII_NOT_SUPPORTED          (-2128L) /**< This ASCII field ID is not supported                                                    */
+N#define SLNETERR_RXFL_RULE_HEADER_NOT_SUPPORTED                         (-2129L) /**< The header rule is not supported on current release                                     */
+N#define SLNETERR_RXFL_RULE_HEADER_OUT_OF_RANGE                          (-2130L) /**< The header rule is out of range                                                         */
+N#define SLNETERR_RXFL_RULE_HEADER_COMBINATION_OPERATOR_OUT_OF_RANGE     (-2131L) /**< Combination function Id is out of range                                                 */
+N#define SLNETERR_RXFL_RULE_HEADER_FIELD_ID_OUT_OF_RANGE                 (-2132L) /**< rule field Id is out of range                                                           */
+N#define SLNETERR_RXFL_UPDATE_NOT_SUPPORTED                              (-2133L) /**< Update not supported                                                                    */
+N#define SLNETERR_RXFL_NO_FILTER_DATABASE_ALLOCATE                       (-2134L)
+N#define SLNETERR_RXFL_ALLOCATION_FOR_GLOBALS_STRUCTURE_FAILED           (-2135L)
+N#define SLNETERR_RXFL_ALLOCATION_FOR_DB_NODE_FAILED                     (-2136L)
+N#define SLNETERR_RXFL_READ_FILE_FILTER_ID_ILLEGAL                       (-2137L)
+N#define SLNETERR_RXFL_READ_FILE_NUMBER_OF_FILTER_FAILED                 (-2138L)
+N#define SLNETERR_RXFL_READ_FILE_FAILED                                  (-2139L)
+N#define SLNETERR_RXFL_NO_FILTERS_ARE_DEFINED                            (-2140L) /**< No filters are defined in the system                                                    */
+N#define SLNETERR_RXFL_NUMBER_OF_FILTER_EXCEEDED                         (-2141L) /**< Number of max filters exceeded                                                          */
+N#define SLNETERR_RXFL_BAD_FILE_MODE                                     (-2142L)
+N#define SLNETERR_RXFL_FAILED_READ_NVFILE                                (-2143L)
+N#define SLNETERR_RXFL_FAILED_INIT_STORAGE                               (-2144L)
+N#define SLNETERR_RXFL_CONTINUE_WRITE_MUST_BE_MOD_4                      (-2145L)
+N#define SLNETERR_RXFL_FAILED_LOAD_FILE                                  (-2146L)
+N#define SLNETERR_RXFL_INVALID_HANDLE                                    (-2147L)
+N#define SLNETERR_RXFL_FAILED_TO_WRITE                                   (-2148L)
+N#define SLNETERR_RXFL_OFFSET_OUT_OF_RANGE                               (-2149L)
+N#define SLNETERR_RXFL_ALLOC                                             (-2150L)
+N#define SLNETERR_RXFL_READ_DATA_LENGTH                                  (-2151L)
+N#define SLNETERR_RXFL_INVALID_FILE_ID                                   (-2152L)
+N#define SLNETERR_RXFL_FILE_FILTERS_NOT_EXISTS                           (-2153L)
+N#define SLNETERR_RXFL_FILE_ALREADY_IN_USE                               (-2154L)
+N#define SLNETERR_RXFL_INVALID_ARGS                                      (-2155L)
+N#define SLNETERR_RXFL_FAILED_TO_CREATE_FILE                             (-2156L)
+N#define SLNETERR_RXFL_FS_ALREADY_LOADED                                 (-2157L)
+N#define SLNETERR_RXFL_UNKNOWN                                           (-2158L)
+N#define SLNETERR_RXFL_FAILED_TO_CREATE_LOCK_OBJ                         (-2159L)
+N#define SLNETERR_RXFL_DEVICE_NOT_LOADED                                 (-2160L)
+N#define SLNETERR_RXFL_INVALID_MAGIC_NUM                                 (-2161L)
+N#define SLNETERR_RXFL_FAILED_TO_READ                                    (-2162L)
+N#define SLNETERR_RXFL_NOT_SUPPORTED                                     (-2163L)
+N#define SLNETERR_WLAN_INVALID_COUNTRY_CODE                              (-2164L)
+N#define SLNETERR_WLAN_NVMEM_ACCESS_FAILED                               (-2165L)
+N#define SLNETERR_WLAN_OLD_FILE_VERSION                                  (-2166L)
+N#define SLNETERR_WLAN_TX_POWER_OUT_OF_RANGE                             (-2167L)
+N#define SLNETERR_WLAN_INVALID_AP_PASSWORD_LENGTH                        (-2168L)
+N#define SLNETERR_WLAN_PROVISIONING_ABORT_PROVISIONING_ALREADY_STARTED   (-2169L)
+N#define SLNETERR_WLAN_PROVISIONING_ABORT_HTTP_SERVER_DISABLED           (-2170L)
+N#define SLNETERR_WLAN_PROVISIONING_ABORT_PROFILE_LIST_FULL              (-2171L)
+N#define SLNETERR_WLAN_PROVISIONING_ABORT_INVALID_PARAM                  (-2172L)
+N#define SLNETERR_WLAN_PROVISIONING_ABORT_GENERAL_ERROR                  (-2173L)
+N#define SLNETERR_WLAN_MULTICAST_EXCEED_MAX_ADDR                         (-2174L)
+N#define SLNETERR_WLAN_MULTICAST_INVAL_ADDR                              (-2175L)
+N#define SLNETERR_WLAN_AP_SCAN_INTERVAL_TOO_SHORT                        (-2176L)
+N#define SLNETERR_WLAN_PROVISIONING_CMD_NOT_EXPECTED                     (-2177L)
+N
+N
+N#define SLNETERR_WLAN_AP_ACCESS_LIST_NO_ADDRESS_TO_DELETE               (-2178L) /**< List is empty, no address to delete                 */
+N#define SLNETERR_WLAN_AP_ACCESS_LIST_FULL                               (-2179L) /**< access list is full                                 */
+N#define SLNETERR_WLAN_AP_ACCESS_LIST_DISABLED                           (-2180L) /**< access list is disabled                             */
+N#define SLNETERR_WLAN_AP_ACCESS_LIST_MODE_NOT_SUPPORTED                 (-2181L) /**< Trying to switch to unsupported mode                */
+N#define SLNETERR_WLAN_AP_STA_NOT_FOUND                                  (-2182L) /**< trying to disconnect station which is not connected */
+N
+N
+N
+N/* DEVICE ERRORS CODES*/
+N#define SLNETERR_SUPPLICANT_ERROR                                       (-4097L)
+N#define SLNETERR_HOSTAPD_INIT_FAIL                                      (-4098L)
+N#define SLNETERR_HOSTAPD_INIT_IF_FAIL                                   (-4099L)
+N#define SLNETERR_WLAN_DRV_INIT_FAIL                                     (-4100L)
+N#define SLNETERR_MDNS_ENABLE_FAIL                                       (-4103L) /**< mDNS enable failed                                                                                            */
+N#define SLNETERR_ROLE_STA_ERR                                           (-4107L) /**< Failure to load MAC/PHY in STA role                                                                           */
+N#define SLNETERR_ROLE_AP_ERR                                            (-4108L) /**< Failure to load MAC/PHY in AP role                                                                            */
+N#define SLNETERR_ROLE_P2P_ERR                                           (-4109L) /**< Failure to load MAC/PHY in P2P role                                                                           */
+N#define SLNETERR_CALIB_FAIL                                             (-4110L) /**< Failure of calibration                                                                                        */
+N#define SLNETERR_RESTORE_IMAGE_COMPLETE                                 (-4113L) /**< Return to factory image completed, perform reset                                                              */
+N#define SLNETERR_UNKNOWN_ERR                                            (-4114L)
+N#define SLNETERR_GENERAL_ERR                                            (-4115L) /**< General error during init                                                                                     */
+N#define SLNETERR_WRONG_ROLE                                             (-4116L)
+N#define SLNETERR_INCOMPLETE_PROGRAMMING                                 (-4117L) /**< Error during programming, Program new image should be invoked (see sl_FsProgram)                              */
+N
+N
+N#define SLNETERR_PENDING_TXRX_STOP_TIMEOUT_EXP                          (-4118L) /**< Timeout expired before completing all TX/RX                                                                   */
+N#define SLNETERR_PENDING_TXRX_NO_TIMEOUT                                (-4119L) /**< No Timeout, still have pending  TX/RX                                                                         */
+N#define SLNETERR_INVALID_PERSISTENT_CONFIGURATION                       (-4120L) /**< persistency configuration can only be set to 0 (disabled) or 1 (enabled)                                      */
+N
+N
+N
+N/* NETAPP ERRORS CODES*/
+N#define SLNETERR_MDNS_CREATE_FAIL                                       (-6145L) /**< mDNS create failed                                   */
+N#define SLNETERR_DEVICE_NAME_LEN_ERR                                    (-6146L) /**< Set Dev name error codes                             */
+N#define SLNETERR_DEVICE_NAME_INVALID                                    (-6147L) /**< Set Dev name error codes                             */
+N#define SLNETERR_DOMAIN_NAME_LEN_ERR                                    (-6148L) /**< Set domain name error codes                          */
+N#define SLNETERR_DOMAIN_NAME_INVALID                                    (-6149L) /**< Set domain name error codes                          */
+N#define SLNETERR_NET_APP_DNS_QUERY_NO_RESPONSE                          (-6150L) /**< DNS query failed, no response                        */
+N#define SLNETERR_NET_APP_DNS_ERROR                                      (-6151L) /**< DNS internal error                                   */
+N#define SLNETERR_NET_APP_DNS_NO_SERVER                                  (-6152L) /**< No DNS server was specified                          */
+N#define SLNETERR_NET_APP_DNS_TIMEOUTR                                   (-6153L) /**< mDNS parameters error                                */
+N#define SLNETERR_NET_APP_DNS_QUERY_FAILED                               (-6154L) /**< DNS query failed; no DNS server sent an 'answer'     */
+N#define SLNETERR_NET_APP_DNS_BAD_ADDRESS_ERROR                          (-6155L) /**< Improperly formatted IPv4 or IPv6 address            */
+N#define SLNETERR_NET_APP_DNS_SIZE_ERROR                                 (-6156L) /**< DNS destination size is too small                    */
+N#define SLNETERR_NET_APP_DNS_MALFORMED_PACKET                           (-6157L) /**< Improperly formed or corrupted DNS packet received   */
+N#define SLNETERR_NET_APP_DNS_BAD_ID_ERROR                               (-6158L) /**< DNS packet from server does not match query ID       */
+N#define SLNETERR_NET_APP_DNS_PARAM_ERROR                                (-6159L) /**< Invalid params                                       */
+N#define SLNETERR_NET_APP_DNS_SERVER_NOT_FOUND                           (-6160L) /**< Server not found in Client list of DNS servers       */
+N#define SLNETERR_NET_APP_DNS_PACKET_CREATE_ERROR                        (-6161L) /**< Error creating DNS packet                            */
+N#define SLNETERR_NET_APP_DNS_EMPTY_DNS_SERVER_LIST                      (-6162L) /**< DNS Client's list of DNS servers is empty            */
+N#define SLNETERR_NET_APP_DNS_SERVER_AUTH_ERROR                          (-6163L) /**< Server not able to authenticate answer/authority data*/
+N#define SLNETERR_NET_APP_DNS_ZERO_GATEWAY_IP_ADDRESS                    (-6164L) /**< DNS Client IP instance has a zero gateway IP address */
+N#define SLNETERR_NET_APP_DNS_MISMATCHED_RESPONSE                        (-6165L) /**< Server response type does not match the query request*/
+N#define SLNETERR_NET_APP_DNS_DUPLICATE_ENTRY                            (-6166L) /**< Duplicate entry exists in DNS server table           */
+N#define SLNETERR_NET_APP_DNS_RETRY_A_QUERY                              (-6167L) /**< SOA status returned; web site only exists as IPv4    */
+N#define SLNETERR_NET_APP_DNS_INVALID_ADDRESS_TYPE                       (-6168L) /**< IP address type (e.g. IPv6L) not supported           */
+N#define SLNETERR_NET_APP_DNS_IPV6_NOT_SUPPORTED                         (-6169L) /**< IPv6 disabled                                        */
+N#define SLNETERR_NET_APP_DNS_NEED_MORE_RECORD_BUFFER                    (-6170L) /**< The buffer size is not enough.                       */
+N#define SLNETERR_NET_APP_MDNS_ERROR                                     (-6171L) /**< MDNS internal error.                                 */
+N#define SLNETERR_NET_APP_MDNS_PARAM_ERROR                               (-6172L) /**< MDNS parameters error.                               */
+N#define SLNETERR_NET_APP_MDNS_CACHE_ERROR                               (-6173L) /**< The Cache size is not enough.                        */
+N#define SLNETERR_NET_APP_MDNS_UNSUPPORTED_TYPE                          (-6174L) /**< The unsupported resource record type.                */
+N#define SLNETERR_NET_APP_MDNS_DATA_SIZE_ERROR                           (-6175L) /**< The data size is too big.                            */
+N#define SLNETERR_NET_APP_MDNS_AUTH_ERROR                                (-6176L) /**< Attempting to parse too large a data.                */
+N#define SLNETERR_NET_APP_MDNS_PACKET_ERROR                              (-6177L) /**< The packet can not add the resource record.          */
+N#define SLNETERR_NET_APP_MDNS_DEST_ADDRESS_ERROR                        (-6178L) /**< The destination address error.                       */
+N#define SLNETERR_NET_APP_MDNS_UDP_PORT_ERROR                            (-6179L) /**< The udp port error.                                  */
+N#define SLNETERR_NET_APP_MDNS_NOT_LOCAL_LINK                            (-6180L) /**< The message that not originate from the local link.  */
+N#define SLNETERR_NET_APP_MDNS_EXCEED_MAX_LABEL                          (-6181L) /**< The data exceed the max laber size.                  */
+N#define SLNETERR_NET_APP_MDNS_EXIST_UNIQUE_RR                           (-6182L) /**< At least one Unqiue record in the cache.             */
+N#define SLNETERR_NET_APP_MDNS_EXIST_ANSWER                              (-6183L) /**< At least one answer record in the cache.             */
+N#define SLNETERR_NET_APP_MDNS_EXIST_SAME_QUERY                          (-6184L) /**< Exist the same query.                                */
+N#define SLNETERR_NET_APP_MDNS_DUPLICATE_SERVICE                         (-6185L) /**< Duplicate service.                                   */
+N#define SLNETERR_NET_APP_MDNS_NO_ANSWER                                 (-6186L) /**< No response for one-shot query.                      */
+N#define SLNETERR_NET_APP_MDNS_NO_KNOWN_ANSWER                           (-6187L) /**< No known answer for query.                           */
+N#define SLNETERR_NET_APP_MDNS_NAME_MISMATCH                             (-6188L) /**< The name mismatch.                                   */
+N#define SLNETERR_NET_APP_MDNS_NOT_STARTED                               (-6189L) /**< MDNS does not start.                                 */
+N#define SLNETERR_NET_APP_MDNS_HOST_NAME_ERROR                           (-6190L) /**< MDNS host name error.                                */
+N#define SLNETERR_NET_APP_MDNS_NO_MORE_ENTRIES                           (-6191L) /**< No more entries be found.                            */
+N#define SLNETERR_NET_APP_MDNS_SERVICE_TYPE_MISMATCH                     (-6192L) /**< The service type mismatch                            */
+N#define SLNETERR_NET_APP_MDNS_LOOKUP_INDEX_ERROR                        (-6193L) /**< Index is bigger than number of services.             */
+N#define SLNETERR_NET_APP_MDNS_MAX_SERVICES_ERROR                        (-6194L)
+N#define SLNETERR_NET_APP_MDNS_IDENTICAL_SERVICES_ERROR                  (-6195L)
+N#define SLNETERR_NET_APP_MDNS_EXISTED_SERVICE_ERROR                     (-6196L)
+N#define SLNETERR_NET_APP_MDNS_ERROR_SERVICE_NAME_ERROR                  (-6197L)
+N#define SLNETERR_NET_APP_MDNS_RX_PACKET_ALLOCATION_ERROR                (-6198L)
+N#define SLNETERR_NET_APP_MDNS_BUFFER_SIZE_ERROR                         (-6199L)
+N#define SLNETERR_NET_APP_MDNS_NET_APP_SET_ERROR                         (-6200L)
+N#define SLNETERR_NET_APP_MDNS_GET_SERVICE_LIST_FLAG_ERROR               (-6201L)
+N#define SLNETERR_NET_APP_MDNS_MDNS_NO_CONFIGURATION_ERROR               (-6202L)
+N#define SLNETERR_NET_APP_MDNS_STATUS_ERROR                              (-6203L)
+N#define SLNETERR_NET_APP_ENOBUFS                                        (-6204L)
+N#define SLNETERR_NET_APP_DNS_IPV6_REQ_BUT_IPV6_DISABLED                 (-6205L) /**< trying to issue ipv6 DNS request but ipv6 is disabled                          */
+N#define SLNETERR_NET_APP_DNS_INVALID_FAMILY_TYPE                        (-6206L) /**< Family type is not ipv4 and not ipv6                                           */
+N#define SLNETERR_NET_APP_DNS_REQ_TOO_BIG                                (-6207L) /**< DNS request size is too big                                                    */
+N#define SLNETERR_NET_APP_DNS_ALLOC_ERROR                                (-6208L) /**< Allocation error                                                               */
+N#define SLNETERR_NET_APP_DNS_EXECUTION_ERROR                            (-6209L) /**< Execution error                                                                */
+N#define SLNETERR_NET_APP_P2P_ROLE_IS_NOT_CONFIGURED                     (-6210L) /**< role p2p is not configured yet, should be CL or GO in order to execute command */
+N#define SLNETERR_NET_APP_INCORECT_ROLE_FOR_APP                          (-6211L) /**< incorrect role for specific application                                        */
+N#define SLNETERR_NET_APP_INCORECT_APP_MASK                              (-6212L) /**< mask does not match any app                                                    */
+N#define SLNETERR_NET_APP_MDNS_ALREADY_STARTED                           (-6213L) /**< mdns application already started                                               */
+N#define SLNETERR_NET_APP_HTTP_SERVER_ALREADY_STARTED                    (-6214L) /**< http server application already started                                        */
+N
+N#define SLNETERR_NET_APP_HTTP_GENERAL_ERROR                             (-6216L) /**< New error - Http handle request failed                                         */
+N#define SLNETERR_NET_APP_HTTP_INVALID_TIMEOUT                           (-6217L) /**< New error - Http timeout invalid argument                                      */
+N#define SLNETERR_NET_APP_INVALID_URN_LENGTH                             (-6218L) /**< invalid URN length                                                             */
+N#define SLNETERR_NET_APP_RX_BUFFER_LENGTH                               (-6219L) /**< size of the requested services is smaller than size of the user buffer */
+N
+N
+N
+N/*< NETCFG ERRORS CODES*/
+N#define SLNETERR_STATIC_ADDR_SUBNET_ERROR                               (-8193L)
+N#define SLNETERR_INCORRECT_IPV6_STATIC_LOCAL_ADDR                       (-8194L) /**< Ipv6 Local address perfix is wrong */
+N#define SLNETERR_INCORRECT_IPV6_STATIC_GLOBAL_ADDR                      (-8195L) /**< Ipv6 Global address perfix is wrong */
+N#define SLNETERR_IPV6_LOCAL_ADDR_SHOULD_BE_SET_FIRST                    (-8195L) /**< Attempt to set ipv6 global address before ipv6 local address is set */
+N
+N
+N
+N/* NETUTIL ERRORS CODES */
+N#define SLNETERR_NETUTIL_CRYPTO_GENERAL                                 (-12289L)
+N#define SLNETERR_NETUTIL_CRYPTO_INVALID_INDEX                           (-12290L)
+N#define SLNETERR_NETUTIL_CRYPTO_INVALID_PARAM                           (-12291L)
+N#define SLNETERR_NETUTIL_CRYPTO_MEM_ALLOC                               (-12292L)
+N#define SLNETERR_NETUTIL_CRYPTO_INVALID_DB_VER                          (-12293L)
+N#define SLNETERR_NETUTIL_CRYPTO_UNSUPPORTED_OPTION                      (-12294L)
+N#define SLNETERR_NETUTIL_CRYPTO_BUFFER_TOO_SMALL                        (-12295L)
+N#define SLNETERR_NETUTIL_CRYPTO_EMPTY_DB_ENTRY                          (-12296L)
+N#define SLNETERR_NETUTIL_CRYPTO_NON_TEMPORARY_KEY                       (-12297L)
+N#define SLNETERR_NETUTIL_CRYPTO_DB_ENTRY_NOT_FREE                       (-12298L)
+N#define SLNETERR_NETUTIL_CRYPTO_CORRUPTED_DB_FILE                       (-12299L)
+N
+N
+N
+N/* GENERAL ERRORS CODES*/
+N#define SLNETERR_INVALID_OPCODE                                         (-14337L)
+N#define SLNETERR_INVALID_PARAM                                          (-14338L)
+N#define SLNETERR_STATUS_ERROR                                           (-14341L)
+N#define SLNETERR_NVMEM_ACCESS_FAILED                                    (-14342L)
+N#define SLNETERR_NOT_ALLOWED_NWP_LOCKED                                 (-14343L) /**< Device is locked, Return to Factory Image or Program new image should be invoked (see sl_FsCtl, sl_FsProgram) */
+N
+N/* SECURITY ERRORS CODE */
+N#define SLNETERR_LOADING_CERTIFICATE_STORE                              (-28673L)
+N
+N/* Device is Locked! Return to Factory Image or Program new
+N   image should be invoked (see sl_FsCtl, sl_FsProgram) */
+N#define SLNETERR_DEVICE_LOCKED_SECURITY_ALERT                           (-28674L)
+N
+N
+N
+N/* INTERNAL HOST ERRORS CODES*/
+N
+N/* Receive this error in case there are no resources to issue the command
+N   If possible, increase the number of MAX_CONCURRENT_ACTIONS (result in memory increase)
+N   If not, try again later */
+N#define SLNETERR_POOL_IS_EMPTY                                          (-2000L)
+N
+N/* Receive this error in case a given length for RX buffer was too small.
+N   Receive payload was bigger than the given buffer size. Therefore, payload is cut according to receive size
+N   Recommend to increase buffer size */
+N#define SLNETERR_ESMALLBUF                                              (-2001L)
+N
+N/* Receive this error in case zero length is supplied to a "get" API
+N   Recommend to supply length according to requested information (view options defines for help) */
+N#define SLNETERR_EZEROLEN                                               (-2002L)
+N
+N/* User supplied invalid parameter */
+N#define SLNETERR_INVALPARAM                                             (-2003L)
+N
+N/* Failed to open interface  */
+N#define SLNETERR_BAD_INTERFACE                                          (-2004L)
+N
+N/* API has been aborted due to an error detected by host driver */
+N#define SLNETERR_API_ABORTED                                            (-2005L)
+N
+N/* Parameters are invalid */
+N#define SLNETERR_RET_CODE_INVALID_INPUT                                 (-2006L)
+N
+N/* Driver internal error */
+N#define SLNETERR_RET_CODE_SELF_ERROR                                    (-2007L)
+N
+N/* NWP internal error */
+N#define SLNETERR_RET_CODE_NWP_IF_ERROR                                  (-2008L)
+N
+N/* malloc error */
+N#define SLNETERR_RET_CODE_MALLOC_ERROR                                  (-2009L)
+N
+N/* protocol error */
+N#define SLNETERR_RET_CODE_PROTOCOL_ERROR                                (-2010L)
+N
+N/* API has been aborted, command is not allowed in device lock state */
+N#define SLNETERR_RET_CODE_DEV_LOCKED                                    (-2011L)
+N
+N/* SlNetSock_Start cannot be invoked twice */
+N#define SLNETERR_RET_CODE_DEV_ALREADY_STARTED                           (-2012L)
+N
+N/* SL Net API is in progress */
+N#define SLNETERR_RET_CODE_API_COMMAND_IN_PROGRESS                       (-2013L)
+N
+N/* Provisioning is in progress -  */
+N#define SLNETERR_RET_CODE_PROVISIONING_IN_PROGRESS                      (-2014L)
+N
+N/* Wrong ping parameters - ping cannot be called with the following parameters:
+N1. infinite ping packet
+N2. report only when finished
+N3. no callback supplied  */
+N#define SLNETERR_RET_CODE_NET_APP_PING_INVALID_PARAMS                   (-2015L)
+N
+N
+N/* SlNetSock select already in progress.
+N   this error will be returned if app will try to call
+N   SlNetSock_select blocking when there is already select trigger in progress */
+N#define SLNETERR_RET_CODE_SOCKET_SELECT_IN_PROGRESS_ERROR               (-2016L)
+N
+N#define SLNETERR_RET_CODE_STOP_IN_PROGRESS                              (-2017L)
+N
+N
+N/* The device has not been started yet */
+N#define SLNETERR_RET_CODE_DEV_NOT_STARTED                               (-2018L)
+N
+N/* The event link was not found in the list */
+N#define SLNETERR_RET_CODE_EVENT_LINK_NOT_FOUND                          (-2019L)
+N
+N/* Function couldn't find any free space/location */
+N#define SLNETERR_RET_CODE_NO_FREE_SPACE                                 (-2020L)
+N
+N/* Function couldn't execute correctly */
+N#define SLNETERR_RET_CODE_FUNCTION_FAILED                               (-2021L)
+N
+N/* Mutex creation failed */
+N#define SLNETERR_RET_CODE_MUTEX_CREATION_FAILED                         (-2022L)
+N
+N/* Function couldn't find the requested resource */
+N#define SLNETERR_RET_CODE_COULDNT_FIND_RESOURCE                         (-2023L)
+N
+N/* Interface doesn't support the non mandatory function */
+N#define SLNETERR_RET_CODE_DOESNT_SUPPORT_NON_MANDATORY_FXN              (-2024L)
+N
+N/* Socket creation in progress */
+N#define SLNETERR_RET_CODE_SOCKET_CREATION_IN_PROGRESS                   (-2025L)
+N
+N/* Unsupported scenario, option or feature */
+N#define SLNETERR_RET_CODE_UNSUPPORTED                                   (-2026L)
+N
+N
+N/* sock related API's from SlNetIf_Config_t failed */
+N#define SLNETSOCK_ERR_SOCKCREATE_FAILED                                 (-3000L)
+N#define SLNETSOCK_ERR_SOCKCLOSE_FAILED                                  (-3001L)
+N#define SLNETSOCK_ERR_SOCKSELECT_FAILED                                 (-3002L)
+N#define SLNETSOCK_ERR_SOCKSETOPT_FAILED                                 (-3003L)
+N#define SLNETSOCK_ERR_SOCKGETOPT_FAILED                                 (-3004L)
+N#define SLNETSOCK_ERR_SOCKRECVFROM_FAILED                               (-3005L)
+N#define SLNETSOCK_ERR_SOCKSENDTO_FAILED                                 (-3006L)
+N#define SLNETSOCK_ERR_SOCKSHUTDOWN_FAILED                               (-3007L)
+N#define SLNETSOCK_ERR_SOCKACCEPT_FAILED                                 (-3008L)
+N#define SLNETSOCK_ERR_SOCKBIND_FAILED                                   (-3009L)
+N#define SLNETSOCK_ERR_SOCKLISTEN_FAILED                                 (-3000L)
+N#define SLNETSOCK_ERR_SOCKCONNECT_FAILED                                (-3001L)
+N#define SLNETSOCK_ERR_SOCKGETPEERNAME_FAILED                            (-3002L)
+N#define SLNETSOCK_ERR_SOCKGETLOCALNAME_FAILED                           (-3003L)
+N#define SLNETSOCK_ERR_SOCKRECV_FAILED                                   (-3004L)
+N#define SLNETSOCK_ERR_SOCKSEND_FAILED                                   (-3005L)
+N#define SLNETSOCK_ERR_SOCKSTARTSEC_FAILED                               (-3006L)
+N
+N/* util related API's from SlNetIf_Config_t failed */
+N#define SLNETUTIL_ERR_UTILGETHOSTBYNAME_FAILED                          (-3100L)
+N
+N/*
+N * base for util error codes related to SlNetUtil_getAddrInfo and
+N * SlNetUtil_gaiStrErr
+N */
+N#define SLNETUTIL_EAI_BASE                                              (-3120L)
+N
+N/*
+N * util error codes related to SlNetUtil_getAddrInfo and SlNetUtil_gaiStrErr
+N * The numbering of these codes MUST match the order of the strErrorMsgs array
+N * in <ti/net/slnetutils.c>
+N */
+N#define SLNETUTIL_EAI_AGAIN                                             (-3121L)
+N#define SLNETUTIL_EAI_BADFLAGS                                          (-3122L)
+N#define SLNETUTIL_EAI_FAIL                                              (-3123L)
+N#define SLNETUTIL_EAI_FAMILY                                            (-3124L)
+N#define SLNETUTIL_EAI_MEMORY                                            (-3125L)
+N#define SLNETUTIL_EAI_NONAME                                            (-3126L)
+N#define SLNETUTIL_EAI_SERVICE                                           (-3127L)
+N#define SLNETUTIL_EAI_SOCKTYPE                                          (-3128L)
+N#define SLNETUTIL_EAI_SYSTEM                                            (-3129L)
+N#define SLNETUTIL_EAI_OVERFLOW                                          (-3130L)
+N#define SLNETUTIL_EAI_ADDRFAMILY                                        (-3131L)
+N
+N/* if related API's from SlNetIf_Config_t failed */
+N#define SLNETIF_ERR_IFLOADSECOBJ_FAILED                                 (-3200L)
+N#define SLNETIF_ERR_IFGETIPADDR_FAILED                                  (-3201L)
+N#define SLNETIF_ERR_IFGETCONNECTIONSTATUS_FAILED                        (-3202L)
+N#define SLNETIF_ERR_IFCREATECONTEXT_FAILED                              (-3203L)
+N
+N/*!
+N
+N Close the Doxygen group.
+N @}
+N
+N*/
+N
+N#ifdef  __cplusplus
+S}
+N#endif /*  __cplusplus */
+N
+N#endif  /*  __SL_NET_ERR_H__ */
+L 41 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 2
+N#include <ti/net/slnetutils.h>
+L 1 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/net/slnetutils.h" 1
+N/*
+N * Copyright (c) 2017-2018, Texas Instruments Incorporated
+N * All rights reserved.
+N *
+N * Redistribution and use in source and binary forms, with or without
+N * modification, are permitted provided that the following conditions
+N * are met:
+N *
+N * *  Redistributions of source code must retain the above copyright
+N *    notice, this list of conditions and the following disclaimer.
+N *
+N * *  Redistributions in binary form must reproduce the above copyright
+N *    notice, this list of conditions and the following disclaimer in the
+N *    documentation and/or other materials provided with the distribution.
+N *
+N * *  Neither the name of Texas Instruments Incorporated nor the names of
+N *    its contributors may be used to endorse or promote products derived
+N *    from this software without specific prior written permission.
+N *
+N * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+N * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+N * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+N * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+N * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+N * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+N * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+N * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+N * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+N * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+N * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+N */
+N
+N/*****************************************************************************/
+N/* Include files                                                             */
+N/*****************************************************************************/
+N
+N#ifndef __SL_NET_UTILS_H__
+N#define __SL_NET_UTILS_H__
+N
+N#include <stddef.h>
+N
+N#include "slnetsock.h"
+N
+N#ifdef    __cplusplus
+Sextern "C" {
+N#endif
+N
+N/*!
+N    \defgroup SlNetUtils SlNetUtils group
+N
+N    \short Sockets related commands and configuration
+N
+N*/
+N/*!
+N
+N    \addtogroup SlNetUtils
+N    @{
+N
+N*/
+N
+N/*****************************************************************************/
+N/* Macro declarations                                                        */
+N/*****************************************************************************/
+N#define SLNETUTIL_AI_PASSIVE     0x00000001
+N#define SLNETUTIL_AI_NUMERICHOST 0x00000004
+N
+N/*****************************************************************************/
+N/* Structure/Enum declarations                                               */
+N/*****************************************************************************/
+N
+Ntypedef struct SlNetUtil_addrInfo_t {
+N    int                          ai_flags;
+N    int                          ai_family;
+N    int                          ai_socktype;
+N    int                          ai_protocol;
+N    size_t                       ai_addrlen;
+N    struct SlNetSock_Addr_t     *ai_addr;
+N    char                        *ai_canonname;
+N    struct SlNetUtil_addrInfo_t *ai_next;
+N} SlNetUtil_addrInfo_t;
+N
+N/* Creating one address parameter from 4 separate address parameters */
+N#define SLNETUTIL_IPV4_VAL(add_3,add_2,add_1,add_0)                         ((((uint32_t)add_3 << 24) & 0xFF000000) | (((uint32_t)add_2 << 16) & 0xFF0000) | (((uint32_t)add_1 << 8) & 0xFF00) | ((uint32_t)add_0 & 0xFF) )
+N
+N/*****************************************************************************/
+N/* Function prototypes                                                       */
+N/*****************************************************************************/
+N
+N/*!
+N
+N    \brief Initialize the SlNetUtil module
+N
+N    \param[in] flags            Reserved
+N
+N    \return                     Zero on success, or negative error code on failure
+N*/
+Nint32_t SlNetUtil_init(int32_t flags);
+N
+N/*!
+N    \brief Return text descriptions of getAddrInfo error codes
+N
+N    \param[in] errorCode A getAddrInfo error code
+N
+N    \return             Text description of the passed in getAddrInfo error code.
+N                        If the error code does not exist returns "Unknown Error"
+N */
+Nconst char *SlNetUtil_gaiStrErr(int32_t errorCode);
+N
+N/*!
+N    \brief Get host IP by name\n
+N    Obtain the IP Address of machine on network, by machine name.
+N
+N    \param[in]     ifBitmap     Specifies the interfaces which the host ip
+N                                needs to be retrieved from according to the
+N                                priority until one of them will return an answer.\n
+N                                Value 0 is used in order to choose automatic
+N                                interfaces selection according to the priority
+N                                interface list.
+N                                Value can be combination of interfaces by OR'ing
+N                                multiple interfaces bit identifiers (SLNETIFC_IDENT_
+N                                defined in slnetif.h)
+N                                Note: interface identifier bit must be configured
+N                                prior to this socket creation using SlNetIf_add().
+N    \param[in]     name         Host name
+N    \param[in]     nameLen      Name length
+N    \param[out]    ipAddr       A buffer used to store the IP address(es) from
+N                                the resulting DNS resolution. The caller is
+N                                responsible for allocating this buffer. Upon
+N                                return, this buffer can be accessed as an array
+N                                of IPv4 or IPv6 addresses, depending on the
+N                                protocol passed in for the family parameter.
+N                                Addresses are stored in host byte order.
+N    \param[in,out] ipAddrLen    Initially holds the number of IP addresses
+N                                that the ipAddr buffer parameter is capable of
+N                                storing. Upon successful return, the ipAddrLen
+N                                parameter contains the number of IP addresses
+N                                that were actually written into the ipAddr
+N                                buffer, as a result of successful DNS
+N                                resolution, or zero if DNS resolution failed.
+N    \param[in]     family       Protocol family
+N
+N    \return                     The interface ID of the interface which was
+N                                able to successfully run the function, or
+N                                negative on failure.\n
+N                                #SLNETERR_POOL_IS_EMPTY may be return in case
+N                                there are no resources in the system\n
+N                                Possible DNS error codes:
+N                                - #SLNETERR_NET_APP_DNS_QUERY_NO_RESPONSE
+N                                - #SLNETERR_NET_APP_DNS_NO_SERVER
+N                                - #SLNETERR_NET_APP_DNS_QUERY_FAILED
+N                                - #SLNETERR_NET_APP_DNS_MALFORMED_PACKET
+N                                - #SLNETERR_NET_APP_DNS_MISMATCHED_RESPONSE
+N
+N    \slnetutil_init_precondition
+N
+N    \warning
+N            In case an IP address in a string format is set as input, without
+N            any prefix (e.g. "1.2.3.4") the device will not try to access the
+N            DNS and it will return the input address in the \c ipAddr field
+N    \par  Example
+N    - Getting IPv4 using get host by name:
+N    \code
+N    // A buffer capable of storing a single 32-bit IPv4 address
+N    uint32_t DestIP[1];
+N
+N    // The number of IP addresses that DestIP can hold
+N    uint16_t DestIPListSize = 1;
+N
+N    int32_t ifID;
+N    int16_t  SockId;
+N    SlNetSock_AddrIn_t LocalAddr; //address of the server to connect to
+N    int32_t LocalAddrSize;
+N
+N    ifID = SlNetUtil_getHostByName(0, "www.ti.com", strlen("www.ti.com"), DestIP, &DestIPListSize, SLNETSOCK_PF_INET);
+N
+N    LocalAddr.sin_family = SLNETSOCK_AF_INET;
+N    LocalAddr.sin_addr.s_addr = SlNetUtil_htonl(DestIP[0]);
+N    LocalAddr.sin_port = SlNetUtil_htons(80);
+N    LocalAddrSize = sizeof(SlNetSock_AddrIn_t);
+N
+N    SockId = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, ifID, 0);
+N
+N    if (SockId >= 0)
+N    {
+N        status = SlNetSock_connect(SockId, (SlNetSock_Addr_t *)&LocalAddr, LocalAddrSize);
+N    }
+N    \endcode
+N*/
+Nint32_t SlNetUtil_getHostByName(uint32_t ifBitmap, char *name, const uint16_t nameLen, uint32_t *ipAddr, uint16_t *ipAddrLen, const uint8_t family);
+N
+N
+N/*!
+N    \brief Network address and service translation
+N
+N    Create an IPv4 or IPv6 socket address structure, to be used with bind()
+N    and/or connect() to create a client or server socket
+N
+N    This is a "minimal" version for support on embedded devices. Supports a
+N    host name or an IPv4 or IPv6 address string passed in via the 'node'
+N    parameter for creating a client socket.  A value of NULL should be passed
+N    for 'node' with AI_PASSIVE flag set to create a (non-loopback) server
+N    socket.
+N
+N    The caller is responsible for freeing the allocated results by calling
+N    SlNetUtil_freeAddrInfo().
+N
+N    \param[in] ifID     Specifies the interface which needs
+N                        to used for socket operations.\n
+N                        The values of the interface identifier
+N                        is defined with the prefix SLNETIF_ID_
+N                        which defined in slnetif.h
+N
+N    \param[in] node     An IP address or a host name.
+N
+N    \param[in] service  The port number of the service to bind or connect to.
+N
+N    \param[in] hints    An SlNetUtil_addrInfo_t struct used to filter the
+N                        results returned.
+N
+N    \param[out] res     one or more SlNetUtil_addrInfo_t structs, each of which
+N                        can be used to bind or connect a socket.
+N
+N    \return             Returns 0 on success, or an error code on failure.
+N
+N    \sa                 SlNetUtil_freeAddrInfo()
+N*/
+Nint32_t SlNetUtil_getAddrInfo(uint16_t ifID, const char *node,
+N        const char *service, const struct SlNetUtil_addrInfo_t *hints,
+N        struct SlNetUtil_addrInfo_t **res);
+N
+N/*!
+N    \brief Free the results returned from SlNetUtil_getAddrInfo
+N
+N    Free the chain of SlNetUtil_addrInfo_t structs allocated and returned by
+N    SlNetUtil_getAddrInfo
+N
+N    \param[in] res linked list of results returned from SlNetUtil_getAddrInfo
+N
+N    \return        None.
+N
+N    \sa            SlNetUtil_getAddrInfo()
+N*/
+Nvoid SlNetUtil_freeAddrInfo(struct SlNetUtil_addrInfo_t *res);
+N
+N/*!
+N    \brief Reorder the bytes of a 32-bit unsigned value
+N
+N    This function is used to reorder the bytes of a 32-bit unsigned value
+N    from host order to network order.
+N
+N    \param[in] val              Variable in host order
+N
+N    \return                     Return the variable in network order
+N
+N    \slnetutil_init_precondition
+N
+N    \sa         SlNetSock_bind()
+N    \sa         SlNetSock_connect()
+N    \sa         SlNetSock_recvFrom()
+N    \sa         SlNetSock_accept()
+N*/
+Nuint32_t SlNetUtil_htonl(uint32_t val);
+N
+N
+N/*!
+N    \brief Reorder the bytes of a 32-bit unsigned value
+N
+N    This function is used to reorder the bytes of a 32-bit unsigned
+N    value from network order to host order.
+N
+N    \param[in] val              Variable in network order
+N
+N    \return                     Return the variable in host order
+N
+N    \slnetutil_init_precondition
+N
+N    \sa         SlNetSock_bind()
+N    \sa         SlNetSock_connect()
+N    \sa         SlNetSock_recvFrom()
+N    \sa         SlNetSock_accept()
+N*/
+Nuint32_t SlNetUtil_ntohl(uint32_t val);
+N
+N
+N/*!
+N    \brief Reorder the bytes of a 16-bit unsigned value
+N
+N    This functions is used to reorder the bytes of a 16-bit unsigned
+N    value from host order to network order.
+N
+N    \param[in] val              Variable in host order
+N
+N    \return                     Return the variable in network order
+N
+N    \slnetutil_init_precondition
+N
+N    \sa         SlNetSock_bind()
+N    \sa         SlNetSock_connect()
+N    \sa         SlNetSock_recvFrom()
+N    \sa         SlNetSock_accept()
+N*/
+Nuint16_t SlNetUtil_htons(uint16_t val);
+N
+N
+N/*!
+N    \brief Reorder the bytes of a 16-bit unsigned value
+N
+N    This functions is used to reorder the bytes of a 16-bit unsigned value
+N    from network order to host order.
+N
+N    \param[in] val              Variable in network order
+N
+N    \return                     Return the variable in host order
+N
+N    \slnetutil_init_precondition
+N
+N    \sa         SlNetSock_bind()
+N    \sa         SlNetSock_connect()
+N    \sa         SlNetSock_recvFrom()
+N    \sa         SlNetSock_accept()
+N*/
+Nuint16_t SlNetUtil_ntohs(uint16_t val);
+N
+N/*!
+N    \brief Convert an IPv4 address in string format to binary format
+N
+N    This function converts an IPv4 address stored as a character string to a
+N    32-bit binary value in network byte order. Note that a leading zero or a
+N    "0x" in the address string are interpreted as octal or hexadecimal,
+N    respectively. The function stores the IPv4 address in the address structure
+N    pointed to by the addr parameter.
+N
+N    \param[in] str   IPv4 address string in dotted decimal format
+N
+N    \param[out] addr pointer to an IPv4 address structure. The converted binary
+N                     address is stored in this structure upon return (in network byte order)
+N
+N    \return          returns nonzero if the address string is valid, zero if not
+N*/
+Nint SlNetUtil_inetAton(const char *str, struct SlNetSock_InAddr_t *addr);
+N
+N/*!
+N    \brief Converts IP address in binary representation to string representation
+N
+N    This functions is used to converts IP address in binary representation
+N    to IP address in string representation.
+N
+N    \param[in]  addrFamily     Specifies the address family of the created
+N                               socket
+N                               For example:
+N                                 - #SLNETSOCK_AF_INET for network address IPv4
+N                                 - #SLNETSOCK_AF_INET6 for network address IPv6
+N    \param[in]  binaryAddr     Pointer to an IP address structure indicating the
+N                               address in binary representation
+N    \param[out] strAddr        Pointer to the address string representation
+N                               for IPv4 or IPv6 according to the address
+N                               family
+N    \param[in]  strAddrLen     Specifies the length of the StrAddress_dst,
+N                               the maximum length of the address in string
+N                               representation for IPv4 or IPv6 according to
+N                               the address family
+N
+N    \return                    strAddr on success, or NULL on failure
+N
+N    \slnetutil_init_precondition
+N
+N    \par    Example
+N    - IPv4 demo of inet_ntop()
+N    \code
+N        SlNetSock_AddrIn_t sa;
+N        char str[SLNETSOCK_INET_ADDRSTRLEN];
+N
+N        // store this IP address in sa:
+N        SlNetUtil_inetPton(SLNETSOCK_AF_INET, "192.0.2.33", &(sa.sin_addr));
+N        // now get it back and print it
+N        SlNetUtil_inetNtop(SLNETSOCK_AF_INET, &(sa.sin_addr), str, SLNETSOCK_INET_ADDRSTRLEN);
+N    \endcode
+N*/
+Nconst char *SlNetUtil_inetNtop(int16_t addrFamily, const void *binaryAddr, char *strAddr, SlNetSocklen_t strAddrLen);
+N
+N
+N/*!
+N    \brief Converts IP address in string representation to binary representation
+N
+N    This functions is used to converts IP address in string representation
+N    to IP address in binary representation.
+N
+N    \param[in]  addrFamily     Specifies the address family of the created
+N                               socket
+N                               For example:
+N                                 - #SLNETSOCK_AF_INET for network address IPv4
+N                                 - #SLNETSOCK_AF_INET6 for network address IPv6
+N    \param[out] strAddr        Specifies the IP address in string representation
+N                               for IPv4 or IPv6 according to the address
+N                               family
+N    \param[in]  binaryAddr     Pointer to an address structure that will be
+N                               filled by the IP address in Binary representation
+N
+N    \return                    1 on success, -1 on failure, or 0 if the input
+N                               isn't a valid IP address
+N
+N    \slnetutil_init_precondition
+N
+N    \par    Example
+N    - IPv6 demo of inet_pton()
+N    \code
+N        SlNetSock_AddrIn6_t sa;
+N
+N        // store this IP address in sa:
+N        SlNetUtil_inetPton(SLNETSOCK_AF_INET6, "0:0:0:0:0:0:0:0", &(sa.sin6_addr));
+N    \endcode
+N*/
+Nint32_t SlNetUtil_inetPton(int16_t addrFamily, const char *strAddr, void *binaryAddr);
+N
+N/*!
+N
+N Close the Doxygen group.
+N @}
+N
+N*/
+N
+N
+N#ifdef  __cplusplus
+S}
+N#endif /* __cplusplus */
+N
+N#endif /* __SL_NET_UTILS_H__ */
+L 42 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/slnetifwifi.h" 2
 N
 N#ifndef __SLNETWIFI_SOCKET_H__
 N#define __SLNETWIFI_SOCKET_H__
@@ -22644,18 +25210,19 @@ N
 N#endif /* __SOCKET_H__ */
 N
 N
-L 39 "/vagrant/Q4_04/sdk_root/source/ti/drivers/net/wifi/slnetif/slnetifwifi.c" 2
+L 39 "/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/drivers/net/wifi/slnetif/slnetifwifi.c" 2
 N
 N/*****************************************************************************/
 N/* Macro declarations                                                        */
 N/*****************************************************************************/
 N
 N/* Macro which split the 8bit security flags from the input flags            */
-N#define SPLIT_SEC_AND_INPUT_FLAGS(inputFlags, secFlags)  (secFlags = inputFlags >> 24)
+N#define SPLIT_SEC_AND_INPUT_FLAGS(inputFlags, secFlags) (secFlags = inputFlags >> 24)
 N
 N/* Disable the 8bit security flags                                           */
-N#define SECURITY_FLAGS_IN_32BIT_REPRESENTATION (0xFF000000)
-N#define DISABLE_SEC_BITS_FROM_INPUT_FLAGS(inputFlags)  (inputFlags &= ~SECURITY_FLAGS_IN_32BIT_REPRESENTATION)
+N#define SECURITY_FLAGS_IN_32BIT_REPRESENTATION          (0xFF000000)
+N#define DISABLE_SEC_BITS_FROM_INPUT_FLAGS(inputFlags)   (inputFlags &= ~SECURITY_FLAGS_IN_32BIT_REPRESENTATION)
+N
 N
 N/*****************************************************************************/
 N/* Structure/Enum declarations                                               */
@@ -22951,7 +25518,7 @@ N
 N    if ( 0 != (flags & SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY)  )
 X    if ( 0 != (flags & (1 << 0))  )
 N    {
-N        /* Start TLS session                                                     */
+N        /* Start TLS session                                                 */
 N        retVal = sl_StartTLS(sd);
 N    }
 N
@@ -23035,40 +25602,55 @@ N//
 N//*****************************************************************************
 Nint32_t SlNetIfWifi_loadSecObj(void *ifContext, uint16_t objType, char *objName, int16_t objNameLen, uint8_t *objBuff, int16_t objBuffLen)
 N{
+N    int32_t   retVal;    /* negative retVal is an error */
 N    char     *deviceFileName   = objName;
 N    int32_t   DeviceFileHandle = -1;
-N    int32_t   retVal;                //negative retVal is an error
 N    uint32_t  Offset           = 0;
 N    uint32_t  MasterToken      = 0;
 N    int32_t   OpenFlags        = 0;
+N    uint8_t   macAddress[SL_MAC_ADDR_LEN];
+X    uint8_t   macAddress[(6)];
+N    uint16_t  macAddressLen = SL_MAC_ADDR_LEN;
+X    uint16_t  macAddressLen = (6);
 N
-N    /* Check if the inputs exists                                        */
+N    /* Check if the inputs exists                                            */
 N    if ( (NULL == objName) || (NULL == objBuff) )
 X    if ( (0 == objName) || (0 == objBuff) )
 N    {
-N        /* input not valid, return error code                            */
+N        /* input not valid, return error code                                */
 N        return SLNETERR_RET_CODE_INVALID_INPUT;
 X        return (-2006L);
 N    }
 N
+N    /* Print device Mac address                                              */
+N    retVal = sl_NetCfgGet(SL_NETCFG_MAC_ADDRESS_GET, 0, &macAddressLen, &macAddress[0]);
+N
+N    /* The masterToken is the Xor combination between the mac address of
+N       the device and the object file name.                                  */
+N    MasterToken = (uint32_t)deviceFileName ^ (uint32_t)macAddress;
+N
 N    /* Create a file and write data. The file is secured, without
-N       signature and with a fail safe commit                             */
+N       signature and with a fail safe commit, with vendor token which is
+N       a Xor combination between the mac address of the device and the
+N       object file name                                                      */
 N    OpenFlags = SL_FS_CREATE;
 X    OpenFlags = ((unsigned long)0x1<<((17)+(10)));
 N    OpenFlags |= SL_FS_OVERWRITE;
 X    OpenFlags |= ((unsigned long)0x4<<((17)+(10)));
 N    OpenFlags |= SL_FS_CREATE_SECURE;
 X    OpenFlags |= ((unsigned long)0x2<<(17));
+N    OpenFlags |= SL_FS_CREATE_VENDOR_TOKEN;
+X    OpenFlags |= ((unsigned long)0x10<<(17));
 N    OpenFlags |= SL_FS_CREATE_NOSIGNATURE;
 X    OpenFlags |= ((unsigned long)0x4<<(17));
 N    OpenFlags |= SL_FS_CREATE_FAILSAFE;
 X    OpenFlags |= ((unsigned long)0x1<<(17));
 N
-N    /* Create a secure file if not exists and open it for write.         */
+N    /* Create a secure file if not exists and open it for write.             */
 N    DeviceFileHandle =  sl_FsOpen((unsigned char *)deviceFileName, OpenFlags | SL_FS_CREATE_MAX_SIZE( objBuffLen ), (unsigned long *)&MasterToken);
 X    DeviceFileHandle =  sl_FsOpen((unsigned char *)deviceFileName, OpenFlags | ((((unsigned long)objBuffLen + 255) / 256 ) & (0x1FFFF) ), (unsigned long *)&MasterToken);
 N
-N    /* Check if file created successfully                                */
+N    /* Check if file created successfully                                    */
 N    if ( DeviceFileHandle < SLNETERR_RET_CODE_OK )
 X    if ( DeviceFileHandle < (0L) )
 N    {
@@ -23076,10 +25658,10 @@ N        return DeviceFileHandle;
 N    }
 N
 N    Offset = 0;
-N    /* Write the buffer to the new file                                  */
+N    /* Write the buffer to the new file                                      */
 N    retVal = sl_FsWrite(DeviceFileHandle, Offset, (unsigned char *)objBuff, objBuffLen);
 N
-N    /* Close the file                                                    */
+N    /* Close the file                                                        */
 N    retVal = sl_FsClose(DeviceFileHandle, NULL, NULL , 0);
 X    retVal = sl_FsClose(DeviceFileHandle, 0, 0 , 0);
 N

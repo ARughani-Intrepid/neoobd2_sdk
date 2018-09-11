@@ -3,7 +3,7 @@
 #  package.bld.  Any modifications to this file will be 
 #  overwritten whenever makefiles are re-generated.
 #
-#  target compatibility key = iar.targets.arm.M4{1,0,8.11,3
+#  target compatibility key = iar.targets.arm.M4{1,0,8.20,2
 #
 ifeq (,$(MK_NOGENDEPS))
 -include package/lib/lib/iar/m4/sntp_debug/package/package_ti.net.sntp.orm4.dep
@@ -15,7 +15,7 @@ package/lib/lib/iar/m4/sntp_debug/package/package_ti.net.sntp.orm4: package/pack
 	@$(RM) $@.dep
 	$(RM) $@
 	@$(MSG) clrm4 $< ...
-	LC_ALL=C $(iar.targets.arm.M4.rootDir)/bin/iccarm  --silent --aeabi --cpu=Cortex-M4 --diag_suppress=Pa050,Go005 --endian=little -e --thumb   -I/vagrant/Q4_04/sdk_root/source/ti/posix/iar -Dxdc_target_name__=M4 -Dxdc_target_types__=iar/targets/arm/std.h -Dxdc_bld__profile_debug -Dxdc_bld__vers_1_0_8_11_3 --debug --dlib_config $(iar.targets.arm.M4.rootDir)/inc/c/DLib_Config_Normal.h -I ../bsd $(XDCINCS)  -o $@  $<
+	LC_ALL=C $(iar.targets.arm.M4.rootDir)/bin/iccarm  --silent --aeabi --cpu=Cortex-M4 --diag_suppress=Pa050,Go005 --endian=little -e --thumb   -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/iar -Dxdc_target_name__=M4 -Dxdc_target_types__=iar/targets/arm/std.h -Dxdc_bld__profile_debug -Dxdc_bld__vers_1_0_8_20_2 --debug --dlib_config $(iar.targets.arm.M4.rootDir)/inc/c/DLib_Config_Normal.h -I ../bsd $(XDCINCS)  -o $@  $<
 	
 	-@$(FIXDEP) $@.dep $@.dep
 	
@@ -25,7 +25,7 @@ package/lib/lib/iar/m4/sntp_debug/package/package_ti.net.sntp.srm4: package/pack
 	@$(RM) $@.dep
 	$(RM) $@
 	@$(MSG) clrm4 $< ...
-	LC_ALL=C $(iar.targets.arm.M4.rootDir)/bin/iccarm  --silent --aeabi --cpu=Cortex-M4 --diag_suppress=Pa050,Go005 --endian=little -e --thumb   -I/vagrant/Q4_04/sdk_root/source/ti/posix/iar -Dxdc_target_name__=M4 -Dxdc_target_types__=iar/targets/arm/std.h -Dxdc_bld__profile_debug -Dxdc_bld__vers_1_0_8_11_3 --debug --dlib_config $(iar.targets.arm.M4.rootDir)/inc/c/DLib_Config_Normal.h -I ../bsd $(XDCINCS)  -o $@  $<
+	LC_ALL=C $(iar.targets.arm.M4.rootDir)/bin/iccarm  --silent --aeabi --cpu=Cortex-M4 --diag_suppress=Pa050,Go005 --endian=little -e --thumb   -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/iar -Dxdc_target_name__=M4 -Dxdc_target_types__=iar/targets/arm/std.h -Dxdc_bld__profile_debug -Dxdc_bld__vers_1_0_8_20_2 --debug --dlib_config $(iar.targets.arm.M4.rootDir)/inc/c/DLib_Config_Normal.h -I ../bsd $(XDCINCS)  -o $@  $<
 	
 	-@$(FIXDEP) $@.dep $@.dep
 	
@@ -40,7 +40,7 @@ package/lib/lib/iar/m4/sntp_debug/sntp.orm4: sntp.c lib/iar/m4/sntp_debug.a.mak
 	@$(RM) $@.dep
 	$(RM) $@
 	@$(MSG) clrm4 $< ...
-	LC_ALL=C $(iar.targets.arm.M4.rootDir)/bin/iccarm  --silent --aeabi --cpu=Cortex-M4 --diag_suppress=Pa050,Go005 --endian=little -e --thumb   -I/vagrant/Q4_04/sdk_root/source/ti/posix/iar -Dxdc_target_name__=M4 -Dxdc_target_types__=iar/targets/arm/std.h -Dxdc_bld__profile_debug -Dxdc_bld__vers_1_0_8_11_3 --debug --dlib_config $(iar.targets.arm.M4.rootDir)/inc/c/DLib_Config_Normal.h -I ../bsd $(XDCINCS)  -o $@  $<
+	LC_ALL=C $(iar.targets.arm.M4.rootDir)/bin/iccarm  --silent --aeabi --cpu=Cortex-M4 --diag_suppress=Pa050,Go005 --endian=little -e --thumb   -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/iar -Dxdc_target_name__=M4 -Dxdc_target_types__=iar/targets/arm/std.h -Dxdc_bld__profile_debug -Dxdc_bld__vers_1_0_8_20_2 --debug --dlib_config $(iar.targets.arm.M4.rootDir)/inc/c/DLib_Config_Normal.h -I ../bsd $(XDCINCS)  -o $@  $<
 	
 	-@$(FIXDEP) $@.dep $@.dep
 	
@@ -50,7 +50,7 @@ package/lib/lib/iar/m4/sntp_debug/sntp.srm4: sntp.c lib/iar/m4/sntp_debug.a.mak
 	@$(RM) $@.dep
 	$(RM) $@
 	@$(MSG) clrm4 $< ...
-	LC_ALL=C $(iar.targets.arm.M4.rootDir)/bin/iccarm  --silent --aeabi --cpu=Cortex-M4 --diag_suppress=Pa050,Go005 --endian=little -e --thumb   -I/vagrant/Q4_04/sdk_root/source/ti/posix/iar -Dxdc_target_name__=M4 -Dxdc_target_types__=iar/targets/arm/std.h -Dxdc_bld__profile_debug -Dxdc_bld__vers_1_0_8_11_3 --debug --dlib_config $(iar.targets.arm.M4.rootDir)/inc/c/DLib_Config_Normal.h -I ../bsd $(XDCINCS)  -o $@  $<
+	LC_ALL=C $(iar.targets.arm.M4.rootDir)/bin/iccarm  --silent --aeabi --cpu=Cortex-M4 --diag_suppress=Pa050,Go005 --endian=little -e --thumb   -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/iar -Dxdc_target_name__=M4 -Dxdc_target_types__=iar/targets/arm/std.h -Dxdc_bld__profile_debug -Dxdc_bld__vers_1_0_8_20_2 --debug --dlib_config $(iar.targets.arm.M4.rootDir)/inc/c/DLib_Config_Normal.h -I ../bsd $(XDCINCS)  -o $@  $<
 	
 	-@$(FIXDEP) $@.dep $@.dep
 	

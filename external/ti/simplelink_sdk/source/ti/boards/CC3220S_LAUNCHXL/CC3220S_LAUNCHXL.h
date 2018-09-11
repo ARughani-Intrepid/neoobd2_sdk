@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Texas Instruments Incorporated
+ * Copyright (c) 2016-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,6 +91,8 @@ typedef enum CC3220S_LAUNCHXL_CryptoName {
 typedef enum CC3220S_LAUNCHXL_GPIOName {
     CC3220S_LAUNCHXL_GPIO_SW2 = 0,
     CC3220S_LAUNCHXL_GPIO_SW3,
+    CC3220S_LAUNCHXL_SPI_MASTER_READY,
+    CC3220S_LAUNCHXL_SPI_SLAVE_READY,
     CC3220S_LAUNCHXL_GPIO_LED_D7,
 
     /*
@@ -100,6 +102,11 @@ typedef enum CC3220S_LAUNCHXL_GPIOName {
      */
     /* CC3220S_LAUNCHXL_GPIO_LED_D6, */
     /* CC3220S_LAUNCHXL_GPIO_LED_D5, */
+
+    /* Sharp 96x96 LCD Pins */
+    CC3220S_LAUNCHXL_LCD_CS,
+    CC3220S_LAUNCHXL_LCD_POWER,
+    CC3220S_LAUNCHXL_LCD_ENABLE,
 
     CC3220S_LAUNCHXL_GPIOCOUNT
 } CC3220S_LAUNCHXL_GPIOName;

@@ -41,19 +41,23 @@
 #include <ti/drivers/net/wifi/source/protocol.h>
 #include <ti/drivers/net/wifi/source/driver.h>
 #include <ti/drivers/net/wifi/source/flowcont.h>
-#ifdef SL_INC_INTERNAL_ERRNO
-#include <ti/drivers/net/wifi/bsd/errno.h>
-#endif
 /*****************************************************************************/
 /* Macro declarations                                                        */
 /*****************************************************************************/
 
+#ifndef SL_PLATFORM_MULTI_THREADED
+
+#define GLOBAL_LOCK_CONTEXT_OWNER_APP     (1)
+#define GLOBAL_LOCK_CONTEXT_OWNER_SPAWN   (2)
+
+_u8 gGlobalLockContextOwner = GLOBAL_LOCK_CONTEXT_OWNER_APP;
+
+#endif
+
 _u8 gGlobalLockCntRequested=0;
 _u8 gGlobalLockCntReleased=0;
 
-#if (defined(SL_INC_INTERNAL_ERRNO) && defined(SL_PLATFORM_MULTI_THREADED))
-extern void * pthread_self(void);
-#endif
+
 /* static functions declaration */
 static void _SlDrvUpdateApiInProgress(_i8 Value);
 
@@ -508,355 +512,20 @@ void _SlDrvHandleNetAppRequestEvents(SlNetAppRequest_t *pNetAppRequest, SlNetApp
 typedef struct
 {
     _u32 Align;
-    _SlDriverCb_t DriverCB;
+#ifdef SL_PLATFORM_MULTI_THREADED
+    _SlAsyncRespBuf_t AsyncBufPool[SL_MAX_ASYNC_BUFFERS];
+#endif
     _u8 AsyncRespBuf[SL_ASYNC_MAX_MSG_LEN];
 }_SlStatMem_t;
 
 static _SlStatMem_t g_StatMem;
 #endif
 
-#if (defined(SL_INC_INTERNAL_ERRNO) && defined(SL_PLATFORM_MULTI_THREADED))
-
-/********************************************************************
-  _SlDrvallocateErrno
-  This function finds an entry in the errno array,
-  and allocate it fot the caller thread.
-*********************************************************************/
-
-_i32* _SlDrvallocateErrno(_i32 Errno)
-{
-    _i8 Index, Found = -1;
-    _i32 Id;
-    if( SL_OS_RET_CODE_OK == sl_LockObjLock(&(g_pCB->ErrnoLockObj), SL_OS_WAIT_FOREVER))
-    {
-        Id = (_i32)pthread_self();
-        /*  Iterate through the errno array, to find an entry for this thread ID
-         *  or an empty one.
-         */
-        for(Index = 0; Index < MAX_CONCURRENT_ACTIONS; Index++ )
-        {
-            if(Id == g_pCB->Errno[Index].Id)
-            {
-                Found = Index;
-                break;
-            }
-            if(-1 == Found)
-            {
-                if(0 == g_pCB->Errno[Index].Id)
-                {
-                    Found = Index;
-                }
-            }
-        }
-        /*  If none is found, we try to overwrite an entry that was
-         *  already read by the thread calling __errno() */
-        if(-1 == Found)
-        {
-            Found = 0;
-            for(Index = 0; Index < MAX_CONCURRENT_ACTIONS; Index++ )
-            {
-                if((g_pCB->Errno[Index].Flags & SL_DRVER_ERRNO_FLAGS_UNREAD))
-                {
-                    Found = Index;
-                    break;
-                }
-                /* In case the former step fails, we write to the oldest,
-                   least significant errno entry. */
-                if((SL_ERROR_BSD_EAGAIN != g_pCB->Errno[Index].Errno) && (SL_ERROR_BSD_EALREADY != g_pCB->Errno[Index].Errno)
-                        && (SL_ERROR_BSD_ESECCERTIFICATEREVOKED != g_pCB->Errno[Index].Errno) && (SL_ERROR_BSD_ESECUNKNOWNROOTCA != g_pCB->Errno[Index].Errno)
-                        && (SL_ERROR_BSD_ESECSNOVERIFY != g_pCB->Errno[Index].Errno) && (SL_ERROR_BSD_ESECDATEERROR != g_pCB->Errno[Index].Errno))
-                {
-                    if((g_pCB->ErrnoIndex - g_pCB->Errno[Index].Index) > g_pCB->ErrnoIndex - g_pCB->Errno[Found].Index )
-                    {
-                        Found = Index;
-                    }
-                }
-            }
-        }
-        if(-1 != Found)
-        {
-            g_pCB->Errno[Found].Errno = Errno;
-            g_pCB->Errno[Found].Id    = Id;
-            g_pCB->Errno[Found].Flags = SL_DRVER_ERRNO_FLAGS_UNREAD;
-            g_pCB->Errno[Found].Index = g_pCB->ErrnoIndex;
-            g_pCB->ErrnoIndex++;
-        }
-
-        sl_LockObjUnlock(&(g_pCB->ErrnoLockObj));
-
-        return (_i32 *)(&g_pCB->Errno[Found].Errno);
-    }
-    /* The flow of the code doesn't suppose to get here,
-     * Since we're always allocating errno entry. */
-    return NULL;
-}
-
-#endif
-/********************************************************************
-  _SlDrvSetErrno
-  Go over the BSD error codes, and sets errno using the internal
-  errno management mechanism, or using an external errno infrastructure.
-*********************************************************************/
-
-_i32 _SlDrvSetErrno(_i32 Errno)
-{
-    if(Errno >= 0)
-    {
-        return Errno;
-    }
-    /*  This switch case block is necessary for translating the NWP error codes
-     *  to BSD ones. The #ifdef in each case are made in order to reduce code footprint:
-     *  This cases are compiled if and only if there's a discrepancy between the BSD error
-     *  number and the error code returned by the NWP.
-     */
-    switch(Errno)
-    {
-#if ERROR  !=  SL_ERROR_BSD_SOC_ERROR
-    case SL_ERROR_BSD_SOC_ERROR:
-        Errno = ERROR;
-        break;
-#endif
-#if INEXE != SL_ERROR_BSD_INEXE
-    case SL_ERROR_BSD_INEXE:
-        Errno = INEXE;
-        break;
-#endif
-#if EBADF != SL_ERROR_BSD_EBADF
-    case SL_ERROR_BSD_EBADF:
-        Errno = EBADF;
-        break;
-#endif
-#if ENSOCK !=  SL_ERROR_BSD_ENSOCK
-    case SL_ERROR_BSD_ENSOCK:
-        Errno = ENSOCK;
-        break;
-#endif
-#if EAGAIN != SL_ERROR_BSD_EAGAIN
-    case SL_ERROR_BSD_EAGAIN:
-        Errno = EAGAIN;
-        break;
-#endif
-#if ENOMEM != SL_ERROR_BSD_ENOMEM
-    case SL_ERROR_BSD_ENOMEM:
-        Errno = ENOMEM;
-        break;
-#endif
-#if EACCES != SL_ERROR_BSD_EACCES
-    case SL_ERROR_BSD_EACCES:
-        Errno = EACCES;
-        break;
-#endif
-#if EFAULT != SL_ERROR_BSD_EFAULT
-    case SL_ERROR_BSD_EFAULT:
-        Errno = EFAULT;
-        break;
-#endif
-#if EINVAL != SL_ERROR_BSD_EINVAL
-    case SL_ERROR_BSD_EINVAL:
-        Errno = EINVAL;
-        break;
-#endif
-#if EDESTADDRREQ != SL_ERROR_BSD_EDESTADDRREQ
-    case SL_ERROR_BSD_EDESTADDRREQ:
-        Errno = EDESTADDRREQ;
-        break;
-#endif
-#if EPROTOTYPE != SL_ERROR_BSD_EPROTOTYPE
-    case SL_ERROR_BSD_EPROTOTYPE:
-        Errno = EPROTOTYPE;
-        break;
-#endif
-#if ENOPROTOOPT != SL_ERROR_BSD_ENOPROTOOPT
-    case SL_ERROR_BSD_ENOPROTOOPT:
-        Errno = ENOPROTOOPT;
-        break;
-#endif
-#if EPROTONOSUPPORT != SL_ERROR_BSD_EPROTONOSUPPORT
-    case SL_ERROR_BSD_EPROTONOSUPPORT:
-        Errno = EPROTONOSUPPORT;
-        break;
-#endif
-#if ESOCKTNOSUPPORT != SL_ERROR_BSD_ESOCKTNOSUPPORT
-    case SL_ERROR_BSD_ESOCKTNOSUPPORT:
-        Errno = ESOCKTNOSUPPORT;
-        break;
-#endif
-#if EOPNOTSUPP != SL_ERROR_BSD_EOPNOTSUPP
-    case SL_ERROR_BSD_EOPNOTSUPP:
-        Errno = EOPNOTSUPP;
-        break;
-#endif
-#if EAFNOSUPPORT != SL_ERROR_BSD_EAFNOSUPPORT
-    case SL_ERROR_BSD_EAFNOSUPPORT:
-        Errno = EAFNOSUPPORT;
-        break;
-#endif
-#if EADDRINUSE != SL_ERROR_BSD_EADDRINUSE
-    case SL_ERROR_BSD_EADDRINUSE:
-        Errno = EADDRINUSE;
-        break;
-#endif
-#if EADDRNOTAVAIL != SL_ERROR_BSD_EADDRNOTAVAIL
-    case SL_ERROR_BSD_EADDRNOTAVAIL:
-        Errno = EADDRNOTAVAIL;
-        break;
-#endif
-#if ENETUNREACH != SL_ERROR_BSD_ENETUNREACH
-    case SL_ERROR_BSD_ENETUNREACH:
-        Errno = ENETUNREACH;
-        break;
-#endif
-#if ENOBUFS != SL_ERROR_BSD_ENOBUFS
-    case SL_ERROR_BSD_ENOBUFS:
-        Errno = ENOBUFS;
-        break;
-#endif
-#if EISCONN != SL_ERROR_BSD_EISCONN
-    case SL_ERROR_BSD_EISCONN:
-        Errno = EISCONN;
-        break;
-#endif
-#if ENOTCONN != SL_ERROR_BSD_ENOTCONN
-    case SL_ERROR_BSD_ENOTCONN:
-        Errno = ENOTCONN;
-        break;
-#endif
-#if ETIMEDOUT != SL_ERROR_BSD_ETIMEDOUT
-    case SL_ERROR_BSD_ETIMEDOUT:
-        Errno = ETIMEDOUT;
-        break;
-#endif
-#if ECONNREFUSED != SL_ERROR_BSD_ECONNREFUSED
-    case SL_ERROR_BSD_ECONNREFUSED:
-        Errno = ECONNREFUSED;
-        break;
-#endif
-    /* The cases below are propriety driver errors, which can
-     * be returned by the SimpleLink Driver, in various cases of failure.
-     * Each is mapped to the corresponding BSD error.
-     */
-    case SL_POOL_IS_EMPTY:
-        Errno = ENOMEM;
-        break;
-    case SL_RET_CODE_INVALID_INPUT:
-    case SL_EZEROLEN:
-    case SL_ESMALLBUF:
-    case SL_INVALPARAM:
-        Errno = EINVAL;
-        break;
-    case SL_RET_CODE_STOP_IN_PROGRESS:
-    case SL_RET_CODE_DEV_LOCKED:
-    case SL_API_ABORTED:
-    case SL_RET_CODE_DEV_NOT_STARTED:
-    case SL_RET_CODE_PROVISIONING_IN_PROGRESS:
-        Errno = EBADE;
-        break;
-    default:
-     /* Do nothing ..
-      * If no case is true, that means that the BSD error
-      * code and the code returned by the NWP are either identical,
-      * or no propriety error has occurred.
-      */
-        break;
-    }
-#ifdef SL_INC_INTERNAL_ERRNO
-#ifdef SL_PLATFORM_MULTI_THREADED
-
-    /* Allocate an entry in the errno array */
-      _SlDrvallocateErrno(Errno);
-
-#else /* This else block refers to the no-rtos case, where we have
-         one context, hence the usage of entry zero only.
-      */
-    if(g_pCB)
-    {
-        g_pCB->Errno[0].Errno = Errno;
-    }
-#endif
-#else
-    /* In case wer'e using an external errno management,
-     * set errno's value and return -1. */
-    slcb_SetErrno(Errno);
-#endif
-
-    return SL_ERROR_BSD_SOC_ERROR;
-}
-
-#ifdef SL_INC_INTERNAL_ERRNO
-
-/********************************************************************
-  __errno
-  Allows a user to read the errno value per calling thread.
-  Available only when SL_INC_INTERNAL_ERRNO is defined.
-*********************************************************************/
-
-int * __errno(void)
-{
-    int * Ret = NULL;
-#ifdef SL_PLATFORM_MULTI_THREADED
-    _i8 Index, Found = -1;
-    _i32 Id;
-    /* Find an entry with that thread id */
-    if( SL_OS_RET_CODE_OK == sl_LockObjLock(&(g_pCB->ErrnoLockObj), SL_OS_WAIT_FOREVER))
-    {
-        Id = (_i32)pthread_self();
-        for(Index = 0; Index < MAX_CONCURRENT_ACTIONS; Index++ )
-        {
-            if(Id == g_pCB->Errno[Index].Id)
-            {
-                Found = Index;
-                break;
-            }
-        }
-        if(-1 != Found)
-        {
-            Ret = (int*)(&g_pCB->Errno[Index].Errno);
-            g_pCB->Errno[Index].Flags &= ~(SL_DRVER_ERRNO_FLAGS_UNREAD);
-        }
-
-        sl_LockObjUnlock(&(g_pCB->ErrnoLockObj));
-    }
-    /* At this point, if an entry isn't found,
-    *  In order to not return a dereferenced null pointer,
-    *  we allocate a new entry for a general BSD socket error (-1)
-    *  This call is expected to always allocate a new entry.
-    */
-   if(NULL == Ret)
-   {
-       Ret = (int *)(_SlDrvallocateErrno(SL_ERROR_BSD_SOC_ERROR));
-   }
-#else
-    if(g_pCB)
-    {
-        Ret = (int *)(&g_pCB->Errno[0].Errno);
-    }
-#endif
-    return Ret;
-}
-
-#endif
-
-_u8 _SlDrvProtectAsyncRespSetting(_u8 *pAsyncRsp, _SlActionID_e ActionID, _u8 SocketID)
-{
-    _u8 ObjIdx;
-
-    /* Use Obj to issue the command, if not available try later */
-    ObjIdx = (_u8)_SlDrvWaitForPoolObj(ActionID, SocketID);
-
-    if (MAX_CONCURRENT_ACTIONS != ObjIdx)
-    {
-        SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
-        g_pCB->ObjPool[ObjIdx].pRespArgs = pAsyncRsp;
-        SL_DRV_PROTECTION_OBJ_UNLOCK();
-    }
-
-    return ObjIdx;
-}
-
 
 /*****************************************************************************/
 /* Variables                                                                 */
 /*****************************************************************************/
+_SlDriverCb_t g_CB;
 static const _SlSyncPattern_t g_H2NSyncPattern = H2N_SYNC_PATTERN;
 
 #ifndef SL_IF_TYPE_UART
@@ -866,6 +535,7 @@ _volatile _u8           RxIrqCnt;
 
 _u16            g_SlDeviceStatus = 0;
 _SlLockObj_t    GlobalLockObj;
+_u8             g_IsGlobalLockObjInit = 0;
 
 
 #ifndef SL_TINY
@@ -921,6 +591,7 @@ const OpcodeKeyVal_t OpcodeTranslateTable[] =
     {SL_OPCODE_WLAN_PROVISIONING_STATUS_ASYNC_EVENT, SL_WLAN_EVENT_PROVISIONING_STATUS},
     {SL_OPCODE_WLAN_PROVISIONING_PROFILE_ADDED_ASYNC_RESPONSE, SL_WLAN_EVENT_PROVISIONING_PROFILE_ADDED},
     {SL_OPCODE_WLAN_RX_FILTER_ASYNC_RESPONSE,SL_WLAN_EVENT_RXFILTER},
+    {SL_OPCODE_WLAN_RESERVED_RESPONSE, SL_WLAN_EVENT_RESERVED},
 
     {SL_OPCODE_NETAPP_IPACQUIRED, SL_NETAPP_EVENT_IPV4_ACQUIRED},
     {SL_OPCODE_NETAPP_IPACQUIRED_V6, SL_NETAPP_EVENT_IPV6_ACQUIRED},
@@ -930,7 +601,9 @@ const OpcodeKeyVal_t OpcodeTranslateTable[] =
     {SL_OPCODE_NETAPP_IPV4_LOST, SL_NETAPP_EVENT_IPV4_LOST},
     {SL_OPCODE_NETAPP_DHCP_IPV4_ACQUIRE_TIMEOUT, SL_NETAPP_EVENT_DHCP_IPV4_ACQUIRE_TIMEOUT},
     {SL_OPCODE_NETAPP_IPV6_LOST_V6, SL_NETAPP_EVENT_IPV6_LOST},
-
+    {SL_OPCODE_NETAPP_RESERVED1, SL_NETAPP_EVENT_RESERVED1},
+    {SL_OPCODE_NETAPP_RESERVED2, SL_NETAPP_EVENT_RESERVED2},
+    {SL_OPCODE_NETAPP_RESERVED3, SL_NETAPP_EVENT_RESERVED3},
     {SL_OPCODE_SOCKET_TXFAILEDASYNCRESPONSE, SL_SOCKET_TX_FAILED_EVENT},
     {SL_OPCODE_SOCKET_SOCKETASYNCEVENT, SL_SOCKET_ASYNC_EVENT}
     
@@ -944,13 +617,13 @@ P_SL_DEV_PING_CALLBACK  pPingCallBackFunc = NULL;
 /*****************************************************************************/
 /* Function prototypes                                                       */
 /*****************************************************************************/
-static _SlReturnVal_t _SlDrvMsgRead(void);
+static _SlReturnVal_t _SlDrvMsgRead(_u16* outMsgReadLen, _u8** pAsyncBuf);
 static _SlReturnVal_t _SlDrvMsgWrite(_SlCmdCtrl_t  *pCmdCtrl,_SlCmdExt_t  *pCmdExt, _u8 *pTxRxDescBuff);
 static _SlReturnVal_t _SlDrvMsgReadCmdCtx(_u16 cmdOpcode, _u8 IsLockRequired);
 static _SlReturnVal_t _SlDrvClassifyRxMsg(_SlOpcode_t Opcode );
 static _SlReturnVal_t _SlDrvRxHdrRead(_u8 *pBuf);
-static void           _SlDrvAsyncEventGenericHandler(_u8 bInCmdContext);
-static void              _SlDrvRemoveFromList(_u8* ListIndex, _u8 ItemIndex);
+static void           _SlDrvAsyncEventGenericHandler(_u8 bInCmdContext, _u8 *pAsyncBuffer);
+static void           _SlDrvRemoveFromList(_u8* ListIndex, _u8 ItemIndex);
 static _SlReturnVal_t _SlDrvFindAndSetActiveObj(_SlOpcode_t  Opcode, _u8 Sd);
 static _SlReturnVal_t _SlDrvObjGlobalLockWaitForever(_u32 Flags);
 
@@ -967,12 +640,7 @@ _SlReturnVal_t _SlDrvDriverCBInit(void)
 {
     _u8          Idx =0;
 
-#ifdef SL_MEMORY_MGMT_DYNAMIC
-    g_pCB = (_SlDriverCb_t*)sl_Malloc(sizeof(_SlDriverCb_t));
-#else
-    g_pCB = &(g_StatMem.DriverCB);
-#endif
-    MALLOC_OK_CHECK(g_pCB);
+    g_pCB = &g_CB;
 
 #ifndef SL_PLATFORM_MULTI_THREADED
     {
@@ -986,21 +654,19 @@ _SlReturnVal_t _SlDrvDriverCBInit(void)
     OSI_RET_OK_CHECK( sl_SyncObjCreate(&g_pCB->CmdSyncObj, "CmdSyncObj") );
     SL_DRV_SYNC_OBJ_CLEAR(&g_pCB->CmdSyncObj);
 
-    if (GlobalLockObj == NULL)
+    if (g_IsGlobalLockObjInit == 0)
     {
         OSI_RET_OK_CHECK( sl_LockObjCreate(&GlobalLockObj, "GlobalLockObj") );
+        g_IsGlobalLockObjInit = 1;
     }
 
-#if (defined(SL_INC_INTERNAL_ERRNO) && defined(SL_PLATFORM_MULTI_THREADED))
-    /* In case the driver runs with rtos and internal errno, we create
-     * a lock object for the errno management and setting a default errno value. */
-    OSI_RET_OK_CHECK( sl_LockObjCreate(&(g_pCB->ErrnoLockObj), "ErrnoLockObj") );
-#endif
     OSI_RET_OK_CHECK( sl_LockObjCreate(&g_pCB->ProtectionLockObj, "ProtectionLockObj") );
-
+    g_pCB->NumOfDeletedSyncObj = 0;
+#if defined(slcb_SocketTriggerEventHandler)
+    g_pCB->SocketTriggerSelect.Info.ObjPoolIdx = MAX_CONCURRENT_ACTIONS;
+#endif
     /* Init Drv object */
     _SlDrvMemZero(&g_pCB->ObjPool[0], (_u16)(MAX_CONCURRENT_ACTIONS*sizeof(_SlPoolObj_t)));
-
     /* place all Obj in the free list*/
     g_pCB->FreePoolIdx = 0;
 
@@ -1016,6 +682,22 @@ _SlReturnVal_t _SlDrvDriverCBInit(void)
      g_pCB->ActivePoolIdx = MAX_CONCURRENT_ACTIONS;
      g_pCB->PendingPoolIdx = MAX_CONCURRENT_ACTIONS;
 
+#ifdef SL_PLATFORM_MULTI_THREADED
+
+#ifdef SL_MEMORY_MGMT_DYNAMIC
+    /* reset the spawn messages list */
+    g_pCB->spawnMsgList = NULL;
+#else
+    for (Idx = 0; Idx < SL_MAX_ASYNC_BUFFERS; Idx++)
+    {
+        g_StatMem.AsyncBufPool[Idx].ActionIndex = 0xFF;
+        g_StatMem.AsyncBufPool[Idx].AsyncHndlr = NULL;
+    }
+#endif
+#else
+    /* clear the global lock owner */
+    _SlDrvSetGlobalLockOwner(GLOBAL_LOCK_CONTEXT_OWNER_APP);
+#endif
     /* Flow control init */
     g_pCB->FlowContCB.TxPoolCnt = FLOW_CONT_MIN;
     OSI_RET_OK_CHECK(sl_LockObjCreate(&g_pCB->FlowContCB.TxLockObj, "TxLockObj"));
@@ -1036,11 +718,12 @@ _SlDrvDriverCBDeinit - De init Driver Control Block
 *****************************************************************************/
 _SlReturnVal_t _SlDrvDriverCBDeinit(void)
 {
-    _u8  Idx =0;
+    _SlSpawnMsgItem_t* pCurr;
+    _SlSpawnMsgItem_t* pNext;
 
     /* Flow control de-init */
     g_pCB->FlowContCB.TxPoolCnt = 0;
-
+    
     SL_SET_DEVICE_STATUS(0);
     
     SL_UNSET_DEVICE_STARTED;
@@ -1054,23 +737,23 @@ _SlReturnVal_t _SlDrvDriverCBDeinit(void)
     OSI_RET_OK_CHECK( sl_SyncObjDelete(&g_pCB->CmdSyncObj));
 
     OSI_RET_OK_CHECK( sl_LockObjDelete(&g_pCB->ProtectionLockObj) );
-        
- #ifndef SL_TINY
-    for (Idx = 0; Idx < MAX_CONCURRENT_ACTIONS; Idx++)
- #endif
-    {
-    OSI_RET_OK_CHECK( sl_SyncObjDelete(&g_pCB->ObjPool[Idx].SyncObj) );   
-    }
-    
-#if (defined(SL_INC_INTERNAL_ERRNO) && defined(SL_PLATFORM_MULTI_THREADED))
-    sl_LockObjDelete(&g_pCB->ErrnoLockObj);
-#endif
+   
     g_pCB->FreePoolIdx = 0;
     g_pCB->PendingPoolIdx = MAX_CONCURRENT_ACTIONS;
     g_pCB->ActivePoolIdx = MAX_CONCURRENT_ACTIONS;
 
 #ifdef SL_MEMORY_MGMT_DYNAMIC
-    sl_Free(g_pCB);
+    /* Release linked list of async buffers */
+    pCurr = g_pCB->spawnMsgList;
+    while (NULL != pCurr)
+    {
+        pNext = pCurr->next;
+        sl_Free(pCurr->Buffer);
+        sl_Free(pCurr);
+        pCurr = pNext;
+    }
+    g_pCB->spawnMsgList = NULL;
+    
 #endif
 
     g_pCB = NULL;
@@ -1228,7 +911,7 @@ _SlReturnVal_t _SlDrvDataReadOp(
     _SlCmdExt_t         *pCmdExt)
 {
     _SlReturnVal_t RetVal;
-    _u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16 ObjIdx = MAX_CONCURRENT_ACTIONS;
     _SlArgsData_t pArgsData;
 
     /* Validate input arguments */
@@ -1245,11 +928,15 @@ _SlReturnVal_t _SlDrvDataReadOp(
     }
 
     /*Use Obj to issue the command, if not available try later*/
-    ObjIdx = (_u8)_SlDrvWaitForPoolObj(RECV_ID, Sd & SL_BSD_SOCKET_ID_MASK);
+    ObjIdx = _SlDrvWaitForPoolObj(RECV_ID, Sd & SL_BSD_SOCKET_ID_MASK);
 
     if (MAX_CONCURRENT_ACTIONS == ObjIdx)
     {
         return SL_POOL_IS_EMPTY;
+    }
+    if (SL_RET_CODE_STOP_IN_PROGRESS == ObjIdx)
+    {
+        return SL_RET_CODE_STOP_IN_PROGRESS;
     }
 
     SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
@@ -1265,7 +952,7 @@ _SlReturnVal_t _SlDrvDataReadOp(
     SL_DRV_OBJ_LOCK_FOREVER(&g_pCB->FlowContCB.TxLockObj);
 
 
-    /* Clear SyncObj for the case it was signalled before TxPoolCnt */
+    /* Clear SyncObj for the case it was signaled before TxPoolCnt */
     /* dropped below '1' (last Data buffer was taken)  */
     /* OSI_RET_OK_CHECK( sl_SyncObjClear(&g_pCB->FlowContCB.TxSyncObj) ); */
     SL_DRV_SYNC_OBJ_CLEAR(&g_pCB->FlowContCB.TxSyncObj);
@@ -1275,14 +962,33 @@ _SlReturnVal_t _SlDrvDataReadOp(
 
         /* If TxPoolCnt was increased by other thread at this moment,
                  TxSyncObj won't wait here */
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->FlowContCB.TxSyncObj);
+#if defined (SL_PLATFORM_MULTI_THREADED)
+        if (_SlDrvIsSpawnOwnGlobalLock())
+        {
+            while (TRUE)
+            {
+                /* If we are in spawn context, this is an API which was called from event handler,
+                read any async event and check if we got signaled */
+                _SlInternalSpawnWaitForEvent();
+                /* is it mine? */
+                if (0 == sl_SyncObjWait(&g_pCB->FlowContCB.TxSyncObj, SL_OS_NO_WAIT))
+                {
+                    break;
+                }
+            }
+        }
+        else
+#endif
+        {
+            SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->FlowContCB.TxSyncObj);
+        }
        
     }
 
     SL_DRV_LOCK_GLOBAL_LOCK_FOREVER(GLOBAL_LOCK_FLAGS_UPDATE_API_IN_PROGRESS);
 
 #ifndef SL_TINY    
-    /* In case the global was succesffully taken but error in progress
+    /* In case the global was successfully taken but error in progress
     it means it has been released as part of an error handling and we should abort immediately */
     if (SL_IS_RESTART_REQUIRED)
     {
@@ -1310,17 +1016,13 @@ _SlReturnVal_t _SlDrvDataReadOp(
         if( g_pCB->SocketNonBlocking & (1<<(Sd & SL_BSD_SOCKET_ID_MASK) ))
         {
              _u16 opcodeAsyncEvent = (pCmdCtrl->Opcode ==  SL_OPCODE_SOCKET_RECV) ? SL_OPCODE_SOCKET_RECVASYNCRESPONSE : SL_OPCODE_SOCKET_RECVFROMASYNCRESPONSE; 
-             
-             SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                                           SL_DRIVER_TIMEOUT_SHORT,
-                                           opcodeAsyncEvent
-                                           );
+             VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, SL_DRIVER_TIMEOUT_SHORT, opcodeAsyncEvent));
         }
         else
 #endif         
         {
             /* Wait for response message. Will be signaled by _SlDrvMsgRead. */
-            SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, 0, 0));
         }
           
     }
@@ -1365,13 +1067,37 @@ _SlReturnVal_t _SlDrvDataWriteOp(
             /*  unblock it - return an error */
             if( g_pCB->SocketNonBlocking & (1<<(Sd & SL_BSD_SOCKET_ID_MASK) ))
             {
+#if defined (SL_PLATFORM_MULTI_THREADED)
+                if (_SlDrvIsSpawnOwnGlobalLock())
+                {
+                    _SlInternalSpawnWaitForEvent();
+                }
+#endif
                 SL_DRV_OBJ_UNLOCK(&g_pCB->FlowContCB.TxLockObj);
                 return RetVal;
             }
             /*  If TxPoolCnt was increased by other thread at this moment, */
             /*  TxSyncObj won't wait here */
-
-            SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->FlowContCB.TxSyncObj);
+#if defined (SL_PLATFORM_MULTI_THREADED)
+            if (_SlDrvIsSpawnOwnGlobalLock())
+            {
+                while (TRUE)
+                {
+                    /* If we are in spawn context, this is an API which was called from event handler,
+                    read any async event and check if we got signaled */
+                    _SlInternalSpawnWaitForEvent();
+                    /* is it mine? */
+                    if (0 == sl_SyncObjWait(&g_pCB->FlowContCB.TxSyncObj, SL_OS_NO_WAIT))
+                    {
+                       break;
+                    }
+                }
+            }
+            else
+#endif
+            {
+                SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->FlowContCB.TxSyncObj);
+            }
         }
         if(g_pCB->FlowContCB.TxPoolCnt > FLOW_CONT_MIN + allocTxPoolPkts )
         {
@@ -1496,7 +1222,7 @@ static _SlReturnVal_t _SlDrvMsgWrite(_SlCmdCtrl_t  *pCmdCtrl,_SlCmdExt_t  *pCmdE
                 /* copy the first payload reminder */
                 sl_Memcpy(&BuffInTheMiddle[0], pCmdExt->pTxPayload1 + pCmdExt->TxPayload1Len, FirstPayloadReminder);
             
-                /* add the beginnig of the second payload to complete 4-bytes transaction */
+                /* add the beginning of the second payload to complete 4-bytes transaction */
                 sl_Memcpy(&BuffInTheMiddle[FirstPayloadReminder], pCmdExt->pTxPayload2, SecondPayloadOffset);
             
                 /* write the second transaction of the 4-bytes buffer */
@@ -1507,7 +1233,7 @@ static _SlReturnVal_t _SlDrvMsgWrite(_SlCmdCtrl_t  *pCmdCtrl,_SlCmdExt_t  *pCmdE
             /* if we still has bytes to write in the second buffer  */
             if (pCmdExt->TxPayload2Len > SecondPayloadOffset)
             {
-                /* write the third transaction (trancuted second payload) */
+                /* write the third transaction (truncated second payload) */
                 NWP_IF_WRITE_CHECK(g_pCB->FD, 
                                    pCmdExt->pTxPayload2 + SecondPayloadOffset,
                                    _SL_PROTOCOL_ALIGN_SIZE(pCmdExt->TxPayload2Len - SecondPayloadOffset));
@@ -1541,7 +1267,7 @@ static _SlReturnVal_t _SlDrvMsgWrite(_SlCmdCtrl_t  *pCmdCtrl,_SlCmdExt_t  *pCmdE
 /* ******************************************************************************/
 /*  _SlDrvMsgRead  */
 /* ******************************************************************************/
-_SlReturnVal_t _SlDrvMsgRead(void)
+_SlReturnVal_t _SlDrvMsgRead(_u16* outMsgReadLen, _u8** pOutAsyncBuf)
 {
     /*  alignment for small memory models */
     union
@@ -1560,7 +1286,6 @@ _SlReturnVal_t _SlDrvMsgRead(void)
     _SlRxMsgClass_e   RxMsgClass;
 
     /* Save parameters in global CB */
-    g_pCB->FunctionParams.AsyncExt.pAsyncBuf       = NULL;
     g_pCB->FunctionParams.AsyncExt.AsyncEvtHandler = NULL;
     _SlDrvMemZero(&TailBuffer[0], sizeof(TailBuffer));
 
@@ -1604,18 +1329,22 @@ _SlReturnVal_t _SlDrvMsgRead(void)
             VERIFY_PROTOCOL(NULL == pAsyncBuf);
 
 #ifdef SL_MEMORY_MGMT_DYNAMIC
-            g_pCB->FunctionParams.AsyncExt.pAsyncBuf = (_u8*)sl_Malloc(SL_ASYNC_MAX_MSG_LEN);
+            *pOutAsyncBuf = (_u8*)sl_Malloc(SL_ASYNC_MAX_MSG_LEN);
+
 #else
-            g_pCB->FunctionParams.AsyncExt.pAsyncBuf = g_StatMem.AsyncRespBuf;
+            *pOutAsyncBuf = g_StatMem.AsyncRespBuf;
 #endif
-                /* set the local pointer to the allocated one */
-            pAsyncBuf = g_pCB->FunctionParams.AsyncExt.pAsyncBuf;
+           /* set the local pointer to the allocated one */
+            pAsyncBuf = *pOutAsyncBuf;
 
             MALLOC_OK_CHECK(pAsyncBuf);
 
             /* clear the async buffer */
             _SlDrvMemZero(pAsyncBuf, (_u16)SL_ASYNC_MAX_MSG_LEN);
             sl_Memcpy(pAsyncBuf, uBuf.TempBuf, _SL_RESP_HDR_SIZE);
+
+            /* add the protocol header length */
+            *outMsgReadLen = _SL_RESP_HDR_SIZE;
 
             if (_SL_PROTOCOL_ALIGN_SIZE(RespPayloadLen) <= SL_ASYNC_MAX_PAYLOAD_LEN)
             {
@@ -1632,6 +1361,7 @@ _SlReturnVal_t _SlDrvMsgRead(void)
                 NWP_IF_READ_CHECK(g_pCB->FD,
                                   pAsyncBuf + _SL_RESP_HDR_SIZE,
                                   AlignedLengthRecv);
+                *outMsgReadLen += AlignedLengthRecv;
             }
             /* In case ASYNC RX buffer length is smaller then the received data length, dump the rest */
             if ((_SL_PROTOCOL_ALIGN_SIZE(RespPayloadLen) > SL_ASYNC_MAX_PAYLOAD_LEN))
@@ -1927,14 +1657,14 @@ _SlReturnVal_t _SlDrvMsgRead(void)
 /* ******************************************************************************/
 /*  _SlDrvAsyncEventGenericHandler */
 /* ******************************************************************************/
-static void _SlDrvAsyncEventGenericHandler(_u8 bInCmdContext)
+static void _SlDrvAsyncEventGenericHandler(_u8 bInCmdContext, _u8 *pAsyncBuffer)
 {
     _u32 SlAsyncEvent = 0;
     _u8  OpcodeFound = FALSE; 
     _u8  i;
     
     _u32* pEventLocation  = NULL; /* This pointer will override the async buffer with the translated event type */
-    _SlResponseHeader_t  *pHdr       = (_SlResponseHeader_t *)g_pCB->FunctionParams.AsyncExt.pAsyncBuf;
+    _SlResponseHeader_t  *pHdr       = (_SlResponseHeader_t *)pAsyncBuffer;
 
 
     /* if no async event registered nothing to do..*/
@@ -1973,7 +1703,7 @@ static void _SlDrvAsyncEventGenericHandler(_u8 bInCmdContext)
         {
             DeviceEventInfo_t deviceEvent;
 
-            deviceEvent.pAsyncMsgBuff = g_pCB->FunctionParams.AsyncExt.pAsyncBuf;
+            deviceEvent.pAsyncMsgBuff = pAsyncBuffer;
             deviceEvent.bInCmdContext = bInCmdContext;
 
             g_pCB->FunctionParams.AsyncExt.AsyncEvtHandler(&deviceEvent);
@@ -1982,13 +1712,13 @@ static void _SlDrvAsyncEventGenericHandler(_u8 bInCmdContext)
         {
             /* This case handles all the async events handlers of the DEVICE & SOCK Silos which are handled internally.
             For these cases we send the async even buffer as is */
-            g_pCB->FunctionParams.AsyncExt.AsyncEvtHandler(g_pCB->FunctionParams.AsyncExt.pAsyncBuf);
+            g_pCB->FunctionParams.AsyncExt.AsyncEvtHandler(pAsyncBuffer);
         }
     }
     else
     {
        /* calculate the event type location to be filled in the async buffer */
-       pEventLocation = (_u32*)(g_pCB->FunctionParams.AsyncExt.pAsyncBuf + sizeof (_SlResponseHeader_t) - sizeof(SlAsyncEvent));
+       pEventLocation = (_u32*)(pAsyncBuffer + sizeof (_SlResponseHeader_t) - sizeof(SlAsyncEvent));
 
        /* Override the async buffer (before the data starts ) with our event type  */
        *pEventLocation = SlAsyncEvent;
@@ -2008,6 +1738,7 @@ static _SlReturnVal_t _SlDrvMsgReadCmdCtx(_u16 cmdOpcode, _u8 IsLockRequired)
 #ifndef SL_TINY
     _u32 CmdCmpltTimeout;
     _i16 RetVal=0;
+    _u8  *pAsyncBuf = NULL;
 
     /* the sl_FsOpen/sl_FsProgram APIs may take long time */
     if ((cmdOpcode == SL_OPCODE_NVMEM_FILEOPEN) || (cmdOpcode == SL_OPCODE_NVMEM_NVMEMFSPROGRAMMINGCOMMAND))
@@ -2031,10 +1762,11 @@ static _SlReturnVal_t _SlDrvMsgReadCmdCtx(_u16 cmdOpcode, _u8 IsLockRequired)
     {
         if(_SL_PENDING_RX_MSG(g_pCB))
         {
+            _u16 outMsgLen = 0;
 #ifdef SL_TINY        
-            VERIFY_RET_OK(_SlDrvMsgRead());
+            VERIFY_RET_OK(_SlDrvMsgRead(&outMsgLen));
 #else
-            RetVal = _SlDrvMsgRead();
+            RetVal = _SlDrvMsgRead(&outMsgLen,&pAsyncBuf);
 
             if (RetVal != SL_OS_RET_CODE_OK)
             {
@@ -2059,19 +1791,24 @@ static _SlReturnVal_t _SlDrvMsgReadCmdCtx(_u16 cmdOpcode, _u8 IsLockRequired)
             }
             else if (ASYNC_EVT_CLASS == g_pCB->FunctionParams.AsyncExt.RxMsgClass)
             {
-                /*  If Async event has been read in CmdResp context, check whether */
-                /*  there is a handler for this event. If there is, spawn specific */
-                /*  handler. Otherwise free the event's buffer. */
-                /*  This way there will be no "dry shots" from CmdResp context to */
-                /*  temporary context, i.e less waste of CPU and faster buffer */
-                /*  release. */
-                _SlDrvAsyncEventGenericHandler(TRUE);
                 
+#ifdef SL_PLATFORM_MULTI_THREADED
+                /* Do not handle async events in command context */
+                /* All async events data will be stored in list and handled in spawn context */
+                RetVal = _SlSpawnMsgListInsert(outMsgLen, pAsyncBuf);
+                if (SL_RET_CODE_NO_FREE_ASYNC_BUFFERS_ERROR == RetVal)
+                {
+                     _SlFindAndReleasePendingCmd();
+                }
+
+#else
+                _SlDrvAsyncEventGenericHandler(TRUE, pAsyncBuf);
+#endif
                 
 #ifdef SL_MEMORY_MGMT_DYNAMIC
-                sl_Free(g_pCB->FunctionParams.AsyncExt.pAsyncBuf);
+                sl_Free(pAsyncBuf);
 #else
-                g_pCB->FunctionParams.AsyncExt.pAsyncBuf = NULL;
+                pAsyncBuf = NULL;
 #endif
             }
 #if (defined(SL_PLATFORM_MULTI_THREADED) && !defined(slcb_SocketTriggerEventHandler))
@@ -2110,6 +1847,14 @@ static _SlReturnVal_t _SlDrvMsgReadCmdCtx(_u16 cmdOpcode, _u8 IsLockRequired)
         }
     }
 
+#ifdef SL_PLATFORM_MULTI_THREADED
+    if (_SlSpawnMsgListGetCount() > 0)
+    {
+        /* signal the spawn task to process the pending async events received during the cmd */
+        sl_Spawn((_SlSpawnEntryFunc_t)_SlDrvMsgReadSpawnCtx, NULL, SL_SPAWN_FLAG_FROM_CMD_PROCESS);
+    }
+#endif
+
     /*  If there are more pending Rx Msgs after CmdResp is received, */
     /*  that means that these are Async, Dummy or Read Data Msgs. */
     /*  Spawn _SlDrvMsgReadSpawnCtx to trigger reading these messages from */
@@ -2122,7 +1867,7 @@ static _SlReturnVal_t _SlDrvMsgReadCmdCtx(_u16 cmdOpcode, _u8 IsLockRequired)
     
     if(_SL_PENDING_RX_MSG(g_pCB))
     {
-        (void)sl_Spawn((_SlSpawnEntryFunc_t)_SlDrvMsgReadSpawnCtx, NULL, 0);
+        sl_Spawn((_SlSpawnEntryFunc_t)_SlDrvMsgReadSpawnCtx, NULL, SL_SPAWN_FLAG_FROM_CMD_CTX);
     }
 
     return SL_OS_RET_CODE_OK;
@@ -2133,19 +1878,20 @@ static _SlReturnVal_t _SlDrvMsgReadCmdCtx(_u16 cmdOpcode, _u8 IsLockRequired)
 /* ******************************************************************************/
 _SlReturnVal_t _SlDrvMsgReadSpawnCtx(void *pValue)
 {
-    _SlReturnVal_t RetVal;
+    _SlReturnVal_t RetVal = SL_OS_RET_CODE_OK;
+    _u16 outMsgLen = 0;
+    _u8  *pAsyncBuf = NULL;
 
 #ifdef SL_POLLING_MODE_USED
-    _i16 retCode = OSI_OK;
 
     /*  for polling based systems */
     do
     {
         if (GlobalLockObj != NULL)
         {
-            retCode = sl_LockObjLock(&GlobalLockObj, 0);
+            RetVal = sl_LockObjLock(&GlobalLockObj, 0);
     
-            if ( OSI_OK != retCode )
+            if (SL_OS_RET_CODE_OK != RetVal )
             {
                 if (TRUE == g_pCB->WaitForCmdResp)
                 {
@@ -2157,33 +1903,45 @@ _SlReturnVal_t _SlDrvMsgReadSpawnCtx(void *pValue)
         }
         
     }
-    while (OSI_OK != retCode);
+    while (SL_OS_RET_CODE_OK != RetVal);
 
 #else
     SL_DRV_LOCK_GLOBAL_LOCK_FOREVER(GLOBAL_LOCK_FLAGS_NONE);
 #endif
 
-    /* pValue paramater is currently not in use */
+#ifndef SL_PLATFORM_MULTI_THREADED
+    /* set the global lock owner (spawn context) */
+    _SlDrvSetGlobalLockOwner(GLOBAL_LOCK_CONTEXT_OWNER_SPAWN);
+#endif
+    /* pValue parameter is currently not in use */
     (void)pValue;
 
     /*  Messages might have been read by CmdResp context. Therefore after */
     /*  getting LockObj, check again where the Pending RX Msg is still present. */
     if(FALSE == (_SL_PENDING_RX_MSG(g_pCB)))
     {
+#ifndef SL_PLATFORM_MULTI_THREADED
+        /* clear the global lock owner (spawn context) */
+        _SlDrvSetGlobalLockOwner(GLOBAL_LOCK_CONTEXT_OWNER_APP);
+#endif
         SL_DRV_LOCK_GLOBAL_UNLOCK(FALSE);
         
         return SL_RET_CODE_OK;
     }
 
 #ifdef SL_TINY
-    VERIFY_RET_OK(_SlDrvMsgRead());
+    VERIFY_RET_OK(_SlDrvMsgRead(&outMsgLen));
 #else
-    RetVal = _SlDrvMsgRead();
+    RetVal = _SlDrvMsgRead(&outMsgLen,&pAsyncBuf);
 
     if (RetVal != SL_OS_RET_CODE_OK)
     {
         if (RetVal != SL_API_ABORTED)
         {
+#ifndef SL_PLATFORM_MULTI_THREADED
+            /* clear the global lock owner (spawn context) */
+            _SlDrvSetGlobalLockOwner(GLOBAL_LOCK_CONTEXT_OWNER_APP);
+#endif
             SL_DRV_LOCK_GLOBAL_UNLOCK(FALSE);
         }
 
@@ -2198,14 +1956,15 @@ _SlReturnVal_t _SlDrvMsgReadSpawnCtx(void *pValue)
     case ASYNC_EVT_CLASS:
         /*  If got here and protected by LockObj a message is waiting  */
         /*  to be read */
-        VERIFY_PROTOCOL(NULL != g_pCB->FunctionParams.AsyncExt.pAsyncBuf);
+        VERIFY_PROTOCOL(NULL != pAsyncBuf);
    
-        _SlDrvAsyncEventGenericHandler(FALSE);        
+        
+        _SlDrvAsyncEventGenericHandler(FALSE, pAsyncBuf);
         
 #ifdef SL_MEMORY_MGMT_DYNAMIC
-        sl_Free(g_pCB->FunctionParams.AsyncExt.pAsyncBuf);
+        sl_Free(pAsyncBuf);
 #else
-        g_pCB->FunctionParams.AsyncExt.pAsyncBuf = NULL;
+        pAsyncBuf = NULL;
 #endif
         break;
     case DUMMY_MSG_CLASS:
@@ -2225,7 +1984,10 @@ _SlReturnVal_t _SlDrvMsgReadSpawnCtx(void *pValue)
     default:
         _SL_ASSERT_ERROR(0, SL_API_ABORTED);
     }
-
+#ifndef SL_PLATFORM_MULTI_THREADED
+    /* clear the global lock owner (spawn context) */
+    _SlDrvSetGlobalLockOwner(GLOBAL_LOCK_CONTEXT_OWNER_APP);
+#endif
     SL_DRV_LOCK_GLOBAL_UNLOCK(FALSE);
 
     return(SL_RET_CODE_OK);
@@ -2463,7 +2225,7 @@ typedef union
 
 
 #ifndef SL_TINY
-_i16 _SlDrvBasicCmd(_SlOpcode_t Opcode)
+_SlReturnVal_t _SlDrvBasicCmd(_SlOpcode_t Opcode)
 {
     _SlBasicCmdMsg_u       Msg;
     _SlCmdCtrl_t           CmdCtrl;
@@ -2476,7 +2238,7 @@ _i16 _SlDrvBasicCmd(_SlOpcode_t Opcode)
 
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&CmdCtrl, &Msg, NULL));
 
-    return (_i16)Msg.Rsp.status;
+    return (_SlReturnVal_t)Msg.Rsp.status;
 }
 #endif
 
@@ -2573,10 +2335,53 @@ _SlReturnVal_t _SlDrvCmdSend(
 
 #endif
 
+
+/* ***************************************************************************** */
+/*  _SlDrvProtectAsyncRespSetting */
+/* ***************************************************************************** */
+_SlReturnVal_t _SlDrvProtectAsyncRespSetting(_u8 *pAsyncRsp, _SlActionID_e ActionID, _u8 SocketID)
+{
+    _i16 ObjIdx;
+
+    /* Use Obj to issue the command, if not available try later */
+    ObjIdx = _SlDrvWaitForPoolObj(ActionID, SocketID);
+
+    if (SL_RET_CODE_STOP_IN_PROGRESS == ObjIdx)
+    {
+        return SL_RET_CODE_STOP_IN_PROGRESS;
+    }
+    else if (MAX_CONCURRENT_ACTIONS == ObjIdx)
+    {
+        return MAX_CONCURRENT_ACTIONS;
+    }
+    else
+    {
+        SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+        g_pCB->ObjPool[ObjIdx].pRespArgs = pAsyncRsp;
+        SL_DRV_PROTECTION_OBJ_UNLOCK();
+    }
+
+    return ObjIdx;
+}
+
+
+/* ***************************************************************************** */
+/*  _SlDrvIsSpawnOwnGlobalLock */
+/* ***************************************************************************** */
+_u8 _SlDrvIsSpawnOwnGlobalLock()
+{
+#ifdef SL_PLATFORM_MULTI_THREADED
+    _u32 ThreadId = (_i32)pthread_self();
+    return _SlInternalIsItSpawnThread(ThreadId);
+#else
+    return (gGlobalLockContextOwner == GLOBAL_LOCK_CONTEXT_OWNER_SPAWN);
+#endif
+}
+
 /* ***************************************************************************** */
 /*  _SlDrvWaitForPoolObj */
 /* ***************************************************************************** */
-_u8 _SlDrvWaitForPoolObj(_u8 ActionID, _u8 SocketID)
+_SlReturnVal_t _SlDrvWaitForPoolObj(_u8 ActionID, _u8 SocketID)
 {
     _u8 CurrObjIndex = MAX_CONCURRENT_ACTIONS;
 
@@ -2616,6 +2421,16 @@ _u8 _SlDrvWaitForPoolObj(_u8 ActionID, _u8 SocketID)
     while ( ( (SL_MAX_SOCKETS > SocketID) && (g_pCB->ActiveActionsBitmap & (1<<SocketID)) ) || 
             ( (g_pCB->ActiveActionsBitmap & ( MULTI_SELECT_MASK & (1<<ActionID))) && (SL_MAX_SOCKETS == SocketID) ) )
     {
+        /* If we are in spawn context, this is an API which was called from event handler,
+        return error since there is no option to block the spawn context on the pending sync obj */
+        if (_SlDrvIsSpawnOwnGlobalLock())
+        {
+            g_pCB->ObjPool[CurrObjIndex].ActionID = 0;
+            g_pCB->ObjPool[CurrObjIndex].AdditionalData = SL_MAX_SOCKETS;
+            g_pCB->FreePoolIdx = CurrObjIndex;
+            SL_DRV_PROTECTION_OBJ_UNLOCK();
+            return MAX_CONCURRENT_ACTIONS;
+        }
         /* action in progress - move to pending list */
         g_pCB->ObjPool[CurrObjIndex].NextIndex = g_pCB->PendingPoolIdx;
         g_pCB->PendingPoolIdx = CurrObjIndex;
@@ -2623,7 +2438,15 @@ _u8 _SlDrvWaitForPoolObj(_u8 ActionID, _u8 SocketID)
         
         /* wait for action to be free */
         (void)_SlDrvSyncObjWaitForever(&g_pCB->ObjPool[CurrObjIndex].SyncObj);
-        
+        if (SL_IS_DEVICE_STOP_IN_PROGRESS)
+        {
+            OSI_RET_OK_CHECK(sl_SyncObjDelete(&g_pCB->ObjPool[CurrObjIndex].SyncObj));
+            SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+            g_pCB->NumOfDeletedSyncObj++;
+            SL_DRV_PROTECTION_OBJ_UNLOCK();
+            return SL_RET_CODE_STOP_IN_PROGRESS;
+        }
+
         /* set params and move to active (remove from pending list at _SlDrvReleasePoolObj) */
         SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
     }
@@ -2654,15 +2477,25 @@ _u8 _SlDrvWaitForPoolObj(_u8 ActionID, _u8 SocketID)
 /* ******************************************************************************/
 /*  _SlDrvReleasePoolObj */
 /* ******************************************************************************/
-void _SlDrvReleasePoolObj(_u8 ObjIdx)
+_SlReturnVal_t _SlDrvReleasePoolObj(_u8 ObjIdx)
 {
 #ifndef SL_TINY        
     _u8 PendingIndex;
 #endif
 
-     SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+    /* Delete sync obj in case stop in progress and return */
+    if (SL_IS_DEVICE_STOP_IN_PROGRESS)
+    {
+        OSI_RET_OK_CHECK(sl_SyncObjDelete(&g_pCB->ObjPool[ObjIdx].SyncObj));
+        SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+        g_pCB->NumOfDeletedSyncObj++;
+        SL_DRV_PROTECTION_OBJ_UNLOCK();
+        return SL_RET_CODE_OK;
+    }
 
-      /* In Tiny mode, there is only one object pool so no pending actions are available */
+    SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+
+    /* In Tiny mode, there is only one object pool so no pending actions are available */
 #ifndef SL_TINY
     /* go over the pending list and release other pending action if needed */
     PendingIndex = g_pCB->PendingPoolIdx;
@@ -2711,9 +2544,74 @@ void _SlDrvReleasePoolObj(_u8 ObjIdx)
     /* Here we decrement the API in progrees counter as we just released the pool object,
        which is held till the API is finished (async event received) */
     _SlDrvUpdateApiInProgress(API_IN_PROGRESS_UPDATE_DECREMENT);
-
+    return SL_RET_CODE_OK;
 }
 
+/* ******************************************************************************/
+/*  _SlDrvReleaseAllActivePendingPoolObj */
+/* ******************************************************************************/
+_SlReturnVal_t _SlDrvReleaseAllActivePendingPoolObj()
+{     
+    _u8 ActiveIndex;
+
+    SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+
+    /* go over the active list and release each action with error */
+    ActiveIndex = g_pCB->ActivePoolIdx;
+
+    while (MAX_CONCURRENT_ACTIONS > ActiveIndex)
+    {
+        /* Set error in case sync objects release due to stop device command */
+        if (g_pCB->ObjPool[ActiveIndex].ActionID == NETUTIL_CMD_ID)
+        {
+            ((_SlNetUtilCmdData_t *)(g_pCB->ObjPool[ActiveIndex].pRespArgs))->Status = SL_RET_CODE_STOP_IN_PROGRESS;
+        }
+        else if (g_pCB->ObjPool[ActiveIndex].ActionID == RECV_ID)
+        {
+            ((SlSocketResponse_t *)((_SlArgsData_t *)(g_pCB->ObjPool[ActiveIndex].pRespArgs))->pArgs)->StatusOrLen = SL_RET_CODE_STOP_IN_PROGRESS;
+        }
+        /* First 2 bytes of all async response holds the status except with NETUTIL_CMD_ID and RECV_ID */
+        else
+        {
+            ((SlSocketResponse_t *)(g_pCB->ObjPool[ActiveIndex].pRespArgs))->StatusOrLen = SL_RET_CODE_STOP_IN_PROGRESS;
+        }
+        /* Signal the pool obj*/
+        SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[ActiveIndex].SyncObj);
+        ActiveIndex = g_pCB->ObjPool[ActiveIndex].NextIndex;
+    }
+
+    /* go over the pending list and release each action */
+    ActiveIndex = g_pCB->PendingPoolIdx;
+
+    while (MAX_CONCURRENT_ACTIONS > ActiveIndex)
+    {
+        /* Signal the pool obj*/
+        SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[ActiveIndex].SyncObj);
+        ActiveIndex = g_pCB->ObjPool[ActiveIndex].NextIndex;
+    }
+
+#ifndef SL_TINY
+    /* Delete only unoccupied objects from the Free list, other obj (pending and active)
+    will be deleted from the relevant context */
+    ActiveIndex = g_pCB->FreePoolIdx;
+    while(MAX_CONCURRENT_ACTIONS > ActiveIndex)
+#endif
+    {
+        OSI_RET_OK_CHECK(sl_SyncObjDelete(&g_pCB->ObjPool[ActiveIndex].SyncObj));
+        g_pCB->NumOfDeletedSyncObj++;
+        ActiveIndex = g_pCB->ObjPool[ActiveIndex].NextIndex;
+    }
+    /* In case trigger select in progress, delete the sync obj */
+#if defined(slcb_SocketTriggerEventHandler)
+    if (MAX_CONCURRENT_ACTIONS != g_pCB->SocketTriggerSelect.Info.ObjPoolIdx)
+    {
+        OSI_RET_OK_CHECK(sl_SyncObjDelete(&g_pCB->ObjPool[g_pCB->SocketTriggerSelect.Info.ObjPoolIdx].SyncObj));
+        g_pCB->NumOfDeletedSyncObj++;
+    }
+#endif
+    SL_DRV_PROTECTION_OBJ_UNLOCK();
+    return SL_RET_CODE_OK;
+}
 
 /* ******************************************************************************/
 /* _SlDrvRemoveFromList  */
@@ -2737,19 +2635,19 @@ static void _SlDrvRemoveFromList(_u8 *ListIndex, _u8 ItemIndex)
     }
     else
     {
-              Idx = *ListIndex;
+        Idx = *ListIndex;
       
-              while(MAX_CONCURRENT_ACTIONS > Idx)
-              {
-                  /* remove from list */
-                  if (g_pCB->ObjPool[Idx].NextIndex == ItemIndex)
-                  {
-                          g_pCB->ObjPool[Idx].NextIndex = g_pCB->ObjPool[ItemIndex].NextIndex;
-                          break;
-                  }
+        while(MAX_CONCURRENT_ACTIONS > Idx)
+        {
+            /* remove from list */
+            if (g_pCB->ObjPool[Idx].NextIndex == ItemIndex)
+            {
+                g_pCB->ObjPool[Idx].NextIndex = g_pCB->ObjPool[ItemIndex].NextIndex;
+                break;
+            }
 
-                  Idx = g_pCB->ObjPool[Idx].NextIndex;
-              }
+            Idx = g_pCB->ObjPool[Idx].NextIndex;
+        }
     }
 #endif    
 }
@@ -2868,7 +2766,8 @@ static _SlReturnVal_t _SlDrvObjGlobalLockWaitForever(_u32 Flags)
 #endif
 
     gGlobalLockCntRequested++;
-    
+
+
     ret = sl_LockObjLock(&GlobalLockObj, SL_OS_WAIT_FOREVER);
 
     /*  start/stop device is in progress so return right away */
@@ -2905,7 +2804,7 @@ static _SlReturnVal_t _SlDrvObjGlobalLockWaitForever(_u32 Flags)
             /* Increment the API in progress counter */
             _SlDrvUpdateApiInProgress(API_IN_PROGRESS_UPDATE_INCREMENT);
         }
-		/* if we are in provisioning than don't abort the stop provisioning cmd.. */
+        /* if we are in provisioning than don't abort the stop provisioning cmd.. */
         else if (FALSE == IsProvStopApi )
         {
             /*  Provisioning is active so release the lock immediately as
@@ -3037,7 +2936,7 @@ void _SlDrvHandleFatalError(_u32 errorId, _u32 info1, _u32 info2)
      (void)sl_LockObjDelete(&GlobalLockObj);
      
      /* Mark the global lock as deleted */
-     GlobalLockObj = NULL;
+     g_IsGlobalLockObjInit = 0;
 
     /* signal all waiting sync objects */
     for (i=0; i< MAX_CONCURRENT_ACTIONS; i++)
@@ -3138,3 +3037,231 @@ void _SlDrvSleep(_u16 DurationInMsec)
 }
 #endif
 
+#ifndef SL_PLATFORM_MULTI_THREADED
+void _SlDrvSetGlobalLockOwner(_u8 Owner)
+{
+    gGlobalLockContextOwner = Owner;
+}
+#endif
+
+
+_SlReturnVal_t _SlDrvWaitForInternalAsyncEvent(_u8 ObjIdx , _u32 Timeout, _SlOpcode_t Opcode)
+{
+
+#if (defined(SL_PLATFORM_EXTERNAL_SPAWN) || !defined(SL_PLATFORM_MULTI_THREADED))
+    SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+    return SL_OS_RET_CODE_OK;
+#else
+    _SlTimeoutParams_t SlTimeoutInfo = { 0 };
+    if (_SlDrvIsSpawnOwnGlobalLock())
+    {
+#if (!defined (SL_TINY)) && (defined(slcb_GetTimestamp))
+        _SlDrvStartMeasureTimeout(&SlTimeoutInfo, Timeout);
+        while (!Timeout || !_SlDrvIsTimeoutExpired(&SlTimeoutInfo))
+#endif
+        {
+            /* If we are in spawn context, this is an API which was called from event handler,
+            read any async event and check if we got signaled */
+            _SlInternalSpawnWaitForEvent();
+            /* is it mine? */
+            if (0 == sl_SyncObjWait(&g_pCB->ObjPool[ObjIdx].SyncObj, SL_OS_NO_WAIT))
+            {
+                return SL_OS_RET_CODE_OK;
+            }
+        }
+        /* if timeout occured...*/
+        _SlDrvHandleFatalError(SL_DEVICE_EVENT_FATAL_CMD_TIMEOUT, Opcode, Timeout);
+        return SL_API_ABORTED;
+    }
+    else
+    {
+        if (Timeout)
+        {
+            SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj, Timeout, Opcode);
+        }
+        else
+        {
+            SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+        }
+        return SL_OS_RET_CODE_OK;
+    }
+    
+#endif
+}
+
+#if (defined(SL_PLATFORM_MULTI_THREADED) && !defined(SL_MEMORY_MGMT_DYNAMIC))
+_SlAsyncRespBuf_t* _SlGetStatSpawnListItem(_u16 AsyncEventLen)
+{
+    _u8 Idx = 0;
+    /* Find free buffer from the pool */
+    while (Idx < SL_MAX_ASYNC_BUFFERS)
+    {
+        if (0xFF == g_StatMem.AsyncBufPool[Idx].ActionIndex)
+        {
+            /* copy buffer */
+            return &g_StatMem.AsyncBufPool[Idx];
+        }
+        Idx++;
+    }
+    return NULL;
+}
+#endif
+
+#if defined(SL_PLATFORM_MULTI_THREADED)
+_SlReturnVal_t _SlSpawnMsgListInsert(_u16 AsyncEventLen, _u8 *pAsyncBuf)
+{
+    _SlReturnVal_t RetVal = SL_OS_RET_CODE_OK;
+
+    /* protect the item insertion */
+    SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+
+#ifdef SL_MEMORY_MGMT_DYNAMIC
+    _SlSpawnMsgItem_t* pCurr = NULL;
+    _SlSpawnMsgItem_t* pItem;
+
+    pItem = (_SlSpawnMsgItem_t*)sl_Malloc(sizeof(_SlSpawnMsgItem_t));
+    /* now allocate the buffer itself */
+    pItem->Buffer = (void*)sl_Malloc(AsyncEventLen);
+    pItem->next = NULL;
+    /* if list is empty point to the allocated one */
+    if (g_pCB->spawnMsgList == NULL)
+    {
+        g_pCB->spawnMsgList = pItem;
+    }
+    else
+    {
+        pCurr = g_pCB->spawnMsgList;
+        /* go to end of list */
+        while (pCurr->next != NULL)
+        {
+            pCurr = pCurr->next;
+        }
+        /* we point to last item in list - add the new one  */
+        pCurr->next = pItem;
+    }
+#else
+    _SlAsyncRespBuf_t* pItem = (_SlAsyncRespBuf_t*)_SlGetStatSpawnListItem(AsyncEventLen);
+#endif
+    if (NULL != pItem)
+    {
+        /* save the action idx */
+        pItem->ActionIndex = g_pCB->FunctionParams.AsyncExt.ActionIndex;
+        /* save the corresponding AsyncHndlr (if registered) */
+        pItem->AsyncHndlr = g_pCB->FunctionParams.AsyncExt.AsyncEvtHandler;
+        /* copy the async event that we read to the buffer */
+        sl_Memcpy(pItem->Buffer, pAsyncBuf, AsyncEventLen);
+    }
+    else
+    {
+            RetVal = SL_RET_CODE_NO_FREE_ASYNC_BUFFERS_ERROR;
+    }
+        SL_DRV_PROTECTION_OBJ_UNLOCK();
+        return RetVal;
+}
+
+_SlReturnVal_t _SlSpawnMsgListProcess()
+{
+    
+#ifdef SL_MEMORY_MGMT_DYNAMIC
+    _SlSpawnMsgItem_t* pHead = g_pCB->spawnMsgList;
+    _SlSpawnMsgItem_t* pCurr = pHead;
+    _SlSpawnMsgItem_t* pLast = pHead;
+
+    while (pCurr != NULL)
+    {
+        /* lock during action */
+        SL_DRV_LOCK_GLOBAL_LOCK_FOREVER(GLOBAL_LOCK_FLAGS_NONE);
+        /* load the async event params */
+        g_pCB->FunctionParams.AsyncExt.ActionIndex = pCurr->ActionIndex;
+        g_pCB->FunctionParams.AsyncExt.AsyncEvtHandler = pCurr->AsyncHndlr;
+
+        pLast = pCurr;
+        pCurr = pCurr->next;
+
+        /* move the list head to point to the next item (or null) */
+        g_pCB->spawnMsgList = pCurr;
+        /* Handle async event: here we are in spawn context, after context
+        * switch from command context. */
+        _SlDrvAsyncEventGenericHandler(FALSE, pLast->Buffer);
+
+        /* free the copied buffer inside the item  */
+        sl_Free(pLast->Buffer);
+
+        /* free the spawn msg item */
+        sl_Free(pLast);
+
+        SL_DRV_LOCK_GLOBAL_UNLOCK(FALSE);
+    }
+
+#else
+    _u8 i;
+
+    for (i = 0; i < SL_MAX_ASYNC_BUFFERS; i++)
+    {
+        if (0xFF != g_StatMem.AsyncBufPool[i].ActionIndex)
+        {
+            /* lock during action */
+        
+            SL_DRV_LOCK_GLOBAL_LOCK_FOREVER(GLOBAL_LOCK_FLAGS_NONE);
+
+            /* load the async event params */
+            g_pCB->FunctionParams.AsyncExt.ActionIndex = g_StatMem.AsyncBufPool[i].ActionIndex;
+            g_pCB->FunctionParams.AsyncExt.AsyncEvtHandler = g_StatMem.AsyncBufPool[i].AsyncHndlr;
+
+            /* Handle async event: here we are in spawn context, after context
+            * switch from command context. */
+            _SlDrvAsyncEventGenericHandler(FALSE, (unsigned char *)&(g_StatMem.AsyncBufPool[i].Buffer));
+
+            SL_DRV_LOCK_GLOBAL_UNLOCK(FALSE);
+	    
+            SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+            g_StatMem.AsyncBufPool[i].ActionIndex = 0xFF;
+            SL_DRV_PROTECTION_OBJ_UNLOCK();
+        }
+    }
+#endif
+    return SL_OS_RET_CODE_OK;
+}
+
+_u16 _SlSpawnMsgListGetCount()
+{
+    _u16 NumOfItems = 0;
+#ifdef SL_MEMORY_MGMT_DYNAMIC
+    _SlSpawnMsgItem_t* pCurr = g_pCB->spawnMsgList;
+
+    /* protect the item insertion  */
+    SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+    while (pCurr != NULL)
+    {
+        NumOfItems++;
+
+        pCurr = pCurr->next;
+    }
+    SL_DRV_PROTECTION_OBJ_UNLOCK();
+
+#else
+    _u8 i;
+    /* protect counting parameters  */
+    SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+
+    for (i = 0; i < SL_MAX_ASYNC_BUFFERS; i++)
+    {
+        if (0xFF != g_StatMem.AsyncBufPool[i].ActionIndex)
+        {
+            NumOfItems++;
+        }
+    }
+    SL_DRV_PROTECTION_OBJ_UNLOCK();
+#endif
+    return NumOfItems;
+}
+
+
+void _SlFindAndReleasePendingCmd()
+{
+    /* In case there is no free buffer to store the async event until context switch release the command and return specific error */
+    ((SlSocketResponse_t *)(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs))->StatusOrLen = SL_RET_CODE_NO_FREE_ASYNC_BUFFERS_ERROR;
+    /* signal pending cmd */
+    SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
+}
+#endif

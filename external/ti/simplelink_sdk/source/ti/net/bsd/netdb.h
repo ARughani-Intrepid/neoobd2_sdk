@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,27 +30,15 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*****************************************************************************/
-/* Include files                                                             */
-/*****************************************************************************/
+#ifndef ti_net_bsd_netdb__include
+#define ti_net_bsd_netdb__include
 
-#ifndef __NETDB_H__
-#define __NETDB_H__
+#include <ti/net/slneterr.h>
+#include <ti/net/slnetutils.h>
 
 #ifdef    __cplusplus
 extern "C" {
 #endif
-
-#define IPv4_ADDR_LEN                (4)
-#define IPv6_ADDR_LEN                (16)
-
-#define GET_HOST_BY_NAME_MAX_ANSWERS (5)
-/*!
-
-    \addtogroup BSD_Socket
-    @{
-
-*/
 
 typedef struct hostent
 {
@@ -63,76 +51,42 @@ typedef struct hostent
 }hostent_t;
 
 /* Flag values for getaddrinfo() */
-#define AI_PASSIVE     0x00000001
-#define AI_NUMERICHOST 0x00000004
+#define AI_PASSIVE     SLNETUTIL_AI_PASSIVE
+#define AI_NUMERICHOST SLNETUTIL_AI_NUMERICHOST
 
-struct addrinfo {
-    int              ai_flags;
-    int              ai_family;
-    int              ai_socktype;
-    int              ai_protocol;
-    size_t           ai_addrlen;
-    struct sockaddr *ai_addr;
-    char            *ai_canonname;
-    struct addrinfo *ai_next;
-};
+/* Error codes for getaddrinfo and gai_strerror */
+#define EAI_AGAIN      SLNETUTIL_EAI_AGAIN
+#define EAI_BADFLAGS   SLNETUTIL_EAI_BADFLAGS
+#define EAI_FAIL       SLNETUTIL_EAI_FAIL
+#define EAI_FAMILY     SLNETUTIL_EAI_FAMILY
+#define EAI_MEMORY     SLNETUTIL_EAI_MEMORY
+#define EAI_NONAME     SLNETUTIL_EAI_NONAME
+#define EAI_SERVICE    SLNETUTIL_EAI_SERVICE
+#define EAI_SOCKTYPE   SLNETUTIL_EAI_SOCKTYPE
+#define EAI_SYSTEM     SLNETUTIL_EAI_SYSTEM
+#define EAI_OVERFLOW   SLNETUTIL_EAI_OVERFLOW
+#define EAI_ADDRFAMILY SLNETUTIL_EAI_ADDRFAMILY
 
-extern int getaddrinfo(const char *node, const char *service,
+/* Data structure mappings for getaddrinfo */
+#define addrinfo SlNetUtil_addrInfo_t
+
+int getaddrinfo(const char *node, const char *service,
         const struct addrinfo *hints, struct addrinfo **res);
-extern void freeaddrinfo(struct addrinfo *ai);
 
-/*!
-    \brief Get host IP by name\n
-    Obtain the IP Address of machine on network, by machine name.
+static inline void freeaddrinfo(struct addrinfo *res)
+{
+    SlNetUtil_freeAddrInfo(res);
+}
 
-    \param[in]  const char *name       Host name
+static inline const char *gai_strerror(int32_t errorcode)
+{
+    return (SlNetUtil_gaiStrErr(errorcode));
+}
 
-
-    \return     Struct hostent containing the answer on success or NULL failure.\n
-
-    \sa         sl_NetAppDnsGetHostByName
-
-    \note       Note: The function isn't reentrant!
-                It utilize a static hostent struct  which holds the answer for the DNS query.
-                Calling this function form several threads may result in invalid answers.
-                A user interested in a reentrant function which resolves IP address by name,
-                can use the SimpleLink API: 'sl_NetAppDnsGetHostByName'.
-                Another option is to protect this call with a lock and copy the returned hostent
-                struct to a user buffer, before unlocking.
-
-    \warning    The parameter 'name' is assumed to be allocated by the user, and it's the
-                user's Responsibility to maintain it's validity. This field is copied (not deep copied)
-                to the struct returned by this function.
-
-    \par  Example
-
-    - Getting host by name:
-    \code
-    struct sockaddr_in sa;
-    struct hostent *host_addr;
-
-    host_addr = gethostbyname("www.cloudprovider.com");
-
-    if(!host_addr)
-    {
-        sa.sin_family = host_addr->h_addrtype;
-        memcpy(&sa.sin_addr.s_addr, host_addr->h_addr_list, host_addr->h_length);
-        sa.sin_port = htons(80);
-    }
-
-    connect(Socketfd, (struct sockaddr *)&sa, sizeof(sa));
-
-    \endcode
-*/
 struct hostent* gethostbyname(const char *name);
 
-/*!
-
- Close the Doxygen group.
- @}
-
- */
 #ifdef  __cplusplus
 }
-#endif /* __cplusplus */
-#endif /* __NETDB_ */
+#endif
+
+#endif /* ti_net_bsd_netdb__include */

@@ -117,15 +117,6 @@ typedef struct _ATCmdWlan_Set_t_
     uint8_t                 *value;
 }ATCmdWlan_Set_t;
 
-typedef struct _ATCmdWlan_Provisioning_t_
-{
-    uint8_t                 cmd;
-    uint8_t                 requestedRole;
-    uint16_t                inactivityTimeout;
-    uint32_t                flags;
-    char                    *smartConfigKey;
-}ATCmdWlan_Provisioning_t;
-
 
 //*****************************************************************************
 // AT Command Wlan Routines
@@ -276,7 +267,7 @@ int32_t ATCmdWlan_connectParse(char *buff, ATCmdWlan_Connect_t *params)
 
     \note           For more information about Security types, Enterprise networks,
                     And driver asynchronous events related to connection process,
-                    please refer to CC3120/CC3220 NWP programmer's guide (SWRU455) chapter 4.3
+                    please refer to CC31xx/CC32xx NWP programmer's guide (SWRU455)
 
     \sa             setStaticIPConfig
 
@@ -2005,121 +1996,6 @@ int32_t ATCmdWlan_getCallback(void *arg)
         ATCmd_commandResult(ATCmdWlan_getResult,params,0);
         ATCmd_okResult();
     }
-
-    return ret;
-}
-
-/*!
-    \brief          Free allocated memory
-
-    \param          params       -   Points to buffer for deallocate.
-
-    \return         Upon successful completion, the function shall return 0.
-
-*/
-int32_t ATCmdWlan_provisioningFree(ATCmdWlan_Provisioning_t *params)
-{    
-    if (params->smartConfigKey != NULL)
-    {
-        free(params->smartConfigKey);
-    }  
-    return 0;
-}
-
-
-/*!
-    \brief          Parse command.
-
-    \param          buff       -   Points to command line buffer.
-    \param          params     -   Points to create socket struct.
-
-    \return         Upon successful completion, the function shall return 0.
-                    In case of failure, this function would return an error;
-
-*/
-int32_t ATCmdWlan_provisioningParse(char *buff, ATCmdWlan_Provisioning_t *params)
-{
-    int32_t ret = 0;
-    
-    /* cmd */
-    if ((ret = StrMpl_getListVal(ATCmd_wlanProvisioningCmd,sizeof(ATCmd_wlanProvisioningCmd)/sizeof(StrMpl_List_t),&buff,&params->cmd,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_8) ) < 0)
-    {
-	    return ret;
-    }
-    /* role */
-    if ((ret = StrMpl_getListVal(ATCmd_wlanRole,sizeof(ATCmd_wlanRole)/sizeof(StrMpl_List_t),&buff,&params->requestedRole,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_8) ) < 0)
-    {
-	    return ret;
-    }
-
-    /* timeout - seconds */
-    if ((ret = StrMpl_getVal(&buff, &params->inactivityTimeout, ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_16 )) < 0)
-    {
-        return ret;
-    }
-
-    /* public key */
-    if ((ret = StrMpl_getAllocStr(&buff,(char **)&params->smartConfigKey,ATCMD_DELIM_ARG,SL_WLAN_SMART_CONFIG_KEY_LENGTH ,ATCmd_excludeDelimStr)) < 0)
-    {
-        if (ret != STRMPL_ERROR_PARAM_MISSING)
-        {
-            return ret;
-        }
-    }
-    
-    /* flags */
-    if ((ret = StrMpl_getListVal(ATCmd_wlanProvisioningFlag,sizeof(ATCmd_wlanProvisioningFlag)/sizeof(StrMpl_List_t),&buff,&params->flags,ATCMD_DELIM_TRM,STRMPL_FLAG_PARAM_SIZE_32) ) < 0)
-    {
-        if (ret != STRMPL_ERROR_PARAM_MISSING)
-        {
-            return ret;
-        }
-        ret = 0;
-    }
-    return ret;
-}
-
-/*!
-    \brief          wlan provisioning callback.
-
-    This routine starts the provisioning process.
-
-    \param          arg       -   Points to command line buffer.
-                                  This container would be passed to the parser module.
-
-    \return         Upon successful completion, the function shall return 0.
-                    In case of failure, this function would return -1;
-
-*/
-int32_t ATCmdWlan_provisioningCallback(void *arg)
-{
-    int32_t ret = 0;
-    ATCmdWlan_Provisioning_t  params;
-	
-    memset(&params, 0x0, sizeof(ATCmdWlan_Provisioning_t));
-
-    /* Call the command parser */
-    ret = ATCmdWlan_provisioningParse(arg , &params);
-	
-	if(ret < 0)
-	{
-        ATCmd_errorResult(ATCmd_errorParseStr,ret);
-        ATCmdWlan_provisioningFree(&params);
-        return -1;
-    }
-
-    /* Start provisioning */
-    ret = sl_WlanProvisioning(params.cmd, params.requestedRole, params.inactivityTimeout, params.smartConfigKey, params.flags);
-
-    if (ret < 0)
-    {
-        ATCmd_errorResult(ATCmd_errorCmdStr,ret);
-    }
-    else
-    {
-        ATCmd_okResult();
-    }
-    ATCmdWlan_provisioningFree(&params);
 
     return ret;
 }

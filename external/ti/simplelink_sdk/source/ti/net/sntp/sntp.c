@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017, Texas Instruments Incorporated
+ * Copyright (c) 2014-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,25 +28,19 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * */
+ */
 /*
  *  ======== sntp.c ========
  */
 
-//*****************************************************************************
-// includes
-//*****************************************************************************
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
 #include <ti/net/slnetsock.h>
+#include <ti/net/slnetutils.h>
 #include <ti/net/sntp/sntp.h>
-
-//*****************************************************************************
-//defines
-//*****************************************************************************
 
 #define SNTP_PORT           123
 
@@ -74,11 +68,6 @@
 /* NTP mode defined in RFC 4330 */
 #define SNTP_MODE_CLIENT 3
 
-
-//*****************************************************************************
-//Typedefs
-//*****************************************************************************
-
 /* SNTP Header (as specified in RFC 4330) */
 typedef struct _SNTP_Header_t_
 {
@@ -104,9 +93,6 @@ typedef struct _SNTP_Header_t_
     uint32_t transmitTS[2];
 } SNTP_Header_t;
 
-//*****************************************************************************
-// Globals
-//*****************************************************************************
 static const char * SNTP_internalServersList[] = {
     "time.google.com",
     "time.nist.gov",
@@ -115,18 +101,11 @@ static const char * SNTP_internalServersList[] = {
     "nist-time-server.eoni.com",
 };
 
-//*****************************************************************************
-// Prototypes
-//*****************************************************************************
 static int32_t getAddrByName(const char *name, uint32_t *addr,
         uint16_t *family);
 static int32_t hasKissCode(char *str);
 static int32_t getTime(SlNetSock_Addr_t *server, uint16_t ifID,
         SlNetSock_Timeval_t *timeout, uint64_t *ntpTimeStamp);
-
-//*****************************************************************************
-// Functions
-//*****************************************************************************
 
 /*
  *  ======== getAddrByName ========

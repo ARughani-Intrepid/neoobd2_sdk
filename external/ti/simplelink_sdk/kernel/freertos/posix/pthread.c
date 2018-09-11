@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2016-2018 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -135,15 +135,15 @@ typedef struct pthread_Obj {
 static void _pthread_runStub(void  *arg);
 
 /*
- *  Default pthread attributes.  These are implementation
- *  dependent.
+ *  ======== defaultPthreadAttrs ========
  */
 static pthread_attr_t defaultPthreadAttrs = {
-    1,                        /* priority */
-    NULL,                     /* stack */
-    configMINIMAL_STACK_SIZE, /* stacksize */
-    0,                        /*  guardsize */
-    PTHREAD_CREATE_JOINABLE   /* detachstate */
+    1,                          /* priority */
+    NULL,                       /* stack */
+    configPOSIX_STACK_SIZE      /* stacksize - must align for all kernels */
+        * sizeof(portSTACK_TYPE),
+    0,                          /* guardsize */
+    PTHREAD_CREATE_JOINABLE     /* detachstate */
 };
 
 static void removeThreadKeys(pthread_t pthread);
@@ -319,15 +319,12 @@ int pthread_cancel(pthread_t pthread)
         removeThreadKeys(pthread);
 
         if (thread->detached) {
-            /* TODO: Clean up */
-            vPortFree(thread);
-
-            /*
-             *  Tasks must not return (attempting to do so will result
+            /*  Tasks must not return (attempting to do so will result
              *  in configASSERT() if defined).  If the task must exit, it
              *  must call vTaskDelete(NULL) to ensure a clean exit.
              */
             vTaskDelete(thread->freeRTOSTask);
+            vPortFree(thread);
         }
         else {
             /* The joining thread will clean up */
@@ -351,7 +348,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
     BaseType_t        status;
     pthread_Obj      *thread = NULL;
     pthread_attr_t   *pAttr;
-    int               retVal;
+    int               retVal = 0;
     bool              schedulerStarted;
 
     pAttr = (attr == NULL) ? &defaultPthreadAttrs : (pthread_attr_t *)attr;
@@ -395,24 +392,31 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 
     status = xTaskCreate((TaskFunction_t)_pthread_runStub, NULL /* name */,
             ((uint16_t)pAttr->stacksize) / sizeof(portSTACK_TYPE),
-            (void *)thread, pAttr->priority,
-            &(thread->freeRTOSTask));
+            (void *)thread, pAttr->priority, &(thread->freeRTOSTask));
 
-    retVal = (status == pdPASS) ? 0 : ENOMEM;
+    if (status == pdPASS) {
+        /*  Set the task tag to the pthread object so we can use it
+         *  in pthread_self().
+         */
+        vTaskSetApplicationTaskTag(thread->freeRTOSTask,
+                (TaskHookFunction_t)thread);
+    }
+    else {
+        if (thread->joinSem != NULL) {
+            vSemaphoreDelete(thread->joinSem);
+        }
+        vPortFree(thread);
+        thread = NULL;
+        retVal = ENOMEM;
+    }
 
-    /*
-     *  Set the task tag to the pthread object so we can use it
-     *  in pthread_self().
-     */
-    vTaskSetApplicationTaskTag(thread->freeRTOSTask,
-            (TaskHookFunction_t)thread);
+    /* store thread handle before releasing the scheduler */
+    *newthread = (pthread_t)thread;
 
     if (schedulerStarted) {
         /* Re-enable the scheduler */
         xTaskResumeAll();
     }
-
-    *newthread = (pthread_t)thread;
 
     return (retVal);
 }
@@ -424,6 +428,9 @@ int pthread_detach(pthread_t pthread)
 {
     pthread_Obj  *thread = (pthread_Obj *)pthread;
 
+    /* Disable the scheduler */
+    vTaskSuspendAll();
+
     if (!thread->detached) {
         /*
          *  If a thread has already joined this thread, the joining
@@ -434,6 +441,9 @@ int pthread_detach(pthread_t pthread)
         }
         thread->detached = true;
     }
+
+    /* Re-enable the scheduler */
+    xTaskResumeAll();
 
     return (0);
 }
@@ -451,7 +461,8 @@ int pthread_equal(pthread_t pt1, pthread_t pt2)
  */
 void pthread_exit(void *retval)
 {
-    pthread_Obj      *thread = (pthread_Obj *)pthread_self();
+    pthread_Obj *thread = (pthread_Obj *)pthread_self();
+    int oldState;
 
     /*
      *  This function terminates the calling thread and returns
@@ -463,12 +474,8 @@ void pthread_exit(void *retval)
      */
     thread->ret = retval;
 
-    /*
-     *  Don't bother disabling the Task scheduler while the thread
-     *  is exiting.  It will be up to the application to not make
-     *  such calls as pthread_cancel() or pthread_detach() while the
-     *  thread is exiting.
-     */
+    /* prevent thread cancellation while terminating myself */
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldState);
 
     /* Pop and execute the cleanup handlers */
     while (thread->cleanupList != NULL) {
@@ -476,7 +483,7 @@ void pthread_exit(void *retval)
     }
 
     /* Cleanup any pthread specific data */
-    //thread_removeThreadKeys((pthread_t)thread);
+    removeThreadKeys((pthread_t)thread);
 
     if (!thread->detached) {
         xSemaphoreGive(thread->joinSem);
@@ -525,6 +532,10 @@ void *pthread_getspecific(pthread_key_t key)
     pthread_Obj        *thread = (pthread_Obj *)pthread_self();
     ThreadKeyData      *threadData;
     void               *specData = NULL;
+    int                 oldState;
+
+    /* prevent thread cancellation while holding the mutex */
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldState);
 
     xSemaphoreTake(mutex, portMAX_DELAY);
 
@@ -540,6 +551,9 @@ void *pthread_getspecific(pthread_key_t key)
     }
 
     xSemaphoreGive(mutex);
+
+    /* restore previous cancelability state, this may never return */
+    pthread_setcancelstate(oldState, &oldState);
 
     return (specData);
 }
@@ -594,9 +608,9 @@ int pthread_join(pthread_t pthread, void **thread_return)
     /* Clean up the joined thread */
     vSemaphoreDelete(thread->joinSem);
 
-    vPortFree(thread);
-
     vTaskDelete(thread->freeRTOSTask);
+
+    vPortFree(thread);
 
     return (0);
 }
@@ -648,6 +662,10 @@ int pthread_key_delete(pthread_key_t key)
     pthread_key_Obj    *keyObj = (pthread_key_Obj *)key;
     KeyData            *keyData, *next;
     ThreadKeyData      *threadData; //, *tmpThreadData;
+    int                 oldState;
+
+    /* prevent thread cancellation while holding the mutex */
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldState);
 
     xSemaphoreTake(mutex, portMAX_DELAY);
 
@@ -671,6 +689,9 @@ int pthread_key_delete(pthread_key_t key)
     vPortFree((void *)keyObj);
 
     xSemaphoreGive(mutex);
+
+    /* restore previous cancelability state, this may never return */
+    pthread_setcancelstate(oldState, &oldState);
 
     return (0);
 }
@@ -720,7 +741,7 @@ pthread_t pthread_self(void)
 /*
  *  ======== pthread_setcancelstate ========
  */
-int pthread_setcancelstate(int state, int *oldstate)
+int pthread_setcancelstate(int state, int *oldState)
 {
     pthread_Obj *thread = (pthread_Obj *)pthread_self();
 
@@ -728,8 +749,7 @@ int pthread_setcancelstate(int state, int *oldstate)
         return (EINVAL);
     }
 
-    *oldstate = thread->cancelState;
-
+    *oldState = thread->cancelState;
     thread->cancelState = state;
 
     if ((state == PTHREAD_CANCEL_ENABLE) && thread->cancelPending) {
@@ -770,13 +790,15 @@ int pthread_setspecific(pthread_key_t key, const void *value)
     KeyData            *newKeyData;
     bool                found = false;
     int                 retVal = 0;
+    int                 oldState;
 
-    /*
-     *  Traverse the list of keys set by the thread, looking for key.  If
+    /* prevent thread cancellation while holding the mutex */
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldState);
+
+    /*  Traverse the list of keys set by the thread, looking for key.  If
      *  the key is already in the list, re-assign its value.  Otherwise
      *  add the key to the thread's list.
      */
-
     xSemaphoreTake(mutex, portMAX_DELAY);
 
     threadData = (ThreadKeyData *)(thread->keyList.next);
@@ -823,6 +845,9 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 
     xSemaphoreGive(mutex);
 
+    /* restore previous cancelability state, this may never return */
+    pthread_setcancelstate(oldState, &oldState);
+
     return (retVal);
 }
 
@@ -866,11 +891,15 @@ void _pthread_cleanup_push(struct _pthread_cleanup_context *context,
 /*
  *  ======== _pthread_runStub ========
  */
-static void _pthread_runStub(void  *arg)
+static void _pthread_runStub(void *arg)
 {
     pthread_Obj *thread = (pthread_Obj *)arg;
+    int oldState;
 
     thread->ret = thread->fxn(thread->arg);
+
+    /* prevent thread cancellation while terminating myself */
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldState);
 
     /* Pop and execute the cleanup handlers */
     while (thread->cleanupList != NULL) {
@@ -889,8 +918,7 @@ static void _pthread_runStub(void  *arg)
     else {
         vPortFree(thread);
 
-        /*
-         *  Tasks must not return (attempting to do so will result
+        /*  Tasks must not return (attempting to do so will result
          *  in configASSERT() if defined).  If the task must exit, it
          *  must call vTaskDelete(NULL) to ensure a clean exit.
          */

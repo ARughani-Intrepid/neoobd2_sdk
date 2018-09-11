@@ -35,6 +35,9 @@
 
 /* TI-DRIVERS Header files */
 #include <ti/drivers/net/wifi/simplelink.h>
+#include <ti/net/mqtt/mqttclient.h>
+#include <ti/net/http/httpclient.h>
+
 #include <ti/net/atcmd/atcmd_defs.h>
 #include <ti/net/atcmd/atcmd_device.h>
 #include <ti/net/atcmd/atcmd_wlan.h>
@@ -43,66 +46,259 @@
 #include <ti/net/atcmd/atcmd_netapp.h>
 #include <ti/net/atcmd/atcmd_netcfg.h>
 #include <ti/net/atcmd/atcmd_netutil.h>
+#include <ti/net/atcmd/atcmd_mqtt.h>
+#include <ti/net/atcmd/atcmd_http.h>
 
 ATCmd_List_t ATCmd_list[] =
 {
-                                    /* command */               /* Command callback */                    /* Command usage */              /* Blocked command */  /* Num parameters*/ /* index */
-/* Start cmd        */              { ATCmd_devStartStr,              ATCmdDev_startCallback,             ATCmd_devStartUsageStr,                   0,                  0,              0 },
-/* Stop cmd         */              { ATCmd_devStopStr,               ATCmdDev_stopCallback,              ATCmd_devStopUsageStr,                    0,                  1,              1 },
-/* Test cmd         */              { ATCmd_devTestStr,               ATCmdDev_testCallback,              ATCmd_devTestUsageStr,                    0,                  0,              2 },
-/* Get cmd          */              { ATCmd_devGetStr,                ATCmdDev_getCallback,               ATCmd_devGetUsageStr,                     0,                  2,              3 },
-/* Set cmd          */              { ATCmd_devSetStr,                ATCmdDev_setCallback,               ATCmd_devSetUsageStr,                     0,                  0xFF,           4 },
-/* Connect cmd      */              { ATCmd_wlanConnectStr,           ATCmdWlan_connectCallback,          ATCmd_wlanConnectUsageStr,                0,                  7,              5 },
-/* Scan cmd         */              { ATCmd_wlanScanStr,              ATCmdWlan_scanCallback,             ATCmd_wlanScanUsageStr,                   1,                  2,              6 },
-/* Disconnect cmd   */              { ATCmd_wlanDisconnectStr,        ATCmdWlan_disconnectCallback,       ATCmd_wlanDisconnectUsageStr,             0,                  0,              7 },
-/* Add profile cmd  */              { ATCmd_wlanProfileAddStr,        ATCmdWlan_profileAddCallback,       ATCmd_wlanProfileAddUsageStr,             0,                  8,              8 },
-/* Get profile cmd  */              { ATCmd_wlanProfileGetStr,        ATCmdWlan_profileGetCallback,       ATCmd_wlanProfileGetUsageStr,             0,                  1,              9 },
-/* Del profile cmd  */              { ATCmd_wlanProfileDelStr,        ATCmdWlan_profileDelCallback,       ATCmd_wlanProfileDelUsageStr,             0,                  1,              10 },
-/* Set policy cmd   */              { ATCmd_wlanPolicySetStr,         ATCmdWlan_policySetCallback,        ATCmd_wlanPolicySetUsageStr,              0,                  3,              11 },
-/* Get policy cmd   */              { ATCmd_wlanPolicyGetStr,         ATCmdWlan_policyGetCallback,        ATCmd_wlanPolicyGetUsageStr,              0,                  1,              12 },
-/* Set mode cmd     */              { ATCmd_wlanSetModeStr,           ATCmdWlan_setModeCallback,          ATCmd_wlanSetModeUsageStr,                0,                  1,              13 },
-/* Set  cmd         */              { ATCmd_wlanSetStr,               ATCmdWlan_setCallback,              ATCmd_wlanSetUsageStr,                    0,                  0xFF,           14 },
-/* Get  cmd         */              { ATCmd_wlanGetStr,               ATCmdWlan_getCallback,              ATCmd_wlanGetUsageStr,                    0,                  0xFF,           15 },
-/* Provisioning cmd */              { ATCmd_wlanProvisioningStr,      ATCmdWlan_provisioningCallback,     ATCmd_wlanProvisioningUsageStr,           0,                  5,              16 },
-/* Socket  cmd      */              { ATCmd_sockSocketStr,            ATCmdSock_socketCallback,           ATCmd_sockSocketUsageStr,                 0,                  3,              17 },
-/* Close  cmd       */              { ATCmd_sockCloseStr,             ATCmdSock_closeCallback,            ATCmd_sockCloseUsageStr,                  1,                  1,              18 },
-/* Accept  cmd      */              { ATCmd_sockAcceptStr,            ATCmdSock_acceptCallback,           ATCmd_sockAcceptUsageStr,                 1,                  2,              19 },
-/* Bind  cmd        */              { ATCmd_sockBindStr,              ATCmdSock_bindCallback,             ATCmd_sockBindUsageStr,                   0,                  4,              20 },
-/* Listen  cmd      */              { ATCmd_sockListenStr,            ATCmdSock_listenCallback,           ATCmd_sockListenUsageStr,                 0,                  2,              21 },
-/* Connect  cmd     */              { ATCmd_sockConnectStr,           ATCmdSock_connectCallback,          ATCmd_sockConnectUsageStr,                1,                  4,              22 },
-/* Select  cmd      */              { ATCmd_sockSelectStr,            ATCmdSock_selectCallback,           ATCmd_sockSelectUsageStr,                 1,                  4,              23 },
-/* Setsockopt  cmd  */              { ATCmd_sockSetSockOptStr,        ATCmdSock_setSockOptCallback,       ATCmd_sockSetSockOptUsageStr,             0,                  0xFF,           24 },
-/* Getsockopt  cmd  */              { ATCmd_sockGetSockOptStr,        ATCmdSock_getSockOptCallback,       ATCmd_sockGetSockOptUsageStr,             0,                  3,              25 },
-/* send  cmd        */              { ATCmd_sockSendStr,              ATCmdSock_sendCallback,             ATCmd_sockSendUsageStr,                   0,                  0xFF,           26 },
-/* recv  cmd        */              { ATCmd_sockRecvStr,              ATCmdSock_recvCallback,             ATCmd_sockRecvUsageStr,                   1,                  3,              27 },
-/* sendto  cmd      */              { ATCmd_sockSendToStr,            ATCmdSock_sendToCallback,           ATCmd_sockSendToUsageStr,                 0,                  0xFF,           28 },
-/* recvfrom  cmd    */              { ATCmd_sockRecvFromStr,          ATCmdSock_recvFromCallback,         ATCmd_sockRecvFromUsageStr,               1,                  6,              29 },
-/* file open  cmd   */              { ATCmd_fileOpenStr,              ATCmdFile_openCallback,             ATCmd_fileOpenUsageStr,                   1,                  3,              30 },
-/* file close  cmd  */              { ATCmd_fileCloseStr,             ATCmdFile_closeCallback,            ATCmd_fileCloseUsageStr,                  1,                  3,              31 },
-/* file ctl  cmd    */              { ATCmd_fileCtlStr,               ATCmdFile_ctlCallback,              ATCmd_fileCtlUsageStr,                    1,                  4,              32 },
-/* file del  cmd    */              { ATCmd_fileDelStr,               ATCmdFile_delCallback,              ATCmd_fileDelUsageStr,                    1,                  2,              33 },
-/* file getfile list cmd */         { ATCmd_fileGetFileListStr,       ATCmdFile_getFileListCallback,      ATCmd_fileGetFileListUsageStr,            1,                  0,              34 },
-/* file getinfo cmd */              { ATCmd_fileGetInfoStr,           ATCmdFile_getInfoCallback,          ATCmd_fileGetInfoUsageStr,                1,                  2,              35 },
-/* file read cmd    */              { ATCmd_fileReadStr,              ATCmdFile_readCallback,             ATCmd_fileReadUsageStr,                   1,                  4,              36 },
-/* file write cmd   */              { ATCmd_fileWriteStr,             ATCmdFile_writeCallback,            ATCmd_fileWriteUsageStr,                  1,                  0xFF,           37 },
-/* netapp start cmd */              { ATCmd_netappStartStr,           ATCmdNetapp_startCallback,          ATCmd_netappStartUsageStr,                0,                  1,              38 },
-/* netapp stop cmd  */              { ATCmd_netappStopStr,            ATCmdNetapp_stopCallback,           ATCmd_netappStopUsageStr,                 0,                  1,              39 },
-/* netapp getHostByName */          { ATCmd_netappGetHostByNameStr,   ATCmdNetapp_getHostByNameCallback,  ATCmd_netappGetHostByNameUsageStr,        1,                  2,              40 },
-/* netapp getHostByService cmd  */  { ATCmd_netappGetHostByServiceStr,ATCmdNetapp_getHostByServiceCallback,ATCmd_netappGetHostByServiceUsageStr,    1,                  2,              41 },
-/* netapp send cmd */               { ATCmd_netappSendStr,            ATCmdNetapp_sendCallback,           ATCmd_netappSendUsageStr,                 0,                  0xFF,           42 },
-/* netapp recv cmd  */              { ATCmd_netappRecvStr,            ATCmdNetapp_recvCallback,           ATCmd_netappRecvUsageStr,                 1,                  3,              43 },
-/* netapp ping cmd */               { ATCmd_netappPingStr,            ATCmdNetapp_pingCallback,           ATCmd_netappPingUsageStr,                 1,                  7,              44 },
-/* netapp getServiceList cmd  */    { ATCmd_netappGetServiceListStr,  ATCmdNetapp_getServiceListCallback, ATCmd_netappGetServiceListUsageStr,       0,                  3,              45 },
-/* netapp registerService cmd */    { ATCmd_netappRegisterServiceStr, ATCmdNetapp_registerServiceCallback,ATCmd_netappRegisterServiceUsageStr,      0,                  5,              46 },
-/* netapp unregisterService cmd  */ { ATCmd_netappUnregisterServiceStr,ATCmdNetapp_unregisterServiceCallback,ATCmd_netappUnregisterServiceUsageStr, 0,                  2,              47 },
-/* netapp set cmd  */               { ATCmd_netappSetStr,             ATCmdNetapp_setCallback,            ATCmd_netappSetUsageStr,                  0,                  0xFF,           48 },
-/* netapp get cmd  */               { ATCmd_netappGetStr,             ATCmdNetapp_getCallback,            ATCmd_netappGetUsageStr,                  0,                  2,              49 },
-/* netcfg set cmd  */               { ATCmd_netcfgSetStr,             ATCmdNetcfg_setCallback,            ATCmd_netcfgSetUsageStr,                  0,                  0xFF,           50 },
-/* netcfg get cmd  */               { ATCmd_netcfgGetStr,             ATCmdNetcfg_getCallback,            ATCmd_netcfgGetUsageStr,                  0,                  1,              51 },
-/* netutil cmd cmd  */              { ATCmd_netUtilCmdStr,            ATCmdNetUtil_cmdCallback,           ATCmd_netUtilCmdUsageStr,                 1,                  0xFF,           52 },
-/* netutil get cmd  */              { ATCmd_netUtilGetStr,            ATCmdNetUtil_getCallback,           ATCmd_netUtilGetUsageStr,                 0,                  2,              53 }
+                                    /* command */               /* Command callback */                    /* Command usage */              /* Blocked command */  /* Num parameters*/
+/* Start cmd        */              { ATCmd_devStartStr,              ATCmdDev_startCallback,             ATCmd_devStartUsageStr,                   0,                  0 },
+/* Stop cmd         */              { ATCmd_devStopStr,               ATCmdDev_stopCallback,              ATCmd_devStopUsageStr,                    0,                  1 },
+/* Test cmd         */              { ATCmd_devTestStr,               ATCmdDev_testCallback,              ATCmd_devTestUsageStr,                    0,                  0 },
+/* Get cmd          */              { ATCmd_devGetStr,                ATCmdDev_getCallback,               ATCmd_devGetUsageStr,                     0,                  2 },
+/* Set cmd          */              { ATCmd_devSetStr,                ATCmdDev_setCallback,               ATCmd_devSetUsageStr,                     0,                  0xFF},
+/* Connect cmd      */              { ATCmd_wlanConnectStr,           ATCmdWlan_connectCallback,          ATCmd_wlanConnectUsageStr,                0,                  7},
+/* Scan cmd         */              { ATCmd_wlanScanStr,              ATCmdWlan_scanCallback,             ATCmd_wlanScanUsageStr,                   1,                  2},
+/* Disconnect cmd   */              { ATCmd_wlanDisconnectStr,        ATCmdWlan_disconnectCallback,       ATCmd_wlanDisconnectUsageStr,             0,                  0},
+/* Add profile cmd  */              { ATCmd_wlanProfileAddStr,        ATCmdWlan_profileAddCallback,       ATCmd_wlanProfileAddUsageStr,             0,                  8},
+/* Get profile cmd  */              { ATCmd_wlanProfileGetStr,        ATCmdWlan_profileGetCallback,       ATCmd_wlanProfileGetUsageStr,             0,                  1},
+/* Del profile cmd  */              { ATCmd_wlanProfileDelStr,        ATCmdWlan_profileDelCallback,       ATCmd_wlanProfileDelUsageStr,             0,                  1 },
+/* Set policy cmd   */              { ATCmd_wlanPolicySetStr,         ATCmdWlan_policySetCallback,        ATCmd_wlanPolicySetUsageStr,              0,                  3 },
+/* Get policy cmd   */              { ATCmd_wlanPolicyGetStr,         ATCmdWlan_policyGetCallback,        ATCmd_wlanPolicyGetUsageStr,              0,                  1 },
+/* Set mode cmd     */              { ATCmd_wlanSetModeStr,           ATCmdWlan_setModeCallback,          ATCmd_wlanSetModeUsageStr,                0,                  1 },
+/* Set  cmd         */              { ATCmd_wlanSetStr,               ATCmdWlan_setCallback,              ATCmd_wlanSetUsageStr,                    0,                  0xFF},
+/* Get  cmd         */              { ATCmd_wlanGetStr,               ATCmdWlan_getCallback,              ATCmd_wlanGetUsageStr,                    0,                  0xFF},
+/* Socket  cmd      */              { ATCmd_sockSocketStr,            ATCmdSock_socketCallback,           ATCmd_sockSocketUsageStr,                 0,                  3 },
+/* Close  cmd       */              { ATCmd_sockCloseStr,             ATCmdSock_closeCallback,            ATCmd_sockCloseUsageStr,                  1,                  1 },
+/* Accept  cmd      */              { ATCmd_sockAcceptStr,            ATCmdSock_acceptCallback,           ATCmd_sockAcceptUsageStr,                 1,                  2 },
+/* Bind  cmd        */              { ATCmd_sockBindStr,              ATCmdSock_bindCallback,             ATCmd_sockBindUsageStr,                   0,                  4 },
+/* Listen  cmd      */              { ATCmd_sockListenStr,            ATCmdSock_listenCallback,           ATCmd_sockListenUsageStr,                 0,                  2 },
+/* Connect  cmd     */              { ATCmd_sockConnectStr,           ATCmdSock_connectCallback,          ATCmd_sockConnectUsageStr,                1,                  4 },
+/* Select  cmd      */              { ATCmd_sockSelectStr,            ATCmdSock_selectCallback,           ATCmd_sockSelectUsageStr,                 1,                  4 },
+/* Setsockopt  cmd  */              { ATCmd_sockSetSockOptStr,        ATCmdSock_setSockOptCallback,       ATCmd_sockSetSockOptUsageStr,             0,                  0xFF },
+/* Getsockopt  cmd  */              { ATCmd_sockGetSockOptStr,        ATCmdSock_getSockOptCallback,       ATCmd_sockGetSockOptUsageStr,             0,                  3 },
+/* send  cmd        */              { ATCmd_sockSendStr,              ATCmdSock_sendCallback,             ATCmd_sockSendUsageStr,                   0,                  0xFF },
+/* recv  cmd        */              { ATCmd_sockRecvStr,              ATCmdSock_recvCallback,             ATCmd_sockRecvUsageStr,                   1,                  3 },
+/* sendto  cmd      */              { ATCmd_sockSendToStr,            ATCmdSock_sendToCallback,           ATCmd_sockSendToUsageStr,                 0,                  0xFF },
+/* recvfrom  cmd    */              { ATCmd_sockRecvFromStr,          ATCmdSock_recvFromCallback,         ATCmd_sockRecvFromUsageStr,               1,                  6 },
+/* file open  cmd   */              { ATCmd_fileOpenStr,              ATCmdFile_openCallback,             ATCmd_fileOpenUsageStr,                   1,                  3 },
+/* file close  cmd  */              { ATCmd_fileCloseStr,             ATCmdFile_closeCallback,            ATCmd_fileCloseUsageStr,                  1,                  3 },
+/* file ctl  cmd    */              { ATCmd_fileCtlStr,               ATCmdFile_ctlCallback,              ATCmd_fileCtlUsageStr,                    1,                  4 },
+/* file del  cmd    */              { ATCmd_fileDelStr,               ATCmdFile_delCallback,              ATCmd_fileDelUsageStr,                    1,                  2 },
+/* file getfile list cmd */         { ATCmd_fileGetFileListStr,       ATCmdFile_getFileListCallback,      ATCmd_fileGetFileListUsageStr,            1,                  0 },
+/* file getinfo cmd */              { ATCmd_fileGetInfoStr,           ATCmdFile_getInfoCallback,          ATCmd_fileGetInfoUsageStr,                1,                  2 },
+/* file read cmd    */              { ATCmd_fileReadStr,              ATCmdFile_readCallback,             ATCmd_fileReadUsageStr,                   1,                  4 },
+/* file write cmd   */              { ATCmd_fileWriteStr,             ATCmdFile_writeCallback,            ATCmd_fileWriteUsageStr,                  1,                  0xFF },
+/* netapp start cmd */              { ATCmd_netappStartStr,           ATCmdNetapp_startCallback,          ATCmd_netappStartUsageStr,                0,                  1 },
+/* netapp stop cmd  */              { ATCmd_netappStopStr,            ATCmdNetapp_stopCallback,           ATCmd_netappStopUsageStr,                 0,                  1 },
+/* netapp getHostByName */          { ATCmd_netappGetHostByNameStr,   ATCmdNetapp_getHostByNameCallback,  ATCmd_netappGetHostByNameUsageStr,        1,                  2 },
+/* netapp getHostByService cmd  */  { ATCmd_netappGetHostByServiceStr,ATCmdNetapp_getHostByServiceCallback,ATCmd_netappGetHostByServiceUsageStr,    1,                  2 },
+/* netapp send cmd */               { ATCmd_netappSendStr,            ATCmdNetapp_sendCallback,           ATCmd_netappSendUsageStr,                 0,                  0xFF },
+/* netapp recv cmd  */              { ATCmd_netappRecvStr,            ATCmdNetapp_recvCallback,           ATCmd_netappRecvUsageStr,                 1,                  3 },
+/* netapp ping cmd */               { ATCmd_netappPingStr,            ATCmdNetapp_pingCallback,           ATCmd_netappPingUsageStr,                 1,                  7 },
+/* netapp getServiceList cmd  */    { ATCmd_netappGetServiceListStr,  ATCmdNetapp_getServiceListCallback, ATCmd_netappGetServiceListUsageStr,       0,                  3 },
+/* netapp registerService cmd */    { ATCmd_netappRegisterServiceStr, ATCmdNetapp_registerServiceCallback,ATCmd_netappRegisterServiceUsageStr,      0,                  5 },
+/* netapp unregisterService cmd  */ { ATCmd_netappUnregisterServiceStr,ATCmdNetapp_unregisterServiceCallback,ATCmd_netappUnregisterServiceUsageStr, 0,                  2 },
+/* netapp set cmd  */               { ATCmd_netappSetStr,             ATCmdNetapp_setCallback,            ATCmd_netappSetUsageStr,                  0,                  0xFF },
+/* netapp get cmd  */               { ATCmd_netappGetStr,             ATCmdNetapp_getCallback,            ATCmd_netappGetUsageStr,                  0,                  2 },
+/* netcfg set cmd  */               { ATCmd_netcfgSetStr,             ATCmdNetcfg_setCallback,            ATCmd_netcfgSetUsageStr,                  0,                  0xFF },
+/* netcfg get cmd  */               { ATCmd_netcfgGetStr,             ATCmdNetcfg_getCallback,            ATCmd_netcfgGetUsageStr,                  0,                  1 },
+/* netutil cmd cmd  */              { ATCmd_netUtilCmdStr,            ATCmdNetUtil_cmdCallback,           ATCmd_netUtilCmdUsageStr,                 1,                  0xFF },
+/* netutil get cmd  */              { ATCmd_netUtilGetStr,            ATCmdNetUtil_getCallback,           ATCmd_netUtilGetUsageStr,                 0,                  2 },
+/* mqtt client create       */      { ATCmd_mqttCreateStr,            ATCmdMqtt_createCallback,           ATCmd_mqttCreateUsageStr,                 0,                  13},
+/* mqtt client delete       */      { ATCmd_mqttDeleteStr,            ATCmdMqtt_deleteCallback,           ATCmd_mqttDeleteUsageStr,                 0,                  1},
+/* mqtt client connect      */      { ATCmd_mqttConnectStr,           ATCmdMqtt_connectCallback,          ATCmd_mqttConnectUsageStr,                0,                  1},
+/* mqtt client disconnect   */      { ATCmd_mqttDisconnectStr,        ATCmdMqtt_disconnectCallback,       ATCmd_mqttDisconnectUsageStr,             0,                  1},
+/* mqtt client publish      */      { ATCmd_mqttPublishStr,           ATCmdMqtt_publishCallback,          ATCmd_mqttPublishUsageStr,                0,                  6},
+/* mqtt client subscribe    */      { ATCmd_mqttSubscribeStr,         ATCmdMqtt_subscribeCallback,        ATCmd_mqttSubscribeUsageStr,              0,                  0xFF},
+/* mqtt client unsubscribe  */      { ATCmd_mqttUnsubscribeStr,       ATCmdMqtt_unsubscribeCallback,      ATCmd_mqttUnsubscribeUsageStr,            0,                  0xFF},
+/* mqtt client set          */      { ATCmd_mqttSetStr,               ATCmdMqtt_setCallback,              ATCmd_mqttSetUsageStr,                    0,                  0xFF},
+/* http client create       */      { ATCmd_httpCreateStr,            ATCmdHttp_createCallback,           ATCmd_httpCreateUsageStr,                 0,                  0},
+/* http client destroy      */      { ATCmd_httpDestroyStr,           ATCmdHttp_destroyCallback,          ATCmd_httpDestroyUsageStr,                0,                  1},
+/* http client connect      */      { ATCmd_httpConnectStr,           ATCmdHttp_connectCallback,          ATCmd_httpConnectUsageStr,                1,                  6},
+/* http client disconnect   */      { ATCmd_httpDisconnectStr,        ATCmdHttp_disconnectCallback,       ATCmd_httpDisconnectUsageStr,             0,                  1},
+/* http client send request */      { ATCmd_httpSendReqStr,           ATCmdHttp_sendReqCallback,          ATCmd_httpSendReqUsageStr,                0,                  7},
+/* http client response body*/      { ATCmd_httpReadResBodyStr,       ATCmdHttp_respBodyCallback,         ATCmd_httpReadResBodyUsageStr,            0,                  3},
+/* http client set header   */      { ATCmd_httpSetHeaderStr,         ATCmdHttp_setHeaderCallback,        ATCmd_httpSetHeaderUsageStr,              0,                  0xFF},
+/* http client get header   */      { ATCmd_httpGetHeaderStr,         ATCmdHttp_getHeaderCallback,        ATCmd_httpGetHeaderUsageStr,              0,                  4},
+/* http client set option   */      { ATCmd_httpSetOptStr,            ATCmdHttp_setOptCallback,           ATCmd_httpSetOptUsageStr,                 0,                  3},
+/* http client set proxy    */      { ATCmd_httpSetProxyStr,          ATCmdHttp_setProxyCallback,         ATCmd_httpSetProxyUsageStr,               0,                  3}
 
 };
+
+const uint32_t ATCmd_maxCmd = (sizeof(ATCmd_list)/sizeof(ATCmd_List_t));
+
+char ATCmd_wlanScanStr[]                    = "+wlanscan";
+char ATCmd_wlanScanUsageStr[]               = "[index],[count]";
+char ATCmd_wlanProfileAddStr[]              = "+wlanprofileadd";
+char ATCmd_wlanProfileAddUsageStr[]         = "[SSID],[BSSID],[SecurityType],[SecurityKey],[SecurityExtUser],[SecurityExtAnonUser],[SecurityExtEapMethod],[Priority]";
+char ATCmd_wlanProfileGetStr[]              = "+wlanprofileget";
+char ATCmd_wlanProfileGetUsageStr[]         = "[Index]";
+char ATCmd_wlanProfileDelStr[]              = "+wlanprofiledel";
+char ATCmd_wlanProfileDelUsageStr[]         = "[Index]";
+char ATCmd_wlanSetModeStr[]                 = "+wlansetmode";
+char ATCmd_wlanSetModeUsageStr[]            = "[Role]";
+char ATCmd_wlanSetStr[]                     = "+wlanset";
+char ATCmd_wlanSetUsageStr[]                = "[ID],[Option],[Value1],..,[ValueX]";
+char ATCmd_wlanGetStr[]                     = "+wlanget";
+char ATCmd_wlanGetUsageStr[]                = "[ID],[Option]";
+char ATCmd_wlanPolicySetStr[]               = "+wlanpolicyset";
+char ATCmd_wlanPolicySetUsageStr[]          = "[Type],[Policy],[Value]";
+char ATCmd_wlanPolicyGetStr[]               = "+wlanpolicyget";
+char ATCmd_wlanPolicyGetUsageStr[]          = "[Type]";
+char ATCmd_wlanConnectStr[]                 = "+wlanconnect";
+char ATCmd_wlanConnectUsageStr[]            = "[SSID],[BSSID],[SecurityType],[SecurityKey],[SecurityExtUser],[SecurityExtAnonUser],[SecurityExtEapMethod]";
+char ATCmd_wlanDisconnectStr[]              = "+wlandisconnect";
+char ATCmd_wlanDisconnectUsageStr[]         = "[]";
+
+char ATCmd_devStartStr[]                    = "+start";
+char ATCmd_devStartUsageStr[]               = "[]";
+char ATCmd_devStopStr[]                     = "+stop";
+char ATCmd_devStopUsageStr[]                = "[timeout]";
+char ATCmd_devTestStr[]                     = "+test";
+char ATCmd_devTestUsageStr[]                = "[]";
+char ATCmd_devGetStr[]                      = "+get";
+char ATCmd_devGetUsageStr[]                 = "[ID],[Option]";
+char ATCmd_devSetStr[]                      = "+set";
+char ATCmd_devSetUsageStr[]                 = "[ID],[Option],[Value1],..,[ValueX]";
+
+char ATCmd_sockSocketStr[]                  = "+socket";
+char ATCmd_sockSocketUsageStr[]             = "[Family],[Type],[Protocol]";
+char ATCmd_sockCloseStr[]                   = "+close";
+char ATCmd_sockCloseUsageStr[]              = "[Socket]";
+char ATCmd_sockAcceptStr[]                  = "+accept";
+char ATCmd_sockAcceptUsageStr[]             = "[Socket],[Family]";
+char ATCmd_sockBindStr[]                    = "+bind";
+char ATCmd_sockBindUsageStr[]               = "[Socket],[Family],[Port],[IP Address]";
+char ATCmd_sockListenStr[]                  = "+listen";
+char ATCmd_sockListenUsageStr[]             = "[Socket],[Backlog]";
+char ATCmd_sockConnectStr[]                 = "+connect";
+char ATCmd_sockConnectUsageStr[]            = "[Socket],[Family],[Port],[IP Address]";
+char ATCmd_sockSelectStr[]                  = "+select";
+char ATCmd_sockSelectUsageStr[]             = "[nfds],[readsds],[timeout sec],[timeout usec]";
+char ATCmd_sockSetSockOptStr[]              = "+setsockopt";
+char ATCmd_sockSetSockOptUsageStr[]         = "[sd],[Level],[Option],[Value1],..,[ValueX]";
+char ATCmd_sockGetSockOptStr[]              = "+getsockopt";
+char ATCmd_sockGetSockOptUsageStr[]         = "[sd],[Level],[Option]";
+char ATCmd_sockSendStr[]                    = "+send";
+char ATCmd_sockSendUsageStr[]               = "[sd],[format],[length],[data]";
+char ATCmd_sockRecvStr[]                    = "+recv";
+char ATCmd_sockRecvUsageStr[]               = "[sd],[format],[length]";
+char ATCmd_sockSendToStr[]                  = "+sendto";
+char ATCmd_sockSendToUsageStr[]             = "[sd],[family],[port],[addr],[format],[length],[data]";
+char ATCmd_sockRecvFromStr[]                = "+recvfrom";
+char ATCmd_sockRecvFromUsageStr[]           = "[sd],[family],[port],[addr],[format],[length]";
+
+char ATCmd_fileOpenStr[]                    = "+fileopen";
+char ATCmd_fileOpenUsageStr[]               = "[Filename],[Option]";
+char ATCmd_fileCloseStr[]                   = "+fileclose";
+char ATCmd_fileCloseUsageStr[]              = "[FileID],[CeritificateFileName],[Signature]";
+char ATCmd_fileCtlStr[]                     = "+filectl";
+char ATCmd_fileCtlUsageStr[]                = "[Command],[Secure_Token],[Filename],[Data]";
+char ATCmd_fileDelStr[]                     = "+filedel";
+char ATCmd_fileDelUsageStr[]                = "[FileName],[SecureToken]";
+char ATCmd_fileGetFileListStr[]             = "+filegetfilelist";
+char ATCmd_fileGetFileListUsageStr[]        = "[Max Entries]";
+char ATCmd_fileGetInfoStr[]                 = "+filegetinfo";
+char ATCmd_fileGetInfoUsageStr[]            = "[FileName],[SecureToken]";
+char ATCmd_fileReadStr[]                    = "+fileread";
+char ATCmd_fileReadUsageStr[]               = "[FileID],[Offset],[Length]";
+char ATCmd_fileWriteStr[]                   = "+filewrite";
+char ATCmd_fileWriteUsageStr[]              = "[FileID],[Offset],[Data]";
+
+char ATCmd_netappStartStr[]                 = "+netappstart";
+char ATCmd_netappStartUsageStr[]            = "[APP Bitmap]";
+char ATCmd_netappStopStr[]                  = "+netappstop";
+char ATCmd_netappStopUsageStr[]             = "[APP Bitmap]";
+char ATCmd_netappGetHostByNameStr[]         = "+netappgethostbyname";
+char ATCmd_netappGetHostByNameUsageStr[]    = "[HostName],[Family]";
+char ATCmd_netappGetHostByServiceStr[]      = "+netappgethostbyservice";
+char ATCmd_netappGetHostByServiceUsageStr[] = "[ServiceName],[Family]";
+char ATCmd_netappSendStr[]                  = "+netappsend";
+char ATCmd_netappSendUsageStr[]             = "[Handle],[Flags],[Data]";
+char ATCmd_netappRecvStr[]                  = "+netapprecv";
+char ATCmd_netappRecvUsageStr[]             = "[Handle]";
+char ATCmd_netappPingStr[]                  = "+netappping";
+char ATCmd_netappPingUsageStr[]             = "[Family],[Destination],[Size],[Delay],[Timeout],[Max Attempts],[Flags]";
+char ATCmd_netappGetServiceListStr[]        = "+netappgetservicelist";
+char ATCmd_netappGetServiceListUsageStr[]   = "[IndexOffset],[MaxServiceCount],[Flags]";
+char ATCmd_netappRegisterServiceStr[]       = "+netappregisterservice";
+char ATCmd_netappRegisterServiceUsageStr[]  = "[ServiceName],[Text],[Port],[TTL],[Options]";
+char ATCmd_netappUnregisterServiceStr[]     = "+netappunregisterservice";
+char ATCmd_netappUnregisterServiceUsageStr[]= "[ServiceName],[Options]";
+char ATCmd_netappSetStr[]                   = "+netappset";
+char ATCmd_netappSetUsageStr[]              = "[App ID],[Option],[Value1],..,[ValueX]";
+char ATCmd_netappGetStr[]                   = "+netappget";
+char ATCmd_netappGetUsageStr[]              = "[App ID],[Option]";
+
+char ATCmd_netcfgSetStr[]                   = "+netcfgset";
+char ATCmd_netcfgSetUsageStr[]              = "[ID],[Option],[Value1],..,[ValueX]";
+char ATCmd_netcfgGetStr[]                   = "+netcfgget";
+char ATCmd_netcfgGetUsageStr[]              = "[ID]";
+
+char ATCmd_netUtilCmdStr[]                  = "+netutilcmd";
+char ATCmd_netUtilCmdUsageStr[]             = "[Option],[ID],[Value1],..,[ValueX]";
+char ATCmd_netUtilGetStr[]                  = "+netutilget";
+char ATCmd_netUtilGetUsageStr[]             = "[Option],[ID]";
+
+char ATCmd_mqttCreateStr[]                  = "+mqttcreate";
+char ATCmd_mqttCreateUsageStr[]             = "[client ID],[flags],[address],[port],[method],[cipher],[private key],[Certificate],[CA],[DH key],[protocol],[blocking send],[data format]";
+char ATCmd_mqttDeleteStr[]                  = "+mqttdelete";
+char ATCmd_mqttDeleteUsageStr[]             = "[index]";
+char ATCmd_mqttConnectStr[]                 = "+mqttconnect";
+char ATCmd_mqttConnectUsageStr[]            = "[index]";
+char ATCmd_mqttDisconnectStr[]              = "+mqttdisconnect";
+char ATCmd_mqttDisconnectUsageStr[]         = "[index]";
+char ATCmd_mqttPublishStr[]                 = "+mqttpublish";
+char ATCmd_mqttPublishUsageStr[]            = "[index],[topic],[QoS],[retain],[message length][message]";
+char ATCmd_mqttSubscribeStr[]               = "+mqttsubscribe";
+char ATCmd_mqttSubscribeUsageStr[]          = "[index],[number of topics],[topic1],[QoS1],[persistent1],..,[topicX],[QoSX],[persistentX]";
+char ATCmd_mqttUnsubscribeStr[]             = "+mqttunsubscribe";
+char ATCmd_mqttUnsubscribeUsageStr[]        = "[index],[number of topics],[topic1],[persistent1],..,[topicX],[persistentX]";
+char ATCmd_mqttSetStr[]                     = "+mqttset";
+char ATCmd_mqttSetUsageStr[]                = "[index],[option],[value1],..,[valueX]";
+
+char ATCmd_httpCreateStr[]                  = "+httpcreate";
+char ATCmd_httpCreateUsageStr[]             = "[]";
+char ATCmd_httpDestroyStr[]                 = "+httpdestroy";
+char ATCmd_httpDestroyUsageStr[]            = "[index]";
+char ATCmd_httpConnectStr[]                 = "+httpconnect";
+char ATCmd_httpConnectUsageStr[]            = "[index],[host],[flags],[private key],[certificate],[ca]";
+char ATCmd_httpDisconnectStr[]              = "+httpdisconnect";
+char ATCmd_httpDisconnectUsageStr[]         = "[index]";
+char ATCmd_httpSendReqStr[]                 = "+httpsendreq";
+char ATCmd_httpSendReqUsageStr[]            = "[index],[method],[uri],[flags],[format],[length],[data]";
+char ATCmd_httpReadResBodyStr[]             = "+httpreadresbody";
+char ATCmd_httpReadResBodyUsageStr[]        = "[index],[format],[length]";
+char ATCmd_httpSetHeaderStr[]               = "+httpsetheader";
+char ATCmd_httpSetHeaderUsageStr[]          = "[index],[option],[flags],[format],[length],[data]";
+char ATCmd_httpGetHeaderStr[]               = "+httpgetheader";
+char ATCmd_httpGetHeaderUsageStr[]          = "[index],[option],[format],[length]";
+char ATCmd_httpSetOptStr[]                  = "+httpsetopt";
+char ATCmd_httpSetOptUsageStr[]             = "[index],[option],[value]";
+char ATCmd_httpSetProxyStr[]                = "+httpsetproxy";
+char ATCmd_httpSetProxyUsageStr[]           = "[family],[port],[address]";
+
+char ATCmd_okStr[]                          = "OK";
+char ATCmd_errorNumParamsStr[]              = "ERROR: number of parameters,xxxxxx";
+char ATCmd_errorAllocStr[]                  = "ERROR: allocate,xxxxxx";
+char ATCmd_errorParseStr[]                  = "ERROR: parse parameters,xxxxxx";
+char ATCmd_errorCmdStr[]                    = "ERROR: process command,xxxxxx";
+char ATCmd_errorExistCmdStr[]               = "ERROR: command not exist,xxxxxx";
+
+char ATCmd_eventGeneralStr[]                = "+eventgeneral";
+char ATCmd_eventWlanStr[]                   = "+eventwlan";
+char ATCmd_eventSockStr[]                   = "+eventsock";
+char ATCmd_eventNetappStr[]                 = "+eventnetapp";
+char ATCmd_eventHttpServerStr[]             = "+eventhttpserver";
+char ATCmd_eventFatalErrorStr[]             = "+eventfatalerror";
+char ATCmd_eventMqttStr[]                   = "+eventmqtt";
+char ATCmd_eventHttpStr[]                   = "+eventhttp";
+
+char ATCmd_excludeDelimStr[2]               = {ATCMD_DELIM_STR,ATCMD_DELIM_STR};
+char ATCmd_excludeDelimArray[2]             = {ATCMD_DELIM_OPEN_ARRAY,ATCMD_DELIM_CLOSE_ARRAY};
+
+
 
 
 StrMpl_List_t ATCmd_devCfgId[3] =
@@ -343,22 +539,6 @@ StrMpl_List_t ATCmd_wlanConnStatus[5] =
     {"ap_connected_stations",SL_WLAN_AP_CONNECTED_STATIONS }
 };
 
-StrMpl_List_t ATCmd_wlanProvisioningCmd[6] =
-{	
-    {"ap",SL_WLAN_PROVISIONING_CMD_START_MODE_AP  },
-    {"sc",SL_WLAN_PROVISIONING_CMD_START_MODE_SC   },
-    {"apsc",SL_WLAN_PROVISIONING_CMD_START_MODE_APSC },
-    {"apsc_ext_cfg",SL_WLAN_PROVISIONING_CMD_START_MODE_APSC_EXTERNAL_CONFIGURATION   },
-    {"stop",SL_WLAN_PROVISIONING_CMD_STOP },
-    {"abort_ext_cfg",SL_WLAN_PROVISIONING_CMD_ABORT_EXTERNAL_CONFIRMATION }
-};
-
-StrMpl_List_t ATCmd_wlanProvisioningFlag[2] =
-{	
-    {"none",0  },
-    {"ext_confirm",SL_WLAN_PROVISIONING_CMD_FLAG_EXTERNAL_CONFIRMATION   }
-};
-
 StrMpl_List_t ATCmd_sockDomain[3] =
 {
     {"inet", SL_AF_INET   },
@@ -431,14 +611,13 @@ StrMpl_List_t ATCmd_sockPhyOpt[7] =
     {"phy_allow_acks",SL_SO_PHY_ALLOW_ACKS               }
 };
 
-StrMpl_List_t ATCmd_sockSocketSecMethod[6] =
+StrMpl_List_t ATCmd_sockSocketSecMethod[5] =
 {
     {"sslv3",SL_SO_SEC_METHOD_SSLV3},
     {"tlsv1",SL_SO_SEC_METHOD_TLSV1},
     {"tlsv1_1",SL_SO_SEC_METHOD_TLSV1_1},
     {"tlsv1_2",SL_SO_SEC_METHOD_TLSV1_2},
-    {"sslv3_tlsv1_2",SL_SO_SEC_METHOD_SSLv3_TLSV1_2}, 
-    {"dlsv1",SL_SO_SEC_METHOD_DLSV1} 
+    {"sslv3_tlsv1_2",SL_SO_SEC_METHOD_SSLv3_TLSV1_2} 
 };
 
 StrMpl_List_t ATCmd_sockSocketCipher[23] =
@@ -662,12 +841,11 @@ StrMpl_List_t ATCmd_netcfgId[12] =
     {"ipv4_dns_client",SL_NETCFG_IPV4_DNS_CLIENT}
 };
 
-StrMpl_List_t ATCmd_netcfgOption[9] =
+StrMpl_List_t ATCmd_netcfgOption[8] =
 {
     {"state",SL_NETCFG_IF_STATE},
     {"dhcp",SL_NETCFG_ADDR_DHCP},
     {"dhcp_lla",SL_NETCFG_ADDR_DHCP_LLA},
-    {"release_ip",SL_NETCFG_ADDR_RELEASE_IP},
     {"static",SL_NETCFG_ADDR_STATIC},
     {"stateless",SL_NETCFG_ADDR_STATELESS},
     {"stateful",SL_NETCFG_ADDR_STATEFUL},
@@ -852,138 +1030,150 @@ StrMpl_List_t ATCmd_netUtilEcNamedCurve[2] =
     {"secp256r1",SL_NETUTIL_CRYPTO_EC_NAMED_CURVE_SECP256R1}
 };
 
-    
-const uint32_t ATCmd_maxCmd = (sizeof(ATCmd_list)/sizeof(ATCmd_List_t));
+StrMpl_List_t ATCmd_mqttCreateFlags[7] =
+{
+    {"ip4",     MQTTCLIENT_NETCONN_IP4},
+    {"ip6",     MQTTCLIENT_NETCONN_IP6},
+    {"url",     MQTTCLIENT_NETCONN_URL},
+    {"sec",     MQTTCLIENT_NETCONN_SEC},
+    {"skip_domain_verify",  MQTTCLIENT_NETCONN_SKIP_DOMAIN_NAME_VERIFICATION},
+    {"skip_cert_verify",    MQTTCLIENT_NETCONN_SKIP_CERTIFICATE_CATALOG_VERIFICATION},
+    {"skip_date_verify",    MQTTCLIENT_NETCONN_SKIP_DATE_VERIFICATION}
+};
 
-char ATCmd_wlanScanStr[]                    = "+wlanscan";
-char ATCmd_wlanScanUsageStr[]               = "[index],[count]";
-char ATCmd_wlanProfileAddStr[]              = "+wlanprofileadd";
-char ATCmd_wlanProfileAddUsageStr[]         = "[SSID],[BSSID],[SecurityType],[SecurityKey],[SecurityExtUser],[SecurityExtAnonUser],[SecurityExtEapMethod],[Priority]";
-char ATCmd_wlanProfileGetStr[]              = "+wlanprofileget";
-char ATCmd_wlanProfileGetUsageStr[]         = "[Index]";
-char ATCmd_wlanProfileDelStr[]              = "+wlanprofiledel";
-char ATCmd_wlanProfileDelUsageStr[]         = "[Index]";
-char ATCmd_wlanSetModeStr[]                 = "+wlansetmode";
-char ATCmd_wlanSetModeUsageStr[]            = "[Role]";
-char ATCmd_wlanSetStr[]                     = "+wlanset";
-char ATCmd_wlanSetUsageStr[]                = "[ID],[Option],[Value1],..,[ValueX]";
-char ATCmd_wlanGetStr[]                     = "+wlanget";
-char ATCmd_wlanGetUsageStr[]                = "[ID],[Option]";
-char ATCmd_wlanPolicySetStr[]               = "+wlanpolicyset";
-char ATCmd_wlanPolicySetUsageStr[]          = "[Type],[Policy],[Value]";
-char ATCmd_wlanPolicyGetStr[]               = "+wlanpolicyget";
-char ATCmd_wlanPolicyGetUsageStr[]          = "[Type]";
-char ATCmd_wlanConnectStr[]                 = "+wlanconnect";
-char ATCmd_wlanConnectUsageStr[]            = "[SSID],[BSSID],[SecurityType],[SecurityKey],[SecurityExtUser],[SecurityExtAnonUser],[SecurityExtEapMethod]";
-char ATCmd_wlanDisconnectStr[]              = "+wlandisconnect";
-char ATCmd_wlanDisconnectUsageStr[]         = "[]";
-char ATCmd_wlanProvisioningStr[]            = "+wlanprovisioning";
-char ATCmd_wlanProvisioningUsageStr[]       = "[Cmd],[Role],[Inactivity Timeout],[Smart Config key],[Flag]";
+StrMpl_List_t ATCmd_mqttCreateMode[2] =
+{
+    {"v3_1",     true},
+    {"v3_1_1",   false}
+};
 
-char ATCmd_devStartStr[]                    = "+start";
-char ATCmd_devStartUsageStr[]               = "[]";
-char ATCmd_devStopStr[]                     = "+stop";
-char ATCmd_devStopUsageStr[]                = "[timeout]";
-char ATCmd_devTestStr[]                     = "+test";
-char ATCmd_devTestUsageStr[]                = "[]";
-char ATCmd_devGetStr[]                      = "+get";
-char ATCmd_devGetUsageStr[]                 = "[ID],[Option]";
-char ATCmd_devSetStr[]                      = "+set";
-char ATCmd_devSetUsageStr[]                 = "[ID],[Option],[Value1],..,[ValueX]";
+StrMpl_List_t ATCmd_mqttQos[3] =
+{
+    {"qos0",     MQTT_QOS_0},
+    {"qos1",     MQTT_QOS_1},
+    {"qos2",     MQTT_QOS_2}
+};
 
-char ATCmd_sockSocketStr[]                  = "+socket";
-char ATCmd_sockSocketUsageStr[]             = "[Family],[Type],[Protocol]";
-char ATCmd_sockCloseStr[]                   = "+close";
-char ATCmd_sockCloseUsageStr[]              = "[Socket]";
-char ATCmd_sockAcceptStr[]                  = "+accept";
-char ATCmd_sockAcceptUsageStr[]             = "[Socket],[Family]";
-char ATCmd_sockBindStr[]                    = "+bind";
-char ATCmd_sockBindUsageStr[]               = "[Socket],[Family],[Port],[IP Address]";
-char ATCmd_sockListenStr[]                  = "+listen";
-char ATCmd_sockListenUsageStr[]             = "[Socket],[Backlog]";
-char ATCmd_sockConnectStr[]                 = "+connect";
-char ATCmd_sockConnectUsageStr[]            = "[Socket],[Family],[Port],[IP Address]";
-char ATCmd_sockSelectStr[]                  = "+select";
-char ATCmd_sockSelectUsageStr[]             = "[nfds],[readsds],[timeout sec],[timeout usec]";
-char ATCmd_sockSetSockOptStr[]              = "+setsockopt";
-char ATCmd_sockSetSockOptUsageStr[]         = "[sd],[Level],[Option],[Value1],..,[ValueX]";
-char ATCmd_sockGetSockOptStr[]              = "+getsockopt";
-char ATCmd_sockGetSockOptUsageStr[]         = "[sd],[Level],[Option]";
-char ATCmd_sockSendStr[]                    = "+send";
-char ATCmd_sockSendUsageStr[]               = "[sd],[format],[length],[data]";
-char ATCmd_sockRecvStr[]                    = "+recv";
-char ATCmd_sockRecvUsageStr[]               = "[sd],[format],[length]";
-char ATCmd_sockSendToStr[]                  = "+sendto";
-char ATCmd_sockSendToUsageStr[]             = "[sd],[family],[port],[addr],[format],[length],[data]";
-char ATCmd_sockRecvFromStr[]                = "+recvfrom";
-char ATCmd_sockRecvFromUsageStr[]           = "[sd],[family],[port],[addr],[format],[length]";
+StrMpl_List_t ATCmd_mqttSetOptions[5] =
+{
+    {"user",     MQTTClient_USER_NAME},
+    {"password", MQTTClient_PASSWORD},
+    {"will",     MQTTClient_WILL_PARAM},
+    {"keepalive",MQTTClient_KEEPALIVE_TIME},        
+    {"clean",    MQTTClient_CLEAN_CONNECT}        
+};
 
-char ATCmd_fileOpenStr[]                    = "+fileopen";
-char ATCmd_fileOpenUsageStr[]               = "[Filename],[Option]";
-char ATCmd_fileCloseStr[]                   = "+fileclose";
-char ATCmd_fileCloseUsageStr[]              = "[FileID],[CeritificateFileName],[Signature]";
-char ATCmd_fileCtlStr[]                     = "+filectl";
-char ATCmd_fileCtlUsageStr[]                = "[Command],[Secure_Token],[Filename],[Data]";
-char ATCmd_fileDelStr[]                     = "+filedel";
-char ATCmd_fileDelUsageStr[]                = "[FileName],[SecureToken]";
-char ATCmd_fileGetFileListStr[]             = "+filegetfilelist";
-char ATCmd_fileGetFileListUsageStr[]        = "[Max Entries]";
-char ATCmd_fileGetInfoStr[]                 = "+filegetinfo";
-char ATCmd_fileGetInfoUsageStr[]            = "[FileName],[SecureToken]";
-char ATCmd_fileReadStr[]                    = "+fileread";
-char ATCmd_fileReadUsageStr[]               = "[FileID],[Offset],[Length]";
-char ATCmd_fileWriteStr[]                   = "+filewrite";
-char ATCmd_fileWriteUsageStr[]              = "[FileID],[Offset],[Data]";
+StrMpl_List_t ATCmd_mqttEventId[3] =
+{
+    {"operation", MQTTClient_OPERATION_CB_EVENT},
+    {"recv",      MQTTClient_RECV_CB_EVENT},
+    {"disconnect",MQTTClient_DISCONNECT_CB_EVENT}
+};
 
-char ATCmd_netappStartStr[]                 = "+netappstart";
-char ATCmd_netappStartUsageStr[]            = "[APP Bitmap]";
-char ATCmd_netappStopStr[]                  = "+netappstop";
-char ATCmd_netappStopUsageStr[]             = "[APP Bitmap]";
-char ATCmd_netappGetHostByNameStr[]         = "+netappgethostbyname";
-char ATCmd_netappGetHostByNameUsageStr[]    = "[HostName],[Family]";
-char ATCmd_netappGetHostByServiceStr[]      = "+netappgethostbyservice";
-char ATCmd_netappGetHostByServiceUsageStr[] = "[ServiceName],[Family]";
-char ATCmd_netappSendStr[]                  = "+netappsend";
-char ATCmd_netappSendUsageStr[]             = "[Handle],[Flags],[Data]";
-char ATCmd_netappRecvStr[]                  = "+netapprecv";
-char ATCmd_netappRecvUsageStr[]             = "[Handle]";
-char ATCmd_netappPingStr[]                  = "+netappping";
-char ATCmd_netappPingUsageStr[]             = "[Family],[Destination],[Size],[Delay],[Timeout],[Max Attempts],[Flags]";
-char ATCmd_netappGetServiceListStr[]        = "+netappgetservicelist";
-char ATCmd_netappGetServiceListUsageStr[]   = "[IndexOffset],[MaxServiceCount],[Flags]";
-char ATCmd_netappRegisterServiceStr[]       = "+netappregisterservice";
-char ATCmd_netappRegisterServiceUsageStr[]  = "[ServiceName],[Text],[Port],[TTL],[Options]";
-char ATCmd_netappUnregisterServiceStr[]     = "+netappunregisterservice";
-char ATCmd_netappUnregisterServiceUsageStr[]= "[ServiceName],[Options]";
-char ATCmd_netappSetStr[]                   = "+netappset";
-char ATCmd_netappSetUsageStr[]              = "[App ID],[Option],[Value1],..,[ValueX]";
-char ATCmd_netappGetStr[]                   = "+netappget";
-char ATCmd_netappGetUsageStr[]              = "[App ID],[Option]";
+StrMpl_List_t ATCmd_mqttEventOperationId[4] =
+{
+    {"connack", MQTTCLIENT_OPERATION_CONNACK},
+    {"puback",  MQTTCLIENT_OPERATION_EVT_PUBACK},
+    {"suback",  MQTTCLIENT_OPERATION_SUBACK},
+    {"unsuback",MQTTCLIENT_OPERATION_UNSUBACK}
+};
 
-char ATCmd_netcfgSetStr[]                   = "+netcfgset";
-char ATCmd_netcfgSetUsageStr[]              = "[ID],[Option],[Value1],..,[ValueX]";
-char ATCmd_netcfgGetStr[]                   = "+netcfgget";
-char ATCmd_netcfgGetUsageStr[]              = "[ID]";
+StrMpl_List_t ATCmd_httpConnectFlags[2] =
+{
+    {"ignore_proxy",   HTTPClient_IGNORE_PROXY},
+    {"host_exist",     HTTPClient_HOST_EXIST}
+};
 
-char ATCmd_netUtilCmdStr[]                  = "+netutilcmd";
-char ATCmd_netUtilCmdUsageStr[]             = "[Option],[ID],[Value1],..,[ValueX]";
-char ATCmd_netUtilGetStr[]                  = "+netutilget";
-char ATCmd_netUtilGetUsageStr[]             = "[Option],[ID]";
+StrMpl_List_t ATCmd_httpSendReqFlags[3] =
+{
+    {"chunk_start",   HTTPClient_CHUNK_START},      /* Sets the client's request state into chunked body */
+    {"chunk_end",     HTTPClient_CHUNK_END},        /* Sets the client's request state out of chunked body nd sends last chunk */
+    {"drop_body",     HTTPClient_DROP_BODY}         /* Flushes the response body */
+};
 
-char ATCmd_okStr[]                          = "OK";
-char ATCmd_errorNumParamsStr[]              = "ERROR: number of parameters,xxxxxx";
-char ATCmd_errorAllocStr[]                  = "ERROR: allocate,xxxxxx";
-char ATCmd_errorParseStr[]                  = "ERROR: parse parameters,xxxxxx";
-char ATCmd_errorCmdStr[]                    = "ERROR: process command,xxxxxx";
-char ATCmd_errorExistCmdStr[]               = "ERROR: command not exist,xxxxxx";
+StrMpl_List_t ATCmd_httpSendReqMethod[7] =
+{
+    {"get",         ATCMDHTTP_METHOD_GET},
+    {"post",        ATCMDHTTP_METHOD_POST},
+    {"head",        ATCMDHTTP_METHOD_HEAD},
+    {"options",     ATCMDHTTP_METHOD_OPTIONS},
+    {"put",         ATCMDHTTP_METHOD_PUT},
+    {"del",         ATCMDHTTP_METHOD_DELETE},
+    {"connect",     ATCMDHTTP_METHOD_CONNECT}
+};
 
-char ATCmd_eventGeneralStr[]                = "+eventgeneral";
-char ATCmd_eventWlanStr[]                   = "+eventwlan";
-char ATCmd_eventSockStr[]                   = "+eventsock";
-char ATCmd_eventNetappStr[]                 = "+eventnetapp";
-char ATCmd_eventHttpServerStr[]             = "+eventhttpserver";
-char ATCmd_eventFatalErrorStr[]             = "+eventfatalerror";
+StrMpl_List_t ATCmd_httpSetHeaderFlags[2] =
+{
+    {"not_persistent", HTTPClient_HFIELD_NOT_PERSISTENT},   /* Header Field added is not persistent */
+    {"persistent",     HTTPClient_HFIELD_PERSISTENT}        /* Header Field added is persistent */
+};
 
-char ATCmd_excludeDelimStr[2]               = {ATCMD_DELIM_STR,ATCMD_DELIM_STR};
-char ATCmd_excludeDelimArray[2]             = {ATCMD_DELIM_OPEN_ARRAY,ATCMD_DELIM_CLOSE_ARRAY};
+StrMpl_List_t ATCmd_httpHeaderOption[58] =
+{
+    {"res_age",                 HTTPClient_HFIELD_RES_AGE},
+    {"res_allow",               HTTPClient_HFIELD_RES_ALLOW},
+    {"res_cache_control",       HTTPClient_HFIELD_RES_CACHE_CONTROL},
+    {"res_connection",          HTTPClient_HFIELD_RES_CONNECTION},
+    {"res_content_encoding",    HTTPClient_HFIELD_RES_CONTENT_ENCODING},
+    {"res_content_language",    HTTPClient_HFIELD_RES_CONTENT_LANGUAGE},
+    {"res_content_length",      HTTPClient_HFIELD_RES_CONTENT_LENGTH},
+    {"res_content_location",    HTTPClient_HFIELD_RES_CONTENT_LOCATION},
+    {"res_content_range",       HTTPClient_HFIELD_RES_CONTENT_RANGE},
+    {"res_content_type",        HTTPClient_HFIELD_RES_CONTENT_TYPE},
+    {"res_date",                HTTPClient_HFIELD_RES_DATE},
+    {"res_etag",                HTTPClient_HFIELD_RES_ETAG},
+    {"res_expires",             HTTPClient_HFIELD_RES_EXPIRES},
+    {"res_last_modified",       HTTPClient_HFIELD_RES_LAST_MODIFIED},
+    {"res_location",            HTTPClient_HFIELD_RES_LOCATION},
+    {"res_proxy_auth",          HTTPClient_HFIELD_RES_PROXY_AUTHENTICATE},
+    {"res_retry_after",         HTTPClient_HFIELD_RES_RETRY_AFTER},
+    {"res_server",              HTTPClient_HFIELD_RES_SERVER},
+    {"res_set_cookie",          HTTPClient_HFIELD_RES_SET_COOKIE},
+    {"res_trailer",             HTTPClient_HFIELD_RES_TRAILER},
+    {"res_tx_encoding",         HTTPClient_HFIELD_RES_TRANSFER_ENCODING},
+    {"res_upgrade",             HTTPClient_HFIELD_RES_UPGRADE},
+    {"res_vary",                HTTPClient_HFIELD_RES_VARY},
+    {"res_via",                 HTTPClient_HFIELD_RES_VIA},
+    {"res_www_auth",            HTTPClient_HFIELD_RES_WWW_AUTHENTICATE},
+    {"res_warning",             HTTPClient_HFIELD_RES_WARNING},   
+    {"req_accept",              HTTPClient_HFIELD_REQ_ACCEPT},
+    {"req_accept_charset",      HTTPClient_HFIELD_REQ_ACCEPT_CHARSET},
+    {"req_accept_encoding",     HTTPClient_HFIELD_REQ_ACCEPT_ENCODING},
+    {"req_accept_language",     HTTPClient_HFIELD_REQ_ACCEPT_LANGUAGE},
+    {"req_allow",               HTTPClient_HFIELD_REQ_ALLOW},
+    {"req_auth",                HTTPClient_HFIELD_REQ_AUTHORIZATION},
+    {"req_cache_control",       HTTPClient_HFIELD_REQ_CACHE_CONTROL},
+    {"req_connection",          HTTPClient_HFIELD_REQ_CONNECTION},
+    {"req_content_encoding",    HTTPClient_HFIELD_REQ_CONTENT_ENCODING},
+    {"req_content_language",    HTTPClient_HFIELD_REQ_CONTENT_LANGUAGE},
+    {"req_content_location",    HTTPClient_HFIELD_REQ_CONTENT_LOCATION},
+    {"req_content_type",        HTTPClient_HFIELD_REQ_CONTENT_TYPE},
+    {"req_cookie",              HTTPClient_HFIELD_REQ_COOKIE},
+    {"req_date",                HTTPClient_HFIELD_REQ_DATE},
+    {"req_expect",              HTTPClient_HFIELD_REQ_EXPECT},
+    {"req_forwarded",           HTTPClient_HFIELD_REQ_FORWARDED},
+    {"req_from",                HTTPClient_HFIELD_REQ_FROM},
+    {"req_host",                HTTPClient_HFIELD_REQ_HOST},
+    {"req_if_match",            HTTPClient_HFIELD_REQ_IF_MATCH},
+    {"req_if_modified_since",   HTTPClient_HFIELD_REQ_IF_MODIFIED_SINCE},
+    {"req_if_none_match",       HTTPClient_HFIELD_REQ_IF_NONE_MATCH},
+    {"req_if_range",            HTTPClient_HFIELD_REQ_IF_RANGE},
+    {"req_if_unmodified_since", HTTPClient_HFIELD_REQ_IF_UNMODIFIED_SINCE},
+    {"req_origin",              HTTPClient_HFIELD_REQ_ORIGIN},
+    {"req_proxy_auth",          HTTPClient_HFIELD_REQ_PROXY_AUTHORIZATION},
+    {"req_range",               HTTPClient_HFIELD_REQ_RANGE},
+    {"req_te",                  HTTPClient_HFIELD_REQ_TE},
+    {"req_tx_encoding",         HTTPClient_HFIELD_REQ_TRANSFER_ENCODING},
+    {"req_upgrade",             HTTPClient_HFIELD_REQ_UPGRADE},
+    {"req_user_agent",          HTTPClient_HFIELD_REQ_USER_AGENT},
+    {"req_via",                 HTTPClient_HFIELD_REQ_VIA},
+    {"req_warning",             HTTPClient_HFIELD_REQ_WARNING}
+};
+
+StrMpl_List_t ATCmd_httpOptOption[3] =
+{
+    {"redirect_feature",        HTTPClient_REDIRECT_FEATURE},               /* Enable / Disable redirect feature */
+    {"res_filter_clear",        HTTPClient_RESPONSE_FILTER_CLEAR},          /* Clear response filter to default(all enabled) */
+    {"redirect_tls_downgrade",  HTTPClient_REDIRECT_TLS_DOWNGRADE}         /* Enable / Disable  the option for tls downgrade */
+};
 

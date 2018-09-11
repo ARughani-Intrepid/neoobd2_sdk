@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -189,12 +189,12 @@ interface.  Some are mandatory, others are optional (but recommended).
 #ifndef __SL_NET_SOCK_H__
 #define __SL_NET_SOCK_H__
 
+#include <stdint.h>
 
 #ifdef    __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
 
 /*!
     \defgroup SlNetSock SlNetSock group
@@ -340,12 +340,12 @@ typedef enum
 } SlNetSockSecAttrib_e;
 
 /* available values for SLNETSOCK_SEC_ATTRIB_METHOD */
-#define SLNETSOCK_SEC_METHOD_SSLV3                                          (0)   /**< security metohd SSL v3                            */
-#define SLNETSOCK_SEC_METHOD_TLSV1                                          (1)   /**< security metohd TLS v1                            */
-#define SLNETSOCK_SEC_METHOD_TLSV1_1                                        (2)   /**< security metohd TLS v1_1                          */
-#define SLNETSOCK_SEC_METHOD_TLSV1_2                                        (3)   /**< security metohd TLS v1_2                          */
+#define SLNETSOCK_SEC_METHOD_SSLV3                                          (0)   /**< security method SSL v3                            */
+#define SLNETSOCK_SEC_METHOD_TLSV1                                          (1)   /**< security method TLS v1                            */
+#define SLNETSOCK_SEC_METHOD_TLSV1_1                                        (2)   /**< security method TLS v1_1                          */
+#define SLNETSOCK_SEC_METHOD_TLSV1_2                                        (3)   /**< security method TLS v1_2                          */
 #define SLNETSOCK_SEC_METHOD_SSLv3_TLSV1_2                                  (4)   /**< use highest possible version from SSLv3 - TLS 1.2 */
-#define SLNETSOCK_SEC_METHOD_DLSV1                                          (5)   /**< security metohd DTL v1                            */
+#define SLNETSOCK_SEC_METHOD_DLSV1                                          (5)   /**< security method DTL v1                            */
 
 /* available values for SLNETSOCK_SEC_ATTRIB_CIPHERS. The value is bitmap! */
 #define SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_SHA                       (1 << 0)
@@ -399,8 +399,8 @@ typedef enum
 #define SLNETSOCK_SHUT_RDWR                                                 (2) /**< Further receptions and transmissions will be disallowed */
 
 /* Length of address string representation  */
-#define SLNETSOCK_INET6_ADDRSTRLEN                                          (40)
-#define SLNETSOCK_INET_ADDRSTRLEN                                           (15)
+#define SLNETSOCK_INET6_ADDRSTRLEN                                          (46)
+#define SLNETSOCK_INET_ADDRSTRLEN                                           (16)
 
 /* flags used in send/recv and friends.
  *
@@ -586,7 +586,7 @@ typedef uint16_t SlNetSocklen_t;
 */
 typedef struct SlNetSock_Addr_t
 {
-    uint16_t sa_family;                  /**< Address family (e.g. , AF_INET)        */
+    uint16_t sa_family;                  /**< Address family (e.g. AF_INET)          */
     uint8_t  sa_data[14];                /**< Protocol- specific address information */
 } SlNetSock_Addr_t;
 
@@ -613,6 +613,18 @@ typedef struct SlNetSock_AddrIn_t
     int8_t             sin_zero[8];      /**< Not used.                    */
 } SlNetSock_AddrIn_t;
 
+/* ss_family + pad must be large enough to hold max of
+ * _SlNetSock_AddrIn6_t or _SlNetSock_AddrIn_t
+ */
+/*!
+    \brief Generic socket address type to hold either IPv4 or IPv6 address
+*/
+typedef struct SlNetSock_SockAddrStorage_t
+{
+    uint16_t ss_family;
+    uint8_t  pad[26];
+} SlNetSock_SockAddrStorage_t;
+
 /*!
     \brief The SlNetSock_SdSet_t structure holds the sd array for SlNetSock_select function
 */
@@ -633,13 +645,6 @@ typedef struct SlNetSock_TransceiverRxOverHead_t
     uint8_t  padding;                    /**< pad to align to 32 bits                        */
     uint32_t timestamp;                  /**< Timestamp in microseconds                      */
 } SlNetSock_TransceiverRxOverHead_t;
-
-
-/* SlNetSock modules include */
-
-#include "slnetif.h"
-#include "slnetutils.h"
-#include "slneterr.h"
 
 
 /*****************************************************************************/
@@ -1343,14 +1348,14 @@ int32_t SlNetSock_sdsIsSet(int16_t sd, SlNetSock_SdSet_t *sdset);
     - SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD:
     \code
         uint32_t thrshld = SLNETSOCK_TX_INHIBIT_THRESHOLD_MED;
-        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD , &thrshld, sizeof(thrshld));
+        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_INHIBIT_THRESHOLD, &thrshld, sizeof(thrshld));
     \endcode
     <br>
 
     - SLNETSOCK_OPPHY_TX_TIMEOUT:
     \code
         uint32_t timeout = 50;
-        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_TIMEOUT  , &timeout, sizeof(timeout));
+        SlNetSock_setOpt(SockID, SLNETSOCK_LVL_PHY, SLNETSOCK_OPPHY_TX_TIMEOUT, &timeout, sizeof(timeout));
     \endcode
     <br>
 
@@ -1443,7 +1448,7 @@ int32_t SlNetSock_getOpt(int16_t sd, int16_t level, int16_t optname, void *optva
         SockID = SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM, 0, 0, 0);
         Status = SlNetSock_bind(SockID, (SlNetSock_Addr_t *)&LocalAddr, AddrSize);
         Status = SlNetSock_listen(SockID, 0);
-        newSockID = SlNetSock_accept(SockID, (SlNetSock_Addr_t*)&Addr, (SlNetSocklen_t*) &AddrSize);
+        newSockID = SlNetSock_accept(SockID, (SlNetSock_Addr_t *)&Addr, (SlNetSocklen_t *)&AddrSize);
         Status = SlNetSock_recv(newSockID, Buf, 1460, 0);
     \endcode
     <br>
@@ -1694,23 +1699,45 @@ int32_t SlNetSock_secAttribDelete(SlNetSockSecAttrib_t *secAttrib);
 
 
 /*!
-    \brief set a security attributes
+    \brief set a security attribute
 
     The SlNetSock_secAttribSet function is used to set a security
-    attribute of a security attributes object.
+    attribute of a security attribute object.
 
     \param[in] secAttrib        Secure attribute handle
     \param[in] attribName       Define the actual attribute to set. Applicable values:
-                                    - #SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY
-                                    - #SLNETSOCK_SEC_ATTRIB_LOCAL_CERT
-                                    - #SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA
-                                    - #SLNETSOCK_SEC_ATTRIB_DH_KEY
-                                    - #SLNETSOCK_SEC_ATTRIB_METHOD
-                                    - #SLNETSOCK_SEC_ATTRIB_CIPHERS
-                                    - #SLNETSOCK_SEC_ATTRIB_ALPN
-                                    - #SLNETSOCK_SEC_ATTRIB_EXT_CLIENT_CHLNG_RESP
-                                    - #SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME
-                                    - #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE
+                                    - #SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY \n
+                                          Sets the private key corresponding to the local certificate \n
+                                          This attribute takes the name of security object containing the private key and the name's length (including the NULL terminating character) as parameters \n
+                                    - #SLNETSOCK_SEC_ATTRIB_LOCAL_CERT \n
+                                          Sets the local certificate chain \n
+                                          This attribute takes the name of the security object containing the certificate and the name's length (including the NULL terminating character) as parameters \n
+                                          For certificate chains, each certificate in the chain can be added via a separate call to SlNetSock_secAttribSet, starting with the root certificate of the chain \n
+                                    - #SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA \n
+                                          Sets the root CA certificate \n
+                                          This attribute takes the name of the security object containing the certificate and the name's length (including the NULL terminating character) as parameters \n
+                                    - #SLNETSOCK_SEC_ATTRIB_DH_KEY \n
+                                          Sets the DH Key \n
+                                          This attribute takes the name of the security object containing the DH Key and the name's length (including the NULL terminating character) as parameters \n
+                                    - #SLNETSOCK_SEC_ATTRIB_METHOD \n
+                                          Sets the TLS protocol version \n
+                                          This attribute takes a <b>SLNETSOCK_SEC_METHOD_*</b> option and <b>sizeof(uint8_t)</b> as parameters \n
+                                    - #SLNETSOCK_SEC_ATTRIB_CIPHERS \n
+                                          Sets the ciphersuites to be used for the connection \n
+                                          This attribute takes a bit mask formed using <b>SLNETSOCK_SEC_CIPHER_*</b> options and <b>sizeof(uint32_t)</b> as parameters \n
+                                    - #SLNETSOCK_SEC_ATTRIB_ALPN \n
+                                          Sets the ALPN \n
+                                          This attribute takes a bit mask formed using <b>SLNETSOCK_SEC_ALPN_*</b> options and <b>sizeof(uint32_t)</b> as parameters \n
+                                    - #SLNETSOCK_SEC_ATTRIB_EXT_CLIENT_CHLNG_RESP \n
+                                          Sets the EXT CLIENT CHLNG RESP \n
+                                          Format TBD \n
+                                    - #SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME \n
+                                          Sets the domain name for verification during connection \n
+                                          This attribute takes a string with the domain name and the string's length (including the NULL-terminating character) as parameters \n
+                                    - #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE\n
+                                          Sets whether to disable the certificate store \n
+                                          This attribute takes <b>1</b> (disable) or <b>0</b> (enable) and <b>sizeof(uint32_t)</b> as parameters \n
+
     \param[in] val
     \param[in] len
 
@@ -1719,22 +1746,83 @@ int32_t SlNetSock_secAttribDelete(SlNetSockSecAttrib_t *secAttrib);
 
     \slnetsock_init_precondition
 
+    \note   Once an attribute is set, it cannot be unset or set to something
+            different. Doing so may result in undefined behavior.
+            Instead, SlNetSock_secAttribDelete() should be called on the
+            existing object, and a new security object should be created with
+            the new attribute set.
+
     \note   The @c SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE value
             is currently being evaluated, and may be removed in a
             future release.  It is currently only supported on CC3x20
             devices.  For more details, see
             #SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE.
 
+    \par    Examples
+
+    - SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY:
+    \code
+           #define PRIVATE_KEY_FILE      "DummyKey"
+           SlNetIf_loadSecObj(SLNETIF_SEC_OBJ_TYPE_RSA_PRIVATE_KEY, PRIVATE_KEY_FILE, strlen(PRIVATE_KEY_FILE), srvKeyPem, srvKeyPemLen, SLNETIF_ID_2);
+           SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY, PRIVATE_KEY_FILE, sizeof(PRIVATE_KEY_FILE));
+    \endcode
+    <br>
+
+    - SLNETSOCK_SEC_ATTRIB_LOCAL_CERT:
+    \code
+           #define ROOT_CA_CERT_FILE     "DummyCA"
+           #define TRUSTED_CERT_FILE     "DummyTrustedCert"
+
+           // create a local certificate chain
+           SlNetIf_loadSecObj(SLNETIF_SEC_OBJ_TYPE_CERTIFICATE, ROOT_CA_CERT_FILE, strlen(ROOT_CA_CERT_FILE), srvCAPem, srvCAPemLen, SLNETIF_ID_2);
+           SlNetIf_loadSecObj(SLNETIF_SEC_OBJ_TYPE_CERTIFICATE, TRUSTED_CERT_FILE, strlen(TRUSTED_CERT_FILE), srvCertPem, srvCertPemLen, SLNETIF_ID_2);
+           SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_LOCAL_CERT, ROOT_CA_CERT_FILE, sizeof(ROOT_CA_CERT_FILE));
+           SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_LOCAL_CERT, TRUSTED_CERT_FILE, sizeof(TRUSTED_CERT_FILE));
+    \endcode
+    <br>
+
+    - SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA:
+    \code
+           #define ROOT_CA_CERT_FILE     "DummyCA"
+           SlNetIf_loadSecObj(SLNETIF_SEC_OBJ_TYPE_CERTIFICATE, ROOT_CA_CERT_FILE, strlen(ROOT_CA_CERT_FILE), srvCAPem, srvCAPemLen, SLNETIF_ID_2);
+           SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA, ROOT_CA_CERT_FILE, sizeof(ROOT_CA_CERT_FILE));
+    \endcode
+    <br>
+
+    - SLNETSOCK_SEC_ATTRIB_METHOD:
+    \code
+        uint8_t  SecurityMethod = SLNETSOCK_SEC_METHOD_SSLV3;
+        SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_METHOD, (void *)&(SecurityMethod), sizeof(SecurityMethod));
+    \endcode
+    <br>
+
+    - SLNETSOCK_SEC_ATTRIB_CIPHERS:
+    \code
+        uint32_t SecurityCipher = SLNETSOCK_SEC_CIPHER_SSL_RSA_WITH_RC4_128_SHA | SLNETSOCK_SEC_CIPHER_TLS_RSA_WITH_AES_256_CBC_SHA;
+        SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_METHOD, (void *)&(SecurityCipher), sizeof(SecurityCipher));
+    \endcode
+    <br>
+
+    - SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME:
+    \code
+        char addr[] = "www.ti.com";
+        SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME, (void *)addr, strlen(addr) + 1);
+    \endcode
+    <br>
+
+
     \sa         SlNetSock_secAttribCreate()
 */
-int32_t SlNetSock_secAttribSet(SlNetSockSecAttrib_t *secAttrib , SlNetSockSecAttrib_e attribName , void *val, uint16_t len);
+int32_t SlNetSock_secAttribSet(SlNetSockSecAttrib_t *secAttrib, SlNetSockSecAttrib_e attribName, void *val, uint16_t len);
 
 
 /*!
     \brief Start a security session on an opened socket
 
     \param[in] sd               Socket descriptor (handle)
-    \param[in] secAttrib        Secure attribute handle
+    \param[in] secAttrib        Secure attribute handle. This can be NULL only
+                                if the SLNETSOCK_SEC_BIND_CONTEXT_ONLY flag is
+                                not thrown.
     \param[in] flags            Specifies flags. \n
                                 The available flags are:
                                     - #SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY

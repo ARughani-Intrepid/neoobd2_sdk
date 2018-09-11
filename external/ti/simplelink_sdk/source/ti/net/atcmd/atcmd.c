@@ -317,13 +317,13 @@ int32_t ATCmd_send(char *buffer)
     char *token = buffer;
     int32_t ret = 0;
     char excludeDelim[2] = {ATCMD_DELIM_STR,ATCMD_DELIM_STR};
-    int16_t *index = NULL;
+    ATCmd_List_t *list = NULL;
     char *params;
     char *eol;
 
     /* Remove end of line (if exist) */
-    eol = strchr(token, '\n');
-    if (eol != NULL)
+    eol = (buffer + strlen(buffer) - 1);
+    if ((*eol == '\n') || (*eol == '\r'))
     {
         *eol = 0;
     }
@@ -349,9 +349,9 @@ int32_t ATCmd_send(char *buffer)
         token += strlen(ATCMD_CMD_PREFIX);
 
         /* Get command index */
-        index = (int16_t *)Map_GetValue(ATCmd_mapHanlde, token);
+        list = (ATCmd_List_t *)Map_GetValue(ATCmd_mapHanlde, token);
 
-        if (index != NULL)
+        if (list != NULL)
         {
             /* move to the params */
             token = params;
@@ -361,29 +361,29 @@ int32_t ATCmd_send(char *buffer)
             if (ATCmd_checkHelp(token))
             {
                 /* Send usage string */                
-                ATCmd_commandResult(ATCmd_commandUsage,ATCmd_list[*index].usage,0);
+                ATCmd_commandResult(ATCmd_commandUsage,list->usage,0);
                 ATCmd_okResult();
             }
-            else if (ATCmd_checkNumParams(token,ATCmd_list[*index].numParams))
+            else if (ATCmd_checkNumParams(token,list->numParams))
             {
                 /* Number params incorrect */                
                 ATCmd_errorResult(ATCmd_errorNumParamsStr,0);
                 ret = -1;
             }
-            else if ((ATCmd_list[*index].blocked) == 1)
+            else if ((list->blocked) == 1)
             {
                 /* Blocked command */                
-                ret = ATCmd_blockedCmd(&ATCmd_list[*index],token);
+                ret = ATCmd_blockedCmd(list,token);
             }
             else 
             {
                 /* Dispatch command callback */
-                ret = ATCmd_list[*index].callback((void *)(token));
+                ret = list->callback((void *)(token));
             }
         }
     }
 
-    if (index == NULL)
+    if (list == NULL)
     {
         ATCmd_errorResult(ATCmd_errorExistCmdStr,0);
         ret = -1;
@@ -429,19 +429,18 @@ int32_t ATCmd_create(void)
     attr.mq_maxmsg = ATCMD_RCV_QUEUE_SIZE;
     attr.mq_msgsize = sizeof (ATCmd_Event_t);
     ATCmd_rxQueue = mq_open("at_events", O_CREAT, 0, &attr);
-
-    /* init the cmd table */
-    ATCmd_mapHanlde = Map_Create(MAP_ATTR_KEY_TYPE_STR);
-    for (i = 0; i < ATCmd_maxCmd; i++)
-    {
-        Map_Insert(ATCmd_mapHanlde, ATCmd_list[i].cmd,  &ATCmd_list[i].index);
-    }
-
     if(ATCmd_rxQueue == NULL)
     {
         return(-1);
     }
 
+    /* init the cmd table */
+    ATCmd_mapHanlde = Map_Create(MAP_ATTR_KEY_TYPE_STR);
+    for (i = 0; i < ATCmd_maxCmd; i++)
+    {
+        Map_Insert(ATCmd_mapHanlde, ATCmd_list[i].cmd,  &ATCmd_list[i]);
+    }
+    
     return (0);
 }
 

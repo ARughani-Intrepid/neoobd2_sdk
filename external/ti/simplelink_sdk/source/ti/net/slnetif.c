@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -127,7 +127,8 @@ static int32_t SlNetIf_configCheck(const SlNetIf_Config_t *ifConf)
 {
     /* Check if the mandatory configuration exists
        This configuration needs to be updated when new mandatory is added    */
-    if ((NULL != ifConf->sockCreate)   &&
+    if ((NULL != ifConf) &&
+        (NULL != ifConf->sockCreate)   &&
         (NULL != ifConf->sockClose)    &&
         (NULL != ifConf->sockSelect)   &&
         (NULL != ifConf->sockSetOpt)   &&
@@ -440,14 +441,14 @@ const char * SlNetIf_getNameByID(uint16_t ifID)
 // SlNetIf_getIDByName - Get interface ID from interface name
 //
 //*****************************************************************************
-int32_t SlNetIf_getIDByName(char * ifName)
+int32_t SlNetIf_getIDByName(char *ifName)
 {
     SlNetIf_Node_t *ifNode = SlNetIf_listHead;
 
     /* Check if ifName is a valid input                                      */
     if (NULL == ifName)
     {
-        return SLNETERR_RET_CODE_INVALID_INPUT;
+        return(SLNETERR_RET_CODE_INVALID_INPUT);
     }
 
     /* Run over the interface list until finding the required ifID or Until
@@ -455,16 +456,16 @@ int32_t SlNetIf_getIDByName(char * ifName)
     while (NULL != ifNode)
     {
         /* Check if the identifier of the interface is equal to the input    */
-        if ((ifNode->netIf).ifName == ifName)
+        if (strcmp((ifNode->netIf).ifName, ifName) == 0)
         {
             /* Required interface found, return the interface identifier     */
-            return (ifNode->netIf).ifID;
+            return ((ifNode->netIf).ifID);
         }
         ifNode = ifNode->next;
     }
 
     /* Interface identifier was not found, return error code                 */
-    return SLNETERR_RET_CODE_INVALID_INPUT;
+    return(SLNETERR_RET_CODE_INVALID_INPUT);
 }
 
 

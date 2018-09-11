@@ -1052,6 +1052,9 @@ int32_t ATCmdFile_readResult(void *args, int32_t num, char *buff)
     
     StrMpl_setStr(ATCmd_fileReadStr,&buff,ATCMD_DELIM_EVENT);
 
+    /* format */
+    StrMpl_setVal(&params->format, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_8 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
+
     outputLen = params->len;
     if (params->format == ATCMD_DATA_FORMAT_BASE64)
     {

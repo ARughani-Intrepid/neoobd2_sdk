@@ -51,7 +51,7 @@
 #define CLOCKSYNC_INTERVAL              (60) /* interval time in seconds between clock updates */
 #define CLOCKSYNC_UPDATE_NWP            (0)  /* 1 - Update NWP clock; 0 - do not update */
 
-#define CLOCKSYNC_BASE_YAER             (1970)
+#define CLOCKSYNC_BASE_YAER             (1900)
 #define CLOCKSYNC_SECONDS_PER_DAY       (24 * 3600)
 #define CLOCKSYNC_LEAP_YEAR(year)       (!((year) % 4) && (((year) % 100) || !((year) % 400)))
 #define CLOCKSYNC_DAYS_PER_YEAR(year)   (CLOCKSYNC_LEAP_YEAR(year) ? 366 : 365)
@@ -391,8 +391,8 @@ int32_t ClockSync_update(void)
                 ClockSync_convert(netSecs,&netTime);
 
                 nwpTime.tm_day  = netTime.tm_mday;
-                nwpTime.tm_mon  = netTime.tm_mon;
-                nwpTime.tm_year = netTime.tm_year;
+                nwpTime.tm_mon  = netTime.tm_mon + 1;
+                nwpTime.tm_year = netTime.tm_year + CLOCKSYNC_BASE_YAER;
                 nwpTime.tm_hour = netTime.tm_hour;
                 nwpTime.tm_min  = netTime.tm_min;
                 nwpTime.tm_sec  = netTime.tm_sec;

@@ -1,25 +1,37 @@
 /*
- *   Copyright (C) 2016 Texas Instruments Incorporated
+ * Copyright (C) 2016-2018, Texas Instruments Incorporated
+ * All rights reserved.
  *
- *   All rights reserved. Property of Texas Instruments Incorporated.
- *   Restricted rights to use, duplicate or disclose this code are
- *   granted through contract.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   The program may not be used without the written permission of
- *   Texas Instruments Incorporated or against the terms and conditions
- *   stipulated in the agreement under which this program has been supplied,
- *   and under no circumstances can it be used with non-TI connectivity device.
- *   
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//*****************************************************************************
-// includes
-//*****************************************************************************
 #include "server_util.h"
 
-//*****************************************************************************
-// defines
-//*****************************************************************************
 /*----------------------------------------------------------------------------
  * Try to prevent fragmentation by consistently allocating a fixed memory size
  *----------------------------------------------------------------------------
@@ -30,21 +42,14 @@
 #define MQP_SERVER_TX_LEN        CFG_SR_MAX_MQP_TX_LEN
 #endif
 
-//*****************************************************************************
-//globals
-//*****************************************************************************
 static uint16_t MQTTServerUtil_msgID = 0xFFFF;
 
 int32_t (*MQTTServerUtil_dbgPrn)(const char *fmt, ...) = NULL;
 bool MQTTServerUtil_prnAux = false;
 
-static void (*MQTTServerUtil_registerMutexLock)(void*) = NULL;
-static void (*MQTTServerUtil_registerMutexUnlock)(void*) = NULL;
-static void *MQTTServerUtil_mutex = NULL;
-
-//*****************************************************************************
-// Internal Routines
-//*****************************************************************************
+static void (*MQTTServerUtil_registerMutexLock)(pthread_mutex_t *)   = NULL;
+static void (*MQTTServerUtil_registerMutexUnlock)(pthread_mutex_t *) = NULL;
+static pthread_mutex_t *MQTTServerUtil_mutex = NULL;
 
 //*****************************************************************************
 //
@@ -56,14 +61,9 @@ static inline uint16_t assign_new_msg_id()
     return MQTTServerUtil_msgID += 2;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 static void my_pkt_free(MQTT_Packet_t *mqp)
 {
-    free((void*) mqp);
+    free((void *)mqp);
 }
 
 //*****************************************************************************
@@ -81,7 +81,7 @@ static MQTT_Packet_t *server_mqp_alloc(uint8_t msgType, uint32_t buf_sz, uint8_t
 
     if ((mqp_sz + buf_sz) > MQP_SERVER_TX_LEN)
     {
-        USR_INFO("S: fatal, buf allocate len > MQP_SERVER_TX_LEN\n\r");
+        /* fatal, buf allocate len > MQP_SERVER_TX_LEN */
         return NULL;
     }
 
@@ -92,23 +92,16 @@ static MQTT_Packet_t *server_mqp_alloc(uint8_t msgType, uint32_t buf_sz, uint8_t
         MQTT_packetInit(mqp, offset);
 
         mqp->msgType = msgType;
-        mqp->maxlen = buf_sz;
-        mqp->buffer = (uint8_t*) mqp + mqp_sz;
+        mqp->maxlen  = buf_sz;
+        mqp->buffer  = (uint8_t *)mqp + mqp_sz;
 
         mqp->free = my_pkt_free;
 
     }
-    else
-    {
-        USR_INFO("S: fatal, failed to allocate Server MQP\n\r");
-    }
+    /* else - fatal, failed to allocate Server MQP */
 
     return mqp;
 }
-
-//*****************************************************************************
-// External Routines
-//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -130,32 +123,22 @@ uint16_t MQTTServerUtil_setMsgID(void)
     return assign_new_msg_id();
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 MQTT_Packet_t *MQTTServerUtil_mqpAlloc(uint8_t msgType, uint32_t buf_sz)
 {
     return server_mqp_alloc(msgType, buf_sz, MQTT_MAX_FH_LEN);
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 MQTT_Packet_t *MQTTServerUtil_mqpCopy(const MQTT_Packet_t *mqp)
 {
     MQTT_Packet_t *cpy = server_mqp_alloc(mqp->msgType, mqp->maxlen, 0);
     uint8_t *buffer;
-    
+
     if (NULL != cpy)
     {
         buffer = cpy->buffer;
 
         /* Copy to overwrite everything in 'cpy' from source 'mqp' */
-        MQTT_bufWrNbytes((uint8_t*) cpy, (uint8_t*) mqp, sizeof(MQTT_Packet_t));
+        MQTT_bufWrNbytes((uint8_t *)cpy, (uint8_t *)mqp, sizeof(MQTT_Packet_t));
 
         cpy->buffer = buffer; /* Restore buffer and copy */
         MQTT_bufWrNbytes(cpy->buffer, mqp->buffer, mqp->maxlen);
@@ -164,11 +147,6 @@ MQTT_Packet_t *MQTTServerUtil_mqpCopy(const MQTT_Packet_t *mqp)
     return cpy;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTTServerUtil_mutexLock(void)
 {
     if (MQTTServerUtil_registerMutexLock)
@@ -178,11 +156,6 @@ void MQTTServerUtil_mutexLock(void)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
 void MQTTServerUtil_mutexUnlock(void)
 {
     if (MQTTServerUtil_registerMutexUnlock)
@@ -192,14 +165,8 @@ void MQTTServerUtil_mutexUnlock(void)
     return;
 }
 
-//*****************************************************************************
-//
-//! \brief
-//
-//*****************************************************************************
-void MQTTServerUtil_setParams(int32_t (*dbg_prn)(const char *fmt, ...), void *mutex, void (*mutexLockin)(void*), void (*mutexUnlock)(void*))
+void MQTTServerUtil_setParams(pthread_mutex_t *mutex, void (*mutexLockin)(pthread_mutex_t *), void (*mutexUnlock)(pthread_mutex_t *))
 {
-    MQTTServerUtil_dbgPrn = dbg_prn;
     MQTTServerUtil_mutex = mutex;
     MQTTServerUtil_registerMutexLock = mutexLockin;
     MQTTServerUtil_registerMutexUnlock = mutexUnlock;

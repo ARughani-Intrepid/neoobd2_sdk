@@ -1022,9 +1022,14 @@ int32_t ATCmdSock_setSockOptParse(char *buff, ATCmdSock_SetSockOpt_t *params)
             {
                 return STRMPL_ERROR_MEM_ALLOCATION;
             }
-            if ((ret = StrMpl_getListVal(ATCmd_sockSocketCipher, sizeof(ATCmd_sockSocketCipher)/sizeof(StrMpl_List_t), &buff, params->optval, ATCMD_DELIM_TRM, STRMPL_FLAG_PARAM_SIZE_32)) < 0)
+            if ((ret = StrMpl_getBitmaskListVal(ATCmd_sockSocketCipher, sizeof(ATCmd_sockSocketCipher)/sizeof(StrMpl_List_t), &buff, params->optval, ATCMD_DELIM_TRM,ATCMD_DELIM_BIT, ATCmd_excludeDelimArray,STRMPL_FLAG_PARAM_SIZE_32 )) < 0)
             {
-                return ret;
+                if (ret != STRMPL_ERROR_PARAM_MISSING)
+                {
+                    return ret;
+                }
+                /* set to the default value */
+                *(uint32_t *)(params->optval) = SL_SEC_MASK_SECURE_DEFAULT;
             }
             break;
         case SL_SO_SECURE_FILES_CA_FILE_NAME:
@@ -1337,7 +1342,7 @@ int32_t ATCmdSock_getSockOptResult(void *args, int32_t num, char *buff)
             StrMpl_setListStr(ATCmd_sockSocketSecMethod, sizeof(ATCmd_sockSocketSecMethod)/sizeof(StrMpl_List_t),params->optval,&buff,ATCMD_DELIM_TRM,STRMPL_FLAG_PARAM_SIZE_8 |STRMPL_FLAG_PARAM_UNSIGNED);
             break;
         case SL_SO_SECURE_MASK:
-            StrMpl_setListStr(ATCmd_sockSocketCipher, sizeof(ATCmd_sockSocketCipher)/sizeof(StrMpl_List_t),params->optval,&buff,ATCMD_DELIM_TRM,STRMPL_FLAG_PARAM_SIZE_32 |STRMPL_FLAG_PARAM_UNSIGNED);
+            StrMpl_setBitmaskListStr(ATCmd_sockSocketCipher, sizeof(ATCmd_sockSocketCipher)/sizeof(StrMpl_List_t),params->optval, &buff, ATCMD_DELIM_TRM, ATCMD_DELIM_BIT, STRMPL_FLAG_PARAM_SIZE_32 |STRMPL_FLAG_PARAM_UNSIGNED);
             break;
         case SL_SO_SECURE_FILES_CA_FILE_NAME:
         case SL_SO_SECURE_FILES_PRIVATE_KEY_FILE_NAME:
@@ -1638,6 +1643,10 @@ int32_t ATCmdSock_recvResult(void *args, int32_t num, char *buff)
     StrMpl_setStr(ATCmd_sockRecvStr,&buff,ATCMD_DELIM_EVENT);
     /* sd */
     StrMpl_setVal(&params->sd, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_16 |STRMPL_FLAG_PARAM_SIGNED|STRMPL_FLAG_PARAM_DEC);
+
+    /* format */
+    StrMpl_setVal(&params->format, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_8 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
+
     /* length */
     outputLen = params->len;
     if (params->format == ATCMD_DATA_FORMAT_BASE64)
@@ -1922,6 +1931,9 @@ int32_t ATCmdSock_recvFromResult(void *args, int32_t num, char *buff)
     /* sd */
     StrMpl_setVal(&params->target.sd, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_16 |STRMPL_FLAG_PARAM_SIGNED|STRMPL_FLAG_PARAM_DEC);
 
+    /* format */
+    StrMpl_setVal(&params->format, &buff,ATCMD_DELIM_ARG,STRMPL_FLAG_PARAM_SIZE_8 |STRMPL_FLAG_PARAM_UNSIGNED|STRMPL_FLAG_PARAM_DEC);
+    
     /* length */
     outputLen = params->len;
     if (params->format == ATCMD_DATA_FORMAT_BASE64)

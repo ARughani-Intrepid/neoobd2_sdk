@@ -1,27 +1,39 @@
 /*
- *   Copyright (C) 2016 Texas Instruments Incorporated
+ * Copyright (C) 2016-2018, Texas Instruments Incorporated
+ * All rights reserved.
  *
- *   All rights reserved. Property of Texas Instruments Incorporated.
- *   Restricted rights to use, duplicate or disclose this code are
- *   granted through contract.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   The program may not be used without the written permission of
- *   Texas Instruments Incorporated or against the terms and conditions
- *   stipulated in the agreement under which this program has been supplied,
- *   and under no circumstances can it be used with non-TI connectivity device.
- *   
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//*****************************************************************************
-// includes
-//*****************************************************************************
 #include "server_util.h"
 #include "client_mgmt.h"
 #include "server_pkts.h"
 
-//*****************************************************************************
-// defines
-//*****************************************************************************
 #ifndef CFG_SR_MAX_CL_ID_SIZE
 #define MAX_CLIENT_ID_LEN 64
 #else
@@ -45,14 +57,14 @@
 #define MQTTClientMgmt_isClUsrFree(usr) ((0 == usr->flags) && ('\0' == usr->clientID[0]))
 #define MQTTClientMgmt_isClInactive(usr) ((0 == usr->flags) && ('\0' != usr->clientID[0]))
 
-#define MQTTClientMgmt_needToWaitListPublish(qos, usr)                          \
-        ((((MQTT_QOS1 == qos) && hasCleanSession(usr)) ||          \
-          ((MQTT_QOS0 == qos)))?                                        \
+#define MQTTClientMgmt_needToWaitListPublish(qos, usr)     \
+        ((((MQTT_QOS1 == qos) && hasCleanSession(usr)) ||  \
+          ((MQTT_QOS0 == qos)))?                           \
          false : true)
 
-#define MQTTClientMgmt_mqpMapGet(mqp)         (mqp->private)
-#define MQTTClientMgmt_mqpMapSet(mqp, clMap) (mqp->private |=  clMap)
-#define MQTTClientMgmt_mqpMapClr(mqp, clMap) (mqp->private &= ~clMap)
+#define MQTTClientMgmt_mqpMapGet(mqp)        (mqp->sessionDataPresent)
+#define MQTTClientMgmt_mqpMapSet(mqp, clMap) (mqp->sessionDataPresent |=  clMap)
+#define MQTTClientMgmt_mqpMapClr(mqp, clMap) (mqp->sessionDataPresent &= ~clMap)
 
 #define MQTTClientMgmt_bmap(usr)             (1 << usr->index)
 
@@ -231,7 +243,7 @@ static void clUsrReset(MQTTClientMgmt_usr_t *usr)
 static void clUsrInit(void)
 {
     int32_t idx = 0;
-    
+
     for (idx = 0; idx < MAX_CLIENTS; idx++)
     {
         MQTTClientMgmt_usr_t *usr = users + idx;
@@ -376,7 +388,7 @@ static void ack1WlMqpDispatch(MQTTClientMgmt_usr_t *usr)
 //*****************************************************************************
 static inline uint32_t _clBmapGet(void *usrCl)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     return (MQTTClientMgmt_isClUsrFree(usr) ? 0 : MQTTClientMgmt_bmap(usr));
 }
@@ -390,7 +402,6 @@ static void pubDispatch(uint32_t clMap, MQTT_Packet_t *mqp)
 {
     uint32_t sp_map = 0; /* client Map for sessions present */
     MQTT_QOS qos = MQTT_FH_BYTE1_QOS(mqp->fhByte1);/* QOS */
-    const uint32_t cl_ref = clMap; /* Keep ref to original */
     int32_t i = 0;
     MQTT_Packet_t *cpy;
     MQTTClientMgmt_usr_t *usr;
@@ -441,8 +452,6 @@ static void pubDispatch(uint32_t clMap, MQTT_Packet_t *mqp)
         MQTT_packetFree(mqp); /* PUB MQP now has no more use; must be freed */
     }
 
-    USR_INFO("PUBLISH: CL Map(0x%08x): For Ack 0x%08x, Inactive 0x%08x\n\r", cl_ref, clMap, sp_map);
-
     return;
 }
 
@@ -472,7 +481,7 @@ static void wlRemove(MQTT_AckWlist_t *list, MQTT_Packet_t *prev, MQTT_Packet_t *
     {
         list->head = elem->next;
     }
-    
+
     if (NULL == list->head)
     {
         list->tail = NULL;
@@ -815,7 +824,7 @@ static MQTTClientMgmt_usr_t *assignClUsr(char *clientID, uint8_t *vhBuf)
     MQTTClientMgmt_usr_t *usr;
     MQTTClientMgmt_usr_t *fr_usr = NULL;
     int32_t idx = 0;
-    
+
     for (idx = 0; idx < MAX_CLIENTS; idx++)
     {
         usr = users + idx;
@@ -828,7 +837,7 @@ static MQTTClientMgmt_usr_t *assignClUsr(char *clientID, uint8_t *vhBuf)
             /* Free usr is present to create CL-ID */
             break;
         }
-        else if ((NULL != clientID) && 
+        else if ((NULL != clientID) &&
                 (0 == strncmp(usr->clientID, clientID,MAX_CLIENT_ID_LEN)))
         {
             /* Found a client obj with exact ID match */
@@ -865,8 +874,6 @@ static MQTTClientMgmt_usr_t *assignClUsr(char *clientID, uint8_t *vhBuf)
         setAssigned(usr, true);
     }
 
-    USR_INFO("Assignment of user %s (detail: index %d and name %s) \n\r", usr ? "Succeeded" : "Failed", usr ? (int32_t )usr->index : -1, usr ? usr->clientID : "");
-
     return usr;
 }
 
@@ -881,13 +888,11 @@ static MQTTClientMgmt_usr_t *assignClUsr(char *clientID, uint8_t *vhBuf)
 //*****************************************************************************
 void MQTTClientMgmt_subCountAdd(void *usrCl)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     if (isConnected(usr))
     {
         usr->n_sub++;
-        USR_INFO("%s has added a new sub, now total is %u\n\r", usr->clientID, usr->n_sub);
-
     }
 
     return;
@@ -900,12 +905,11 @@ void MQTTClientMgmt_subCountAdd(void *usrCl)
 //*****************************************************************************
 void MQTTClientMgmt_subCountDel(void *usrCl)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     if (isConnected(usr))
     {
         usr->n_sub--;
-        USR_INFO("%s has deleted a sub, now total is %u\n\r", usr->clientID, usr->n_sub);
     }
 
     return;
@@ -918,7 +922,7 @@ void MQTTClientMgmt_subCountDel(void *usrCl)
 //*****************************************************************************
 bool MQTTClientMgmt_qos2PubRxUpdate(void *usrCl, uint16_t msgID)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     return (usr && (qos2PubRxIsDone(usr, msgID) || qos2PubRxLogup(usr, msgID)));
 }
@@ -940,7 +944,7 @@ uint32_t MQTTClientMgmt_bmapGet(void *usrCl)
 //*****************************************************************************
 void *MQTTClientMgmt_appHndlGet(void *usrCl)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     return ((usr && isConnected(usrCl)) ? usr->app : NULL);
 }
@@ -952,7 +956,7 @@ void *MQTTClientMgmt_appHndlGet(void *usrCl)
 //*****************************************************************************
 void *MQTTClientMgmt_willHndlGet(void *usrCl)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     return ((usr && isConnected(usrCl)) ? usr->will : NULL);
 }
@@ -1004,7 +1008,7 @@ int32_t MQTTClientMgmt_pubMsgSend(void *usrCl, const MQTT_UTF8String_t *topic, c
 //*****************************************************************************
 bool MQTTClientMgmt_canSessionDelete(void *usrCl)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     return (usr ? (hasCleanSession(usr) || !hasSessionData(usr)) : false);
 }
@@ -1017,7 +1021,7 @@ bool MQTTClientMgmt_canSessionDelete(void *usrCl)
 //*****************************************************************************
 void MQTTClientMgmt_onNetClose(void *usrCl)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     /* Check if the user is in CONNACK state */
     if (isAssigned(usr))
@@ -1054,7 +1058,7 @@ void MQTTClientMgmt_onNetClose(void *usrCl)
 //*****************************************************************************
 bool MQTTClientMgmt_notifyAck(void *usrCl, uint8_t msgType, uint16_t msgID)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
     bool rv = false;
 
     if (NULL == usr)
@@ -1110,7 +1114,7 @@ uint16_t MQTTClientMgmt_connectRx(void *ctxCl, bool cleanSession, char *clientID
     {
         vhBuf[0] = MQTT_VH_SESSION_PRESENT; /* Set Session Present Flag */
     }
-    *usrCl = (void*) usr;
+    *usrCl = (void *)usr;
 
     usr->ctx = ctxCl;
     usr->app = appCl;
@@ -1131,12 +1135,12 @@ uint16_t MQTTClientMgmt_connectRx(void *ctxCl, bool cleanSession, char *clientID
 //*****************************************************************************
 void MQTTClientMgmt_onConnackSend(void *usrCl, bool cleanSession)
 {
-    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t*) usrCl;
+    MQTTClientMgmt_usr_t *usr = (MQTTClientMgmt_usr_t *)usrCl;
 
     /* Check if the usr is connected and has CONNACK assigned */
     if (false == isAssigned(usr))
     {
-        USR_INFO("Fatal: CONNACK for unassigned usr Id %u, abort\n\r", usr->index);
+        /* Fatal: CONNACK for unassigned user Id */
         return;
     }
 
@@ -1153,8 +1157,7 @@ void MQTTClientMgmt_onConnackSend(void *usrCl, bool cleanSession)
         sessionResume(usr);
     }
 
-    DBG_INFO("Server is now connected to client %s\n\r", usr->clientID);
-
+    /* Server is now connected to client */
     return;
 }
 

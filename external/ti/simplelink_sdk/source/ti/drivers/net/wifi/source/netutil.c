@@ -51,13 +51,6 @@
 /* API Functions                                                             */
 /*****************************************************************************/
 
-typedef struct
-{
-    _u8   *pOutputValues;
-    _u16  *pOutputLen;
-    _i16   Status;
-}_SlNetUtilCmdData_t;
-
 
 /******************************************************************************
 sl_UtilsGet
@@ -213,7 +206,7 @@ _i16 sl_NetUtilCmd(const _u16 Cmd, const _u8 *pAttrib,  const _u16 AttribLen,
     if(SL_OS_RET_CODE_OK == (_i16)Msg.Rsp.status)
     {
         /* after the async event is signaled, the data will be copied to the pOutputValues buffer  */
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+        VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, 0, 0));
 
         /* the response header status */
         RetVal = OutData.Status;

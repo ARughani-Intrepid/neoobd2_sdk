@@ -51,11 +51,6 @@
 			<locationURI>PARENT-1-PROJECT_LOC/source/driver.c</locationURI>
 		</link>
 		<link>
-			<name>errno.h</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/bsd/errno.h</locationURI>
-		</link>
-		<link>
 			<name>errors.h</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/errors.h</locationURI>
@@ -86,16 +81,6 @@
 			<locationURI>PARENT-1-PROJECT_LOC/fs.h</locationURI>
 		</link>
 		<link>
-			<name>in.h</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/bsd/netinet/in.h</locationURI>
-		</link>
-		<link>
-			<name>inet.h</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/bsd/arpa/inet.h</locationURI>
-		</link>
-		<link>
 			<name>netapp.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/source/netapp.c</locationURI>
@@ -116,16 +101,6 @@
 			<locationURI>PARENT-1-PROJECT_LOC/netcfg.h</locationURI>
 		</link>
 		<link>
-			<name>netdb.c</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/source/netdb.c</locationURI>
-		</link>
-		<link>
-			<name>netdb.h</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/bsd/netdb.h</locationURI>
-		</link>
-		<link>
 			<name>netutil.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/source/netutil.c</locationURI>
@@ -141,11 +116,6 @@
 			<locationURI>PARENT-1-PROJECT_LOC/source/nonos.c</locationURI>
 		</link>
 		<link>
-			<name>select.h</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/bsd/sys/select.h</locationURI>
-		</link>
-		<link>
 			<name>simplelink.h</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/simplelink.h</locationURI>
@@ -159,16 +129,6 @@
 			<name>sl_socket.h</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/sl_socket.h</locationURI>
-		</link>
-		<link>
-			<name>socket.c</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/source/socket.c</locationURI>
-		</link>
-		<link>
-			<name>socket.h</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/bsd/sys/socket.h</locationURI>
 		</link>
 		<link>
 			<name>spawn.c</name>
@@ -199,7 +159,7 @@
 	<variableList>
 		<variable>
 			<name>FREERTOS_INSTALL_DIR</name>
-			<value>file:/C:/FreeRTOSv9.0.0</value>
+			<value>file:/C:/FreeRTOSv10.0.0</value>
 		</variable>
 		<variable>
 			<name>XDC_TOOLS_DIR</name>

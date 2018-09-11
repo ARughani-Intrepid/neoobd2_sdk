@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,12 +37,13 @@
 #ifndef __SL_NET_UTILS_H__
 #define __SL_NET_UTILS_H__
 
+#include <stddef.h>
+
+#include "slnetsock.h"
 
 #ifdef    __cplusplus
 extern "C" {
 #endif
-
-#include "slnetsock.h"
 
 /*!
     \defgroup SlNetUtils SlNetUtils group
@@ -58,8 +59,25 @@ extern "C" {
 */
 
 /*****************************************************************************/
+/* Macro declarations                                                        */
+/*****************************************************************************/
+#define SLNETUTIL_AI_PASSIVE     0x00000001
+#define SLNETUTIL_AI_NUMERICHOST 0x00000004
+
+/*****************************************************************************/
 /* Structure/Enum declarations                                               */
 /*****************************************************************************/
+
+typedef struct SlNetUtil_addrInfo_t {
+    int                          ai_flags;
+    int                          ai_family;
+    int                          ai_socktype;
+    int                          ai_protocol;
+    size_t                       ai_addrlen;
+    struct SlNetSock_Addr_t     *ai_addr;
+    char                        *ai_canonname;
+    struct SlNetUtil_addrInfo_t *ai_next;
+} SlNetUtil_addrInfo_t;
 
 /* Creating one address parameter from 4 separate address parameters */
 #define SLNETUTIL_IPV4_VAL(add_3,add_2,add_1,add_0)                         ((((uint32_t)add_3 << 24) & 0xFF000000) | (((uint32_t)add_2 << 16) & 0xFF0000) | (((uint32_t)add_1 << 8) & 0xFF00) | ((uint32_t)add_0 & 0xFF) )
@@ -79,11 +97,21 @@ extern "C" {
 int32_t SlNetUtil_init(int32_t flags);
 
 /*!
+    \brief Return text descriptions of getAddrInfo error codes
+
+    \param[in] errorCode A getAddrInfo error code
+
+    \return             Text description of the passed in getAddrInfo error code.
+                        If the error code does not exist returns "Unknown Error"
+ */
+const char *SlNetUtil_gaiStrErr(int32_t errorCode);
+
+/*!
     \brief Get host IP by name\n
     Obtain the IP Address of machine on network, by machine name.
 
-    \param[in]     ifBitmap     Specifies the interfaces which the the host ip
-                                needs to be retrieved from according tothe
+    \param[in]     ifBitmap     Specifies the interfaces which the host ip
+                                needs to be retrieved from according to the
                                 priority until one of them will return an answer.\n
                                 Value 0 is used in order to choose automatic
                                 interfaces selection according to the priority
@@ -95,16 +123,25 @@ int32_t SlNetUtil_init(int32_t flags);
                                 prior to this socket creation using SlNetIf_add().
     \param[in]     name         Host name
     \param[in]     nameLen      Name length
-    \param[out]    ipAddr       This parameter is filled in with an array of
-                                IP addresses. In case that host name is not
-                                resolved, ipAddrLen is zero.
-    \param[in,out] ipAddrLen    Holds the size of the ipAddr array, when function
-                                successful, the ipAddrLen parameter will be updated with
-                                the number of the IP addresses found.
+    \param[out]    ipAddr       A buffer used to store the IP address(es) from
+                                the resulting DNS resolution. The caller is
+                                responsible for allocating this buffer. Upon
+                                return, this buffer can be accessed as an array
+                                of IPv4 or IPv6 addresses, depending on the
+                                protocol passed in for the family parameter.
+                                Addresses are stored in host byte order.
+    \param[in,out] ipAddrLen    Initially holds the number of IP addresses
+                                that the ipAddr buffer parameter is capable of
+                                storing. Upon successful return, the ipAddrLen
+                                parameter contains the number of IP addresses
+                                that were actually written into the ipAddr
+                                buffer, as a result of successful DNS
+                                resolution, or zero if DNS resolution failed.
     \param[in]     family       Protocol family
 
-    \return                     The interface ID of the interface which run
-                                successfully the function, or negative on failure.\n
+    \return                     The interface ID of the interface which was
+                                able to successfully run the function, or
+                                negative on failure.\n
                                 #SLNETERR_POOL_IS_EMPTY may be return in case
                                 there are no resources in the system\n
                                 Possible DNS error codes:
@@ -123,14 +160,18 @@ int32_t SlNetUtil_init(int32_t flags);
     \par  Example
     - Getting IPv4 using get host by name:
     \code
-    uint16_t DestIPListSize = 1;
+    // A buffer capable of storing a single 32-bit IPv4 address
     uint32_t DestIP[1];
-    uint32_t ifID;
+
+    // The number of IP addresses that DestIP can hold
+    uint16_t DestIPListSize = 1;
+
+    int32_t ifID;
     int16_t  SockId;
     SlNetSock_AddrIn_t LocalAddr; //address of the server to connect to
     int32_t LocalAddrSize;
 
-    ifID = SlNetUtil_getHostByName(0, "www.google.com", strlen("www.google.com"), DestIP, &DestIPListSize, SLNETSOCK_PF_INET);
+    ifID = SlNetUtil_getHostByName(0, "www.ti.com", strlen("www.ti.com"), DestIP, &DestIPListSize, SLNETSOCK_PF_INET);
 
     LocalAddr.sin_family = SLNETSOCK_AF_INET;
     LocalAddr.sin_addr.s_addr = SlNetUtil_htonl(DestIP[0]);
@@ -141,12 +182,65 @@ int32_t SlNetUtil_init(int32_t flags);
 
     if (SockId >= 0)
     {
-        status = SlNetSock_connect(SockId, (SlNetSock_Addr_t *) &LocalAddr, LocalAddrSize);
+        status = SlNetSock_connect(SockId, (SlNetSock_Addr_t *)&LocalAddr, LocalAddrSize);
     }
     \endcode
 */
 int32_t SlNetUtil_getHostByName(uint32_t ifBitmap, char *name, const uint16_t nameLen, uint32_t *ipAddr, uint16_t *ipAddrLen, const uint8_t family);
 
+
+/*!
+    \brief Network address and service translation
+
+    Create an IPv4 or IPv6 socket address structure, to be used with bind()
+    and/or connect() to create a client or server socket
+
+    This is a "minimal" version for support on embedded devices. Supports a
+    host name or an IPv4 or IPv6 address string passed in via the 'node'
+    parameter for creating a client socket.  A value of NULL should be passed
+    for 'node' with AI_PASSIVE flag set to create a (non-loopback) server
+    socket.
+
+    The caller is responsible for freeing the allocated results by calling
+    SlNetUtil_freeAddrInfo().
+
+    \param[in] ifID     Specifies the interface which needs
+                        to used for socket operations.\n
+                        The values of the interface identifier
+                        is defined with the prefix SLNETIF_ID_
+                        which defined in slnetif.h
+
+    \param[in] node     An IP address or a host name.
+
+    \param[in] service  The port number of the service to bind or connect to.
+
+    \param[in] hints    An SlNetUtil_addrInfo_t struct used to filter the
+                        results returned.
+
+    \param[out] res     one or more SlNetUtil_addrInfo_t structs, each of which
+                        can be used to bind or connect a socket.
+
+    \return             Returns 0 on success, or an error code on failure.
+
+    \sa                 SlNetUtil_freeAddrInfo()
+*/
+int32_t SlNetUtil_getAddrInfo(uint16_t ifID, const char *node,
+        const char *service, const struct SlNetUtil_addrInfo_t *hints,
+        struct SlNetUtil_addrInfo_t **res);
+
+/*!
+    \brief Free the results returned from SlNetUtil_getAddrInfo
+
+    Free the chain of SlNetUtil_addrInfo_t structs allocated and returned by
+    SlNetUtil_getAddrInfo
+
+    \param[in] res linked list of results returned from SlNetUtil_getAddrInfo
+
+    \return        None.
+
+    \sa            SlNetUtil_getAddrInfo()
+*/
+void SlNetUtil_freeAddrInfo(struct SlNetUtil_addrInfo_t *res);
 
 /*!
     \brief Reorder the bytes of a 32-bit unsigned value
@@ -227,6 +321,23 @@ uint16_t SlNetUtil_htons(uint16_t val);
 */
 uint16_t SlNetUtil_ntohs(uint16_t val);
 
+/*!
+    \brief Convert an IPv4 address in string format to binary format
+
+    This function converts an IPv4 address stored as a character string to a
+    32-bit binary value in network byte order. Note that a leading zero or a
+    "0x" in the address string are interpreted as octal or hexadecimal,
+    respectively. The function stores the IPv4 address in the address structure
+    pointed to by the addr parameter.
+
+    \param[in] str   IPv4 address string in dotted decimal format
+
+    \param[out] addr pointer to an IPv4 address structure. The converted binary
+                     address is stored in this structure upon return (in network byte order)
+
+    \return          returns nonzero if the address string is valid, zero if not
+*/
+int SlNetUtil_inetAton(const char *str, struct SlNetSock_InAddr_t *addr);
 
 /*!
     \brief Converts IP address in binary representation to string representation
@@ -260,9 +371,9 @@ uint16_t SlNetUtil_ntohs(uint16_t val);
         char str[SLNETSOCK_INET_ADDRSTRLEN];
 
         // store this IP address in sa:
-        SlNetSock_inet_pton(SLNETSOCK_AF_INET, "192.0.2.33", &(sa.sin_addr));
+        SlNetUtil_inetPton(SLNETSOCK_AF_INET, "192.0.2.33", &(sa.sin_addr));
         // now get it back and print it
-        SlNetSock_inet_ntop(SLNETSOCK_AF_INET, &(sa.sin_addr), str, SLNETSOCK_INET_ADDRSTRLEN);
+        SlNetUtil_inetNtop(SLNETSOCK_AF_INET, &(sa.sin_addr), str, SLNETSOCK_INET_ADDRSTRLEN);
     \endcode
 */
 const char *SlNetUtil_inetNtop(int16_t addrFamily, const void *binaryAddr, char *strAddr, SlNetSocklen_t strAddrLen);
@@ -296,7 +407,7 @@ const char *SlNetUtil_inetNtop(int16_t addrFamily, const void *binaryAddr, char 
         SlNetSock_AddrIn6_t sa;
 
         // store this IP address in sa:
-        SlNetSock_inet_pton(SLNETSOCK_AF_INET6, "SLNETSOCK_AF_INET6", &(sa.sin6_addr));
+        SlNetUtil_inetPton(SLNETSOCK_AF_INET6, "0:0:0:0:0:0:0:0", &(sa.sin6_addr));
     \endcode
 */
 int32_t SlNetUtil_inetPton(int16_t addrFamily, const char *strAddr, void *binaryAddr);

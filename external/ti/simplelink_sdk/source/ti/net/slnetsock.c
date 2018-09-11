@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,9 @@
 #include <stdlib.h>
 
 #include <ti/net/slnetsock.h>
+#include <ti/net/slnetutils.h>
 #include <ti/net/slnetif.h>
+#include <ti/net/slneterr.h>
 
 /* POSIX Header files */
 #include <pthread.h>
@@ -300,7 +302,7 @@ int32_t SlNetSock_init(int32_t flags)
     {
         /* Setup the mutex operations */
         retVal = pthread_mutex_init(&VirtualSocketMutex, (const pthread_mutexattr_t *)NULL);
-        if (retVal < 0)
+        if (0 != retVal)
         {
             return SLNETERR_RET_CODE_MUTEX_CREATION_FAILED;
         }
@@ -688,7 +690,7 @@ int32_t SlNetSock_connect(int16_t sd, const SlNetSock_Addr_t *addr, SlNetSocklen
 //*****************************************************************************
 int32_t SlNetSock_connectUrl(int16_t sd, const char *url)
 {
-    uint8_t             addr[SLNETSOCK_IPV6_ADDR_LEN];
+    uint32_t            addr[4];
     uint16_t            ipAddrLen;
     SlNetSock_AddrIn_t  localAddr; //address of the server to connect to
     SlNetSocklen_t      localAddrSize;
@@ -713,12 +715,12 @@ int32_t SlNetSock_connectUrl(int16_t sd, const char *url)
     }
 
     /* Query DNS for IPv4 address.                                           */
-    retVal = (netIf->ifConf)->utilGetHostByName(netIf->ifContext, (char *)url, strlen(url), (uint32_t *)addr, &ipAddrLen, SLNETSOCK_AF_INET);
+    retVal = (netIf->ifConf)->utilGetHostByName(netIf->ifContext, (char *)url, strlen(url), addr, &ipAddrLen, SLNETSOCK_AF_INET);
     SLNETSOCK_NORMALIZE_RET_VAL(retVal,SLNETUTIL_ERR_UTILGETHOSTBYNAME_FAILED);
     if(retVal < 0)
     {
         /* If call fails, try again for IPv6.                                */
-        retVal = (netIf->ifConf)->utilGetHostByName(netIf->ifContext, (char *)url, strlen(url), (uint32_t *)addr, &ipAddrLen, SLNETSOCK_AF_INET6);
+        retVal = (netIf->ifConf)->utilGetHostByName(netIf->ifContext, (char *)url, strlen(url), addr, &ipAddrLen, SLNETSOCK_AF_INET6);
         SLNETSOCK_NORMALIZE_RET_VAL(retVal,SLNETUTIL_ERR_UTILGETHOSTBYNAME_FAILED);
         if(retVal < 0)
         {
@@ -740,7 +742,7 @@ int32_t SlNetSock_connectUrl(int16_t sd, const char *url)
 
         /* convert the IPv4 address from host byte order to network byte
            order                                                             */
-        localAddr.sin_addr.s_addr = SlNetUtil_htonl(((uint32_t *)(addr))[0]);
+        localAddr.sin_addr.s_addr = SlNetUtil_htonl(addr[0]);
     }
 
 
@@ -959,11 +961,11 @@ int32_t SlNetSock_select(int16_t nsds, SlNetSock_SdSet_t *readsds, SlNetSock_SdS
                 }
                 if (SlNetSock_sdsIsSet(tempNode->realSd, &ifWritesds) == 1)
                 {
-                    SlNetSock_sdsSet(tempNode->virtualSd , writesds);
+                    SlNetSock_sdsSet(tempNode->virtualSd, writesds);
                 }
                 if (SlNetSock_sdsIsSet(tempNode->realSd, &ifExceptsds) == 1)
                 {
-                    SlNetSock_sdsSet(tempNode->virtualSd , exceptsds);
+                    SlNetSock_sdsSet(tempNode->virtualSd, exceptsds);
                 }
                 tempNode = tempNode->next;
             }
@@ -1427,6 +1429,8 @@ int32_t SlNetSock_secAttribDelete(SlNetSockSecAttrib_t *secAttrib)
         tempSecAttrib = nextSecAttrib;
     }
 
+    free(secAttrib);
+
     return SLNETERR_RET_CODE_OK;
 }
 
@@ -1437,7 +1441,7 @@ int32_t SlNetSock_secAttribDelete(SlNetSockSecAttrib_t *secAttrib)
 //                          attributes object
 //
 //*****************************************************************************
-int32_t SlNetSock_secAttribSet(SlNetSockSecAttrib_t *secAttrib , SlNetSockSecAttrib_e attribName , void *val, uint16_t len)
+int32_t SlNetSock_secAttribSet(SlNetSockSecAttrib_t *secAttrib, SlNetSockSecAttrib_e attribName, void *val, uint16_t len)
 {
     SlNetSock_SecAttribNode_t *secAttribObj;
 

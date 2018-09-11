@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2016-2018 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -277,17 +277,12 @@ static void _clock_gettimeMono(struct timespec *ts)
     key = HwiP_disable();
     /*
      *  This gets the number of tick count overflows as well as the tick
-     *  count.  Called with interrupts disabled, since the function does
-     *  not disable interrupts:
-     *
-     *  void vTaskSetTimeOutState( TimeOut_t * const pxTimeOut )
-     *  {
-     *      configASSERT( pxTimeOut );
-     *      pxTimeOut->xOverflowCount = xNumOfOverflows;
-     *      pxTimeOut->xTimeOnEntering = xTickCount;
-     *  }
+     *  count.  We use the internal API (new in FreeRTOS 10), since it can be
+     *  called from an ISR.  Calling the public API, vTaskSetTimeOutState,
+     *  will cause an exception if called from an ISR.
      */
-    vTaskSetTimeOutState(&timeout);
+    vTaskInternalSetTimeOutState(&timeout);
+
     HwiP_restore(key);
 
     ticks = timeout.xTimeOnEntering;

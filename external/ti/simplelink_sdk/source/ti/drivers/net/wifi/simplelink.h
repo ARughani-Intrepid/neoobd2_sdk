@@ -110,7 +110,7 @@ Please see the rest of the page for more details about the different steps.
  adjustments. \n
  The file should be located in the porting directory (the porting directory is in the same level as the source directory)\n
  It is recommended to use the empty template provided as part of this driver or
- file of other platform such as MSP432 or CC3220, from one of the wide range
+ file of other platform such as MSP432 or CC32xx, from one of the wide range
  of example applications provided by Texas Instruments.
 
  \subsection    porting_step2   Step 2 - Select the capabilities set required for your application
@@ -130,7 +130,7 @@ Please see the rest of the page for more details about the different steps.
 
  \subsection    porting_step3   Step 3 - Bind the device enable/disable output line
 
- The CC3120 has two external hardware lines that can be used to enable/disable the device.
+ The CC31xx has two external hardware lines that can be used to enable/disable the device.
  - <b>nReset</b>
  - <b>nHib</b> - provides mechanism to enter the device into the least current consumption mode. In
  this mode the RTC value is kept.
@@ -149,7 +149,7 @@ Please see the rest of the page for more details about the different steps.
 
  \subsection    porting_step4   Step 4 - Writing your interface communication driver
 
- The SimpleLink CC3120 has two standard communication interfaces
+ The SimpleLink CC31xx has two standard communication interfaces
     - SPI
     - UART
 
@@ -294,11 +294,11 @@ extern "C"
 /*****************************************************************************/
 /* Macro declarations for Host Driver version                                */
 /*****************************************************************************/
-#define SL_DRIVER_VERSION       "2.0.1.26"
-#define SL_MAJOR_VERSION_NUM    2L
+#define SL_DRIVER_VERSION   "3.0.1.39"
+#define SL_MAJOR_VERSION_NUM    3L
 #define SL_MINOR_VERSION_NUM    0L
 #define SL_VERSION_NUM          1L
-#define SL_SUB_VERSION_NUM      26L
+#define SL_SUB_VERSION_NUM      39L
 
 /*****************************************************************************/
 /* Macro declarations for predefined configurations                          */
@@ -873,7 +873,9 @@ extern void _SlDrvHandleNetAppRequestEvents(SlNetAppRequest_t *pNetAppRequest, S
 
 typedef _SlReturnVal_t (*_SlSpawnEntryFunc_t)(void* pValue);
 
-#define SL_SPAWN_FLAG_FROM_SL_IRQ_HANDLER    (0X1)
+#define SL_SPAWN_FLAG_FROM_SL_IRQ_HANDLER    (0x1)
+#define SL_SPAWN_FLAG_FROM_CMD_CTX           (0x2)
+#define SL_SPAWN_FLAG_FROM_CMD_PROCESS       (0x3)
 
 #ifdef SL_PLATFORM_MULTI_THREADED
     #include "source/spawn.h"

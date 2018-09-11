@@ -51,6 +51,7 @@ UART.h
 ./uart/UARTCC32XXDMA.h
 Watchdog.h
 ./watchdog/WatchdogCC32XX.h
+.meta
 package/package.cfg.xdc.inc
 lib/drivers_cc32xx.aem4
 package/package_ti.drivers.c

@@ -1,29 +1,44 @@
 /*
- *   Copyright (C) 2016 Texas Instruments Incorporated
+ * Copyright (C) 2016-2018, Texas Instruments Incorporated
+ * All rights reserved.
  *
- *   All rights reserved. Property of Texas Instruments Incorporated.
- *   Restricted rights to use, duplicate or disclose this code are
- *   granted through contract.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   The program may not be used without the written permission of
- *   Texas Instruments Incorporated or against the terms and conditions
- *   stipulated in the agreement under which this program has been supplied,
- *   and under no circumstances can it be used with non-TI connectivity device.
- *   
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __SERVER_PLUG_H__
-#define __SERVER_PLUG_H__
+#ifndef ti_net_mqtt_server_MQTTServerPlug__include
+#define ti_net_mqtt_server_MQTTServerPlug__include
 
-//*****************************************************************************
-// includes
-//*****************************************************************************
 #include "server_pkts.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-//*****************************************************************************
-// defines
-//*****************************************************************************
 /* Used by Server Core Logic */
 #define PG_MAP_BITS_SIZE     2
 #define PG_MAP_BITS_MASK     ((1 << PG_MAP_BITS_SIZE) - 1)
@@ -51,9 +66,6 @@
 #error "Make size-of pg_map greate than 1 byte"
 #endif
 
-//*****************************************************************************
-// typedefs
-//*****************************************************************************
 typedef struct _MQTTServerPlug_CBs_t_
 {
         int32_t (*topicEnroll)(uint8_t pgID, const MQTT_UTF8String_t *topic,
@@ -63,9 +75,6 @@ typedef struct _MQTTServerPlug_CBs_t_
                        uint32_t dataLen, MQTT_QOS qos, bool retain);
 }MQTTServerPlug_CBs_t;
 
-//*****************************************************************************
-// function prototypes
-//*****************************************************************************
 int32_t MQTTServerPlug_init(const MQTTServerPlug_CBs_t *cbs);
 
 /* uint16_t composition: MSB is CONNACK-Flags = 0, LSB is CONNACK-RC */
@@ -80,5 +89,8 @@ int32_t MQTTServerPlug_publish(uint8_t pg_map, const MQTT_UTF8String_t *topic,
 
 int32_t MQTTServerPlug_disconn(const void *appUsr, bool due2err);
 
+#ifdef __cplusplus
+}
 #endif
 
+#endif

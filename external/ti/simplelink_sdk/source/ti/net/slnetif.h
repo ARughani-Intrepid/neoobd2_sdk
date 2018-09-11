@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,15 +37,14 @@
 #ifndef __SL_NET_IF_H__
 #define __SL_NET_IF_H__
 
-
-#ifdef    __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 
 #include <ti/net/slnetsock.h>
+
+#ifdef    __cplusplus
+extern "C" {
+#endif
 
 /*!
     \defgroup SlNetIf SlNetIf group
@@ -578,7 +577,7 @@ int32_t SlNetIf_getConnectionStatus(uint16_t ifID);
     \code
         SlNetSock_In6Addr_t IPAdd;
         uint16_t addressConfig = 0;
-        SlNetIf_getIPAddr(SLNETIF_ID_1 ,SLNETIF_IPV6_ADDR_LOCAL ,&addressConfig ,(uint8_t *)ipAddr);
+        SlNetIf_getIPAddr(SLNETIF_ID_1, SLNETIF_IPV6_ADDR_LOCAL, &addressConfig, (uint8_t *)ipAddr);
     \endcode
     <br>
 */

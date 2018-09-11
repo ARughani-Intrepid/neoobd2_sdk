@@ -34,8 +34,11 @@
 /*****************************************************************************/
 /* Include files                                                             */
 /*****************************************************************************/
-#include <ti/net/slnetsock.h>
 #include <ti/drivers/net/wifi/simplelink.h>
+#include <ti/net/slnetsock.h>
+#include <ti/net/slnetif.h>
+#include <ti/net/slneterr.h>
+#include <ti/net/slnetutils.h>
 
 #ifndef __SLNETWIFI_SOCKET_H__
 #define __SLNETWIFI_SOCKET_H__

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017, Texas Instruments Incorporated
+ * Copyright (c) 2013-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,7 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * */
+ */
 /*
  *  ======== sntp.h ========
  */
@@ -83,12 +83,12 @@
 /*! @ingroup ti_net_sntp_SNTP */
 /*@{*/
 
+#include <stdint.h>
+#include <ti/net/slnetsock.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <ti/net/slnetsock.h>
 
 /*!
  *  @name SNTP Error Codes

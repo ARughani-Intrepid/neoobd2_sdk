@@ -211,7 +211,7 @@ _i32 sl_FsOpen(const _u8 *pFileName,const _u32 ModeAndMaxSize, _u32 *pToken)
     }
     else
     {
-        return SL_ERROR_FS_UNVALID_FILE_MODE;
+        return SL_ERROR_FS_INVALID_FILE_MODE;
     }
 
     if(pToken != NULL)

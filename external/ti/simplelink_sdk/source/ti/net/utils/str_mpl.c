@@ -1016,6 +1016,7 @@ int32_t StrMpl_getArrayBitVal(char **src, void *des, char delim, char intraDelim
     /* check for no parameters */
     if (numParams == 0)
     {
+        *src = *src + 1;
         return STRMPL_ERROR_PARAM_MISSING;
     }
 
@@ -1177,6 +1178,7 @@ int32_t StrMpl_getBitmaskListVal(StrMpl_List_t *list, uint32_t listSize, char **
     /* check for no parameters */
     if (numParams == 0)
     {
+        *src = *src + 1;
         return STRMPL_ERROR_PARAM_MISSING;
     }
 
@@ -1381,18 +1383,18 @@ int32_t StrMpl_getAllocStr(char **src, char **des, char delim, uint32_t maxSize,
 
     if (status == 0)
     {
-        /* get current string length */
-        length = strlen(*src);
+        /* get current string length + null terminated */
+        length = strlen(*src) + 1;
 
-        /* check current string length and max size */  
-        if (length > maxSize)
+        /* check current string length and max size + null terminated */  
+        if (length > (maxSize + 1))
         {
             status = STRMPL_ERROR_WRONG_SIZE;
         }
         else
         {
             /* allocate the destination */
-            *des = malloc(length);
+            *des = calloc(length , sizeof(uint8_t));
             if (*des == NULL)
             {
                 return STRMPL_ERROR_MEM_ALLOCATION;

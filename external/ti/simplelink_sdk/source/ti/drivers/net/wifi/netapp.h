@@ -81,6 +81,9 @@ typedef enum
     SL_NETAPP_EVENT_IPV4_LOST,
     SL_NETAPP_EVENT_DHCP_IPV4_ACQUIRE_TIMEOUT,
     SL_NETAPP_EVENT_IPV6_LOST,
+    SL_NETAPP_EVENT_RESERVED1,
+    SL_NETAPP_EVENT_RESERVED2,
+    SL_NETAPP_EVENT_RESERVED3,
     SL_NETAPP_EVENT_MAX
 } SlNetAppEventId_e;
 
@@ -177,6 +180,8 @@ typedef enum
 #define SL_NETAPP_HTTP_CA_CERTIFICATE_FILE_NAME             (11)
 #define SL_NETAPP_HTTP_TEMP_REGISTER_MDNS_SERVICE_NAME      (12)
 #define SL_NETAPP_HTTP_TEMP_UNREGISTER_MDNS_SERVICE_NAME    (13)
+#define SL_NETAPP_HTTP_TIMEOUT                              (14)
+
                                                      
 #define SL_NETAPP_MDNS_CONT_QUERY_OPT                       (1)
 #define SL_NETAPP_MDNS_QEVETN_MASK_OPT                      (2)
@@ -814,7 +819,8 @@ _i16 sl_NetAppGetServiceList(const _u8   IndexOffset,
                                         - SL_NETAPP_MDNS_OPTIONS_ADD_SERVICE_BIT   bit 31  - for internal use if the service should be added or deleted (set means ADD).
 
         \return    Zero on success, or negative error code on failure 
-        \sa          sl_NetAppMDNSRegisterService
+        \par       Persistent   - <b>Optionally persistent</b>        
+        \sa        sl_NetAppMDNSRegisterService
         \note        
         \warning 
         The size of the service length should be smaller than 255.
@@ -856,6 +862,8 @@ _i16 sl_NetAppMDNSUnRegisterService(const _i8 *pServiceName,const _u8 ServiceNam
 
         \return    Zero on success, or negative error code on failure
 
+        \par    Persistent   - <b>Optionally persistent</b>        
+
         \sa        sl_NetAppMDNSUnRegisterService
 
         \warning   1) Temporary -  there is an allocation on stack of internal buffer.
@@ -880,7 +888,7 @@ _i16 sl_NetAppMDNSUnRegisterService(const _i8 *pServiceName,const _u8 ServiceNam
 
     - Update text for existing service:
     \code
-        Please Note! Update is for text only! Importent to apply the same persistent flag options as original service registration.\n
+        Please Note! Update is for text only! Important to apply the same persistent flag options as original service registration.\n
 
         Options = SL_NETAPP_MDNS_OPTION_UPDATE_TEXT | SL_NETAPP_MDNS_OPTIONS_IS_NOT_PERSISTENT;
         sl_NetAppMDNSRegisterService(AddService,sizeof(AddService),"Service 5;payper=A4;size=10",strlen("Service 5;payper=A4;size=10"),1000,120,Options);
@@ -990,8 +998,9 @@ _i16 sl_NetAppPing(const SlNetAppPingCommand_t* pPingParams,const _u8 Family, Sl
                                     - SL_NETAPP_HTTP_CA_CERTIFICATE_FILE_NAME
                                     - SL_NETAPP_HTTP_TEMP_REGISTER_MDNS_SERVICE_NAME
                                     - SL_NETAPP_HTTP_TEMP_UNREGISTER_MDNS_SERVICE_NAME
+                                    - SL_NETAPP_HTTP_TIMEOUT
                                 - For SL_NETAPP_DHCP_SERVER_ID:
-                                    - SL_NETAPP_DHCP_SERVER_BASIC_OPT
+                                    - SL_NETAPP_DHCP_SRV_BASIC_OPT
                                 - For SL_NETAPP_MDNS_ID:
                                     - SL_NETAPP_MDNS_CONT_QUERY_OPT
                                     - SL_NETAPP_MDNS_QEVETN_MASK_OPT
@@ -1008,9 +1017,11 @@ _i16 sl_NetAppPing(const SlNetAppPingCommand_t* pPingParams,const _u8 Family, Sl
     \par Persistent                 
     \par
                                 <b>Reset</b>:                
-                                    - SL_NETAPP_DHCP_SERVER_BASIC_OPT \n
+                                    - SL_NETAPP_DEVICE_DOMAIN
+                                    - SL_NETAPP_DHCP_SRV_BASIC_OPT \n
     \par
                                 <b>Non- Persistent</b>:                    
+                                    - SL_NETAPP_HTTP_TIMEOUT
                                     - SL_NETAPP_HTTP_TEMP_REGISTER_MDNS_SERVICE_NAME
                                     - SL_NETAPP_HTTP_TEMP_UNREGISTER_MDNS_SERVICE_NAME \n
     \par
@@ -1025,13 +1036,14 @@ _i16 sl_NetAppPing(const SlNetAppPingCommand_t* pPingParams,const _u8 Family, Sl
                                     - SL_NETAPP_HTTP_SECONDARY_PORT_ENABLE
                                     - SL_NETAPP_HTTP_PRIMARY_PORT_SECURITY_MODE
                                     - SL_NETAPP_HTTP_PRIVATE_KEY_FILENAME
-                                    - SL_NETAPP_HTTP_DEVICE_CERTIFICATE_FILE_NAME
-                                    - SL_NETAPP_HTTP_CA_CERTIFICATE_FILENAME
+                                    - SL_NETAPP_HTTP_DEVICE_CERTIFICATE_FILENAME
+                                    - SL_NETAPP_HTTP_CA_CERTIFICATE_FILE_NAME
                                     - SL_NETAPP_MDNS_CONT_QUERY_OPT
                                     - SL_NETAPP_MDNS_QEVETN_MASK_OPT
                                     - SL_NETAPP_MDNS_TIMING_PARAMS_OPT 
-                                    - SL_NETAPP_DEV_CONF_OPT_DEVICE_URN
-                                    - SL_NETAPP_DEV_CONF_OPT_DOMAIN_NAME
+                                    - SL_NETAPP_DEVICE_URN
+                                    - SL_NETAPP_DEVICE_ID
+                                    - SL_NETAPP_DNS_CLIENT_ID
 
     \return    Zero on success, or negative value if an error occurred.
     \sa        sl_NetAppGet
@@ -1087,8 +1099,10 @@ _i16 sl_NetAppPing(const SlNetAppPingCommand_t* pPingParams,const _u8 Family, Sl
          time.MaxResponseTime = 2000;
         time.NumOfRetries = 30;
         sl_NetAppSet (SL_NETAPP_DNS_CLIENT_ID, SL_NETAPP_DNS_CLIENT_TIME, sizeof(time), (_u8 *)&time);
+
     \endcode
     <br>
+	
 
     - Start MDNS continuous querys: <br>
     In a continuous mDNS query mode, the device keeps sending queries to the network according to a specific service name. 
@@ -1246,7 +1260,8 @@ _i16 sl_NetAppSet(const _u8 AppId ,const _u8 Option,const _u8 OptionLen,const _u
         sl_NetAppGet (SL_NETAPP_DNS_CLIENT_ID, SL_NETAPP_DNS_CLIENT_TIME, &pOptionLen, (_u8 *)&time); 
     \endcode
     <br>
-
+	
+    
     - Getting active applications: <br>
       Get active applications for active role. return value is mask of the active application (similar defines as sl_NetAppStart\sl_NetAppStop):
     \code
@@ -1291,13 +1306,13 @@ _u16 sl_NetAppSend( _u16 Handle, _u16 DataLen, _u8 *pData, _u32 Flags);
     \param[out]     *pData     Data received
     \param[in,out]  *Flags     Can have the following values:
                                - SL_NETAPP_REQUEST_RESPONSE_FLAGS_CONTINUATION (out) 
-                               - More data is pending in the network procesor. Application should continue reading the data by calling sl_NetAppRecv again
+                               - More data is pending in the network processor. Application should continue reading the data by calling sl_NetAppRecv again
 
     \return         Zero on success, or negative error code on failure
 
     \sa             sl_NetAppSend 
     \note    
-    \warning        handle is received in the sl_NetAppRequestHandler callback. Handle is valid untill all data is receive from the network processor.
+    \warning        handle is received in the sl_NetAppRequestHandler callback. Handle is valid until all data is receive from the network processor.
 */
 #if _SL_INCLUDE_FUNC(sl_NetAppRecv)
 _SlReturnVal_t sl_NetAppRecv( _u16 Handle, _u16 *DataLen, _u8 *pData, _u32 *Flags);

@@ -346,6 +346,61 @@ typedef struct
     SlSockSSLCertInfo_t SecurePeerCertinfo;
 } SlSockSSLConnectionParams_t;
 
+
+
+
+typedef enum
+{
+    SL_SOCK_TX_RATE_1M         = 1,
+    SL_SOCK_TX_RATE_2M         = 2,
+    SL_SOCK_TX_RATE_5_5M       = 3,
+    SL_SOCK_TX_RATE_11M        = 4,
+    SL_SOCK_TX_RATE_6M         = 6,
+    SL_SOCK_TX_RATE_9M         = 7,
+    SL_SOCK_TX_RATE_12M        = 8,
+    SL_SOCK_TX_RATE_18M        = 9,
+    SL_SOCK_TX_RATE_24M        = 10,
+    SL_SOCK_TX_RATE_36M        = 11,
+    SL_SOCK_TX_RATE_48M        = 12,
+    SL_SOCK_TX_RATE_54M        = 13,
+    SL_SOCK_TX_RATE_MCS_0      = 14,
+    SL_SOCK_TX_RATE_MCS_1      = 15,
+    SL_SOCK_TX_RATE_MCS_2      = 16,
+    SL_SOCK_TX_RATE_MCS_3      = 17,
+    SL_SOCK_TX_RATE_MCS_4      = 18,
+    SL_SOCK_TX_RATE_MCS_5      = 19,
+    SL_SOCK_TX_RATE_MCS_6      = 20,
+    SL_SOCK_TX_RATE_MCS_7      = 21,
+    SL_SOCK_TX_MAX_NUM_RATES   = 0xFF
+}slSockTransceiverTXRateTable_e;
+
+
+typedef enum 
+{
+    SL_SOCK_RX_RATE_1M       =  0,
+    SL_SOCK_RX_RATE_2M       =  1,
+    SL_SOCK_RX_RATE_5_5M     =  2,
+    SL_SOCK_RX_RATE_11M      =  3,
+    SL_SOCK_RX_RATE_6M       =  4,
+    SL_SOCK_RX_RATE_9M       =  5,
+    SL_SOCK_RX_RATE_12M      =  6,
+    SL_SOCK_RX_RATE_18M      =  7,
+    SL_SOCK_RX_RATE_24M      =  8,
+    SL_SOCK_RX_RATE_36M      =  9,
+    SL_SOCK_RX_RATE_48M      =  10,
+    SL_SOCK_RX_RATE_54M      =  11,
+    SL_SOCK_RX_RATE_MCS0     =  12, /* 6.5Mbps */
+    SL_SOCK_RX_RATE_MCS1     =  13, /* 13Mbps */
+    SL_SOCK_RX_RATE_MCS2     =  14, /* 19.5Mbps */
+    SL_SOCK_RX_RATE_MCS3     =  15, /* 26Mbps */
+    SL_SOCK_RX_RATE_MCS4     =  16, /* 39Mbps */
+    SL_SOCK_RX_RATE_MCS5     =  17, /* 52Mbps */
+    SL_SOCK_RX_RATE_MCS6     =  18, /* 58.5Mbps */
+    SL_SOCK_RX_RATE_MCS7     =  19, /* 65Mbps */
+    SL_SOCK_RX_RATE_MCS7_SGI =  20, /* 65Mbps+10% */
+
+}SlSockTransceiverRXRates_e;
+
 typedef enum
 {
   SL_BSD_SECURED_PRIVATE_KEY_IDX = 0,
@@ -421,11 +476,11 @@ typedef struct SlFdSet_t  /* The select socket array manager */
 
 typedef struct
 {
-    _u8   Rate;               /* Recevied Rate  */
-    _u8   Channel;            /* The received channel*/
-    _i8   Rssi;               /* The computed RSSI value in db of current frame */
-    _u8   Padding;            /* pad to align to 32 bits */
-    _u32  Timestamp;          /* Timestamp in microseconds */
+    _u8    Rate;               /* Received Rate, refer to slSockTransceiverRXRateTable_e  */
+    _u8    Channel;            /* The received channel*/
+    _i8    Rssi;               /* The computed RSSI value in db of current frame */
+    _u8    Padding;            /* pad to align to 32 bits */
+    _u32   Timestamp;          /* Timestamp in microseconds */
 }SlTransceiverRxOverHead_t;
 
 
@@ -458,7 +513,7 @@ typedef struct
                                    - when used with AF_RF:
                                       - SL_SOCK_DGRAM - L2 socket
                                       - SL_SOCK_RAW - L1 socket - bypass WLAN CCA (Clear Channel Assessment)
-
+                                        The Protocol parameter is used to set the channel number.				     
     \param[in] Protocol         specifies a particular transport to be used with 
                                 the socket. \n
                                 The most common are 
@@ -704,7 +759,7 @@ _i16 sl_Connect(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen);
             In this case, MAX_CONCURRENT_ACTIONS can be increased (result in memory increase) or try
             again later to issue the command.
 
-            In case all the user sockets are open, sl_Select will exhibit the behaviour mentioned in (2)
+            In case all the user sockets are open, sl_Select will exhibit the behavior mentioned in (2)
             This is due to the fact sl_select supports multiple callers by utilizing one user socket internally.
             User who wish to ensure multiple select calls at any given time, must reserve one socket out of the 16 given.
    
@@ -715,45 +770,6 @@ _i16 sl_Connect(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen);
 _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *exceptsds, struct SlTimeval_t *timeout);
 #endif
 
-/*!
-    \cond DOXYGEN_IGNORE
-*/
-
-/*!
-    \brief Select's SlFdSet_t SET function
-   
-    Sets current socket descriptor on SlFdSet_t container
-*/
-void SL_SOCKET_FD_SET(_i16 fd, SlFdSet_t *fdset);
-
-/*!
-    \brief Select's SlFdSet_t CLR function
-   
-    Clears current socket descriptor on SlFdSet_t container
-*/
-void SL_SOCKET_FD_CLR(_i16 fd, SlFdSet_t *fdset);
-
-
-/*!
-    \brief Select's SlFdSet_t ISSET function
-   
-    Checks if current socket descriptor is set (TRUE/FALSE)
-
-    \return            Returns TRUE if set, FALSE if unset
-
-*/
-_i16  SL_SOCKET_FD_ISSET(_i16 fd, SlFdSet_t *fdset);
-
-/*!
-    \brief Select's SlFdSet_t ZERO function
-   
-    Clears all socket descriptors from SlFdSet_t
-*/
-void SL_SOCKET_FD_ZERO(SlFdSet_t *fdset);
-
-/*!
-    \endcond
-*/
 
 
 /*!
@@ -845,6 +861,11 @@ void SL_SOCKET_FD_ZERO(SlFdSet_t *fdset);
                                                 SL_SECURE_ALPN_H2_14    
                                                 SL_SECURE_ALPN_H2_16    
                                                 SL_SECURE_ALPN_FULL_LIST
+                                  - <b>SL_SO_SECURE_EXT_CLIENT_CHLNG_RESP</b> \n
+                                                 Set with no parameter to indicate that the client uses external signature using netapp request.\n
+                                                 needs netapp request handler\n
+                                  - <b>SL_SO_SECURE_DOMAIN_NAME_VERIFICATION </b>\n
+                                                 Set a domain name, to check in ssl client connection.
                                 - <b>SL_IPPROTO_IP</b> 
                                 - <b>SL_IP_MULTICAST_TTL</b> \n
                                                 Set the time-to-live value of outgoing multicast packets for this socket. \n
@@ -892,19 +913,14 @@ void SL_SOCKET_FD_ZERO(SlFdSet_t *fdset);
                                                 This options takes <b>_u32</b> as parameter 
                                 - <b>SL_SO_PHY_TX_TIMEOUT</b> \n  
                                                 RAW socket, set WLAN Tx – changes the TX timeout (lifetime) of transceiver frames. \n   
-                                                Value in Ms, maximum value is 10ms    \n
+                                                Value in Ms, maximum value is 100ms    \n
                                                 This options takes <b>_u32</b> as parameter 
                                 - <b>SL_SO_PHY_ALLOW_ACKS </b> \n  
                                                 RAW socket, set WLAN Tx – Enable\Disable sending ACKs in transceiver mode \n  
                                                 0 = disabled / 1 = enabled    \n
                                                 This options takes <b>_u32</b> as parameter 
                                 - <b>SL_SO_LINGER</b> \n
-                                                Socket lingers on close pending remaining send/receive packetst\n
-                                - <b>SL_SO_SECURE_EXT_CLIENT_CHLNG_RESP</b> \n
-                                                Set with no parameter to indicate that the client uses external signature using netapp requesrt.\n
-                                                needs netapp request handler\n
-                                - <b>SL_SO_SECURE_DOMAIN_NAME_VERIFICATION </b>\n
-                                                Set a domain name, to check in ssl client connection.
+                                                Socket lingers on close pending remaining send/receive packets\n
 
     \param[in] optval           Specifies a value for the option
     \param[in] optlen           Specifies the length of the 
@@ -1010,6 +1026,7 @@ void SL_SOCKET_FD_ZERO(SlFdSet_t *fdset);
         sl_SetSockOpt(SockID,SL_SOL_SOCKET,SL_SO_SECURE_FILES_DH_KEY_FILE_NAME,"myDHinServerMode.der",strlen("myDHinServerMode.der"));
      \endcode
      <br>
+    
 
     - SL_IP_MULTICAST_TTL:
      \code
@@ -1335,6 +1352,7 @@ _i16 sl_RecvFrom(_i16 sd, void *buf, _i16 len, _i16 flags, SlSockAddr_t *from, S
                                 supported for TCP.
                                 For transceiver mode, the SL_WLAN_RAW_RF_TX_PARAMS macro can be used to determine
                                 transmission parameters (channel,rate,tx_power,preamble)
+                                -rate need to be define using slSockTransceiverTXRateTable_e
     
     
     \return                     Zero on success, or negative error code on failure
@@ -1475,6 +1493,45 @@ _u16 sl_Htons( _u16 val );
 #define sl_Ntohs sl_Htons   /* Reorder the bytes of a 16-bit unsigned value from network order to processor orde. */
 #endif
 
+/*!
+    \cond DOXYGEN_IGNORE
+*/
+
+/*!
+    \brief Select's SlFdSet_t SET function
+
+    Sets current socket descriptor on SlFdSet_t container
+*/
+void SL_SOCKET_FD_SET(_i16 fd, SlFdSet_t *fdset);
+
+/*!
+    \brief Select's SlFdSet_t CLR function
+
+    Clears current socket descriptor on SlFdSet_t container
+*/
+void SL_SOCKET_FD_CLR(_i16 fd, SlFdSet_t *fdset);
+
+
+/*!
+    \brief Select's SlFdSet_t ISSET function
+
+    Checks if current socket descriptor is set (TRUE/FALSE)
+
+    \return            Returns TRUE if set, FALSE if unset
+
+*/
+_i16  SL_SOCKET_FD_ISSET(_i16 fd, SlFdSet_t *fdset);
+
+/*!
+    \brief Select's SlFdSet_t ZERO function
+
+    Clears all socket descriptors from SlFdSet_t
+*/
+void SL_SOCKET_FD_ZERO(SlFdSet_t *fdset);
+
+/*!
+    \endcond
+*/
 
 /*!
 

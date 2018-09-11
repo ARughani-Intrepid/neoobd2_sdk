@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2016-2018 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,14 +57,17 @@
 #include <errno.h>
 
 /*
- *  ======== pthread_mutex_Obj ========
+ *  ======== pthread_mutex_obj ========
+ *  FreeRTOS implementation of a POSIX mutex
+ *
+ *  This object must align with 'struct freertos_Mutex' (_internal.h).
  */
-typedef struct pthread_mutex_Obj {
+typedef struct {
     int                protocol;
     pthread_t          owner;
     int                type;
     SemaphoreHandle_t  sem;
-} pthread_mutex_Obj;
+} pthread_mutex_obj;
 
 /*
  *  Function for obtaining a timeout in Clock ticks from the difference of
@@ -73,7 +76,7 @@ typedef struct pthread_mutex_Obj {
 extern int _clock_abstime2ticks(clockid_t clockId,
         const struct timespec *abstime, uint32_t *ticks);
 
-static int acquireMutex(pthread_mutex_Obj *mutex, uint32_t timeout);
+static int acquireMutex(pthread_mutex_obj *mutex, uint32_t timeout);
 
 /*
  *  Default mutex attrs.
@@ -99,8 +102,7 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 /*
  *  ======== pthread_mutexattr_gettype ========
  */
-int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr,
-        int *type)
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
 {
     *type = attr->type;
     return (0);
@@ -169,15 +171,11 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
  */
 int pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
-    pthread_mutex_Obj *mutexObj = (pthread_mutex_Obj *)*mutex;
+    pthread_mutex_obj *obj = (pthread_mutex_obj *)(&mutex->freertos);
 
-    if (mutexObj->sem != NULL) {
-        vSemaphoreDelete(mutexObj->sem);
+    if (obj->sem != NULL) {
+        vSemaphoreDelete(obj->sem);
     }
-
-    vPortFree((void *)(*mutex));
-
-    *mutex = NULL;
 
     return (0);
 }
@@ -187,27 +185,20 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
  */
 int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
 {
-    pthread_mutex_Obj   *mutexObj;
+    pthread_mutex_obj *obj = (pthread_mutex_obj *)(&mutex->freertos);
     pthread_mutexattr_t *mAttrs;
     SemaphoreHandle_t    sem;
-    *mutex = NULL;
-
-    mutexObj = pvPortMalloc(sizeof(pthread_mutex_Obj));
-
-    if (mutexObj == NULL) {
-        return (ENOMEM);
-    }
 
     mAttrs = (attr == NULL) ? &defAttrs : (pthread_mutexattr_t *)attr;
 
-    mutexObj->type = mAttrs->type;
-    mutexObj->sem = NULL;
-    mutexObj->owner = NULL;
+    obj->type = mAttrs->type;
+    obj->sem = NULL;
+    obj->owner = NULL;
 
-    mutexObj->protocol = mAttrs->protocol;
+    obj->protocol = mAttrs->protocol;
 
-    if ((mutexObj->type == PTHREAD_MUTEX_NORMAL) ||
-            (mutexObj->type == PTHREAD_MUTEX_ERRORCHECK)) {
+    if ((obj->type == PTHREAD_MUTEX_NORMAL) ||
+            (obj->type == PTHREAD_MUTEX_ERRORCHECK)) {
         sem = xSemaphoreCreateMutex();
     }
     else {
@@ -216,13 +207,11 @@ int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
     }
 
     if (sem == NULL) {
-        pthread_mutex_destroy((pthread_mutex_t *)&mutexObj);
+        pthread_mutex_destroy(mutex);
         return (ENOMEM);
     }
 
-    mutexObj->sem = sem;
-
-    *mutex = (pthread_mutex_t)mutexObj;
+    obj->sem = sem;
 
     return (0);
 }
@@ -237,9 +226,9 @@ int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
  */
 int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
-    pthread_mutex_Obj *mutexObj = (pthread_mutex_Obj *)*mutex;
+    pthread_mutex_obj *obj = (pthread_mutex_obj *)(&mutex->freertos);
 
-    return (acquireMutex(mutexObj, portMAX_DELAY));
+    return (acquireMutex(obj, portMAX_DELAY));
 }
 
 /*
@@ -254,12 +243,12 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
 int pthread_mutex_timedlock(pthread_mutex_t *mutex,
         const struct timespec *abstime)
 {
-    pthread_mutex_Obj *mutexObj = (pthread_mutex_Obj *)*mutex;
-    uint32_t           timeout;
-    int                retc;
+    pthread_mutex_obj *obj = (pthread_mutex_obj *)(&mutex->freertos);
+    uint32_t timeout;
+    int retc;
 
     /* must attempt operation before validating abstime */
-    retc = acquireMutex(mutexObj, 0);
+    retc = acquireMutex(obj, 0);
 
     if (retc != ETIMEDOUT) {
         return (retc);
@@ -274,7 +263,7 @@ int pthread_mutex_timedlock(pthread_mutex_t *mutex,
         return (ETIMEDOUT);
     }
 
-    return (acquireMutex(mutexObj, timeout));
+    return (acquireMutex(obj, timeout));
 }
 
 /*
@@ -286,11 +275,11 @@ int pthread_mutex_timedlock(pthread_mutex_t *mutex,
  */
 int pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
-    pthread_mutex_Obj *mutexObj = (pthread_mutex_Obj *)*mutex;
-    int        retc = 0;
+    pthread_mutex_obj *obj = (pthread_mutex_obj *)(&mutex->freertos);
+    int retc = 0;
 
     /* Attempt to acquire the mutex with timeout of 0 */
-    retc = acquireMutex(mutexObj, 0);
+    retc = acquireMutex(obj, 0);
 
     retc = (retc == ETIMEDOUT) ? EBUSY : retc;
 
@@ -305,31 +294,31 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex)
  */
 int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
-    pthread_mutex_Obj *mutexObj = (pthread_mutex_Obj *)*mutex;
-    BaseType_t         status;
-    int                retc = 0;
+    pthread_mutex_obj *obj = (pthread_mutex_obj *)(&mutex->freertos);
+    BaseType_t status;
+    int retc = 0;
 
     /*
      *  Don't bother checking whether or not this thread owns the
      *  mutex:
      *
-     *      if (mutexObj->owner != pthread_self()) {
+     *      if (obj->owner != pthread_self()) {
      *          return (EPERM);
      *      }
      *
      *  Instead, we'll rely on FreeRTOS returning an error.
      */
 
-    if (mutexObj->type == PTHREAD_MUTEX_RECURSIVE) {
-        status = xSemaphoreGiveRecursive(mutexObj->sem);
+    if (obj->type == PTHREAD_MUTEX_RECURSIVE) {
+        status = xSemaphoreGiveRecursive(obj->sem);
         return (status == pdTRUE ? 0 : EPERM);
     }
     else {
         /* Disable the scheduler */
         vTaskSuspendAll();
 
-        status = xSemaphoreGive(mutexObj->sem);
-        mutexObj->owner = NULL;
+        status = xSemaphoreGive(obj->sem);
+        obj->owner = NULL;
 
         /* Re-enable the scheduler */
         xTaskResumeAll();
@@ -357,7 +346,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
 /*
  *  ======== acquireMutex ========
  */
-static int acquireMutex(pthread_mutex_Obj *mutex, uint32_t timeout)
+static int acquireMutex(pthread_mutex_obj *mutex, uint32_t timeout)
 {
     pthread_t       *thisThread;
     BaseType_t       status;

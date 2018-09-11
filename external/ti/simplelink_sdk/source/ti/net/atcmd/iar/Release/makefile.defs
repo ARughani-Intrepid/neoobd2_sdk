@@ -41,7 +41,9 @@ CFILES = \
     atcmd_netutil.c \
     atcmd_event.c \
     atcmd_gen.c \
-    atcmd.c
+    atcmd.c \
+    atcmd_mqtt.c \
+    atcmd_http.c
 
 OBJCFILES = $(CFILES:.c=.obj)
 

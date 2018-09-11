@@ -54,6 +54,14 @@
 
 #define ATCMD_RCV_QUEUE_SIZE        (10)
 
+#define ATCMDHTTP_METHOD_GET     1
+#define ATCMDHTTP_METHOD_POST    2
+#define ATCMDHTTP_METHOD_HEAD    3
+#define ATCMDHTTP_METHOD_OPTIONS 4
+#define ATCMDHTTP_METHOD_PUT     5
+#define ATCMDHTTP_METHOD_DELETE  6
+#define ATCMDHTTP_METHOD_CONNECT 7
+
 typedef struct _ATCmd_List_t_
 {
     char        *cmd;
@@ -61,7 +69,6 @@ typedef struct _ATCmd_List_t_
     char        *usage;
     uint8_t     blocked;
     uint8_t     numParams; /* case the number of params is not fixed, set this variable to 0xFF */
-    uint16_t    index;
 }ATCmd_List_t;
 
 typedef struct _ATCmd_Event_t_
@@ -102,8 +109,6 @@ extern StrMpl_List_t ATCmd_wlanRxFilterCfg[4];
 extern StrMpl_List_t ATCmd_wlanApAccessList[2];
 extern StrMpl_List_t ATCmd_wlanInfoElementRole[2];
 extern StrMpl_List_t ATCmd_wlanConnStatus[5];
-extern StrMpl_List_t ATCmd_wlanProvisioningCmd[6];
-extern StrMpl_List_t ATCmd_wlanProvisioningFlag[2];
 
 extern StrMpl_List_t ATCmd_sockDomain[3];
 extern StrMpl_List_t ATCmd_sockType[3];
@@ -112,7 +117,7 @@ extern StrMpl_List_t ATCmd_sockLevel[3];
 extern StrMpl_List_t ATCmd_sockSocketOpt[17];
 extern StrMpl_List_t ATCmd_sockIpOpt[6];
 extern StrMpl_List_t ATCmd_sockPhyOpt[7];
-extern StrMpl_List_t ATCmd_sockSocketSecMethod[6];
+extern StrMpl_List_t ATCmd_sockSocketSecMethod[5];
 extern StrMpl_List_t ATCmd_sockSocketCipher[23];
 extern StrMpl_List_t ATCmd_sockSocketAlpn[6];
 extern StrMpl_List_t ATCmd_sockPhyThreshold[6];
@@ -135,7 +140,7 @@ extern StrMpl_List_t ATCmd_netappDhcpSrvOptions[1];
 extern StrMpl_List_t ATCmd_netappMdnsTypes[20];
 
 extern StrMpl_List_t ATCmd_netcfgId[12];
-extern StrMpl_List_t ATCmd_netcfgOption[9];
+extern StrMpl_List_t ATCmd_netcfgOption[8];
 extern StrMpl_List_t ATCmd_netcfgIfState[12];
 extern StrMpl_List_t ATCmd_netcfgDhcpState[6];
     
@@ -156,6 +161,21 @@ extern StrMpl_List_t ATCmd_netUtilTempKeys[2];
 extern StrMpl_List_t ATCmd_netUtilInstallOp[2];
 extern StrMpl_List_t ATCmd_netUtilPubKeyAlgo[2];
 extern StrMpl_List_t ATCmd_netUtilEcNamedCurve[2];
+
+extern StrMpl_List_t ATCmd_mqttCreateFlags[7];
+extern StrMpl_List_t ATCmd_mqttCreateMode[2];
+extern StrMpl_List_t ATCmd_mqttQos[3];
+extern StrMpl_List_t ATCmd_mqttSetOptions[5];
+extern StrMpl_List_t ATCmd_mqttEventId[3];
+extern StrMpl_List_t ATCmd_mqttEventOperationId[4];
+
+extern StrMpl_List_t ATCmd_httpConnectFlags[2];
+extern StrMpl_List_t ATCmd_httpSendReqFlags[3];
+extern StrMpl_List_t ATCmd_httpSendReqMethod[7];
+extern StrMpl_List_t ATCmd_httpSetHeaderFlags[2];
+extern StrMpl_List_t ATCmd_httpHeaderOption[58];
+extern StrMpl_List_t ATCmd_httpOptOption[3];
+
 
 extern const uint32_t ATCmd_maxCmd;
 
@@ -181,8 +201,6 @@ extern char ATCmd_wlanConnectStr[];
 extern char ATCmd_wlanConnectUsageStr[];
 extern char ATCmd_wlanDisconnectStr[];
 extern char ATCmd_wlanDisconnectUsageStr[];
-extern char ATCmd_wlanProvisioningStr[];
-extern char ATCmd_wlanProvisioningUsageStr[];
 
 extern char ATCmd_devStartStr[];
 extern char ATCmd_devStartUsageStr[];
@@ -274,6 +292,46 @@ extern char ATCmd_netUtilCmdUsageStr[];
 extern char ATCmd_netUtilGetStr[];
 extern char ATCmd_netUtilGetUsageStr[];
 
+extern char ATCmd_mqttCreateStr[];
+extern char ATCmd_mqttCreateUsageStr[];
+extern char ATCmd_mqttDeleteStr[];
+extern char ATCmd_mqttDeleteUsageStr[];
+extern char ATCmd_mqttConnectStr[];
+extern char ATCmd_mqttConnectUsageStr[];
+extern char ATCmd_mqttDisconnectStr[];
+extern char ATCmd_mqttDisconnectUsageStr[];
+extern char ATCmd_mqttPublishStr[];
+extern char ATCmd_mqttPublishUsageStr[];
+extern char ATCmd_mqttSubscribeStr[];
+extern char ATCmd_mqttSubscribeUsageStr[];
+extern char ATCmd_mqttUnsubscribeStr[];
+extern char ATCmd_mqttUnsubscribeUsageStr[];
+extern char ATCmd_mqttSetStr[];
+extern char ATCmd_mqttSetUsageStr[];
+
+extern char ATCmd_httpCreateStr[];
+extern char ATCmd_httpCreateUsageStr[];
+extern char ATCmd_httpDestroyStr[];
+extern char ATCmd_httpDestroyUsageStr[];
+extern char ATCmd_httpConnectStr[];
+extern char ATCmd_httpConnectUsageStr[];
+extern char ATCmd_httpDisconnectStr[];
+extern char ATCmd_httpDisconnectUsageStr[];
+extern char ATCmd_httpSendReqStr[];
+extern char ATCmd_httpSendReqUsageStr[];
+extern char ATCmd_httpReadResBodyStr[];
+extern char ATCmd_httpReadResBodyUsageStr[];
+extern char ATCmd_httpSetHeaderStr[];
+extern char ATCmd_httpSetHeaderUsageStr[];
+extern char ATCmd_httpGetHeaderStr[];
+extern char ATCmd_httpGetHeaderUsageStr[];
+extern char ATCmd_httpSetOptStr[];
+extern char ATCmd_httpSetOptUsageStr[];
+extern char ATCmd_httpGetOptStr[];
+extern char ATCmd_httpGetOptUsageStr[];
+extern char ATCmd_httpSetProxyStr[];
+extern char ATCmd_httpSetProxyUsageStr[];
+
 extern char ATCmd_okStr[];
 extern char ATCmd_errorNumParamsStr[];
 extern char ATCmd_errorAllocStr[];
@@ -287,6 +345,8 @@ extern char ATCmd_eventSockStr[];
 extern char ATCmd_eventNetappStr[];
 extern char ATCmd_eventHttpServerStr[];
 extern char ATCmd_eventFatalErrorStr[];
+extern char ATCmd_eventMqttStr[];
+extern char ATCmd_eventHttpStr[];
 
 extern char ATCmd_excludeDelimStr[2];
 extern char ATCmd_excludeDelimArray[2];

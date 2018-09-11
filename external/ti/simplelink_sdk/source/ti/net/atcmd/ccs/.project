@@ -56,6 +56,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/atcmd_gen.c</locationURI>
 		</link>
 		<link>
+			<name>atcmd_http.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/atcmd_http.c</locationURI>
+		</link>
+		<link>
 			<name>atcmd_netapp.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/atcmd_netapp.c</locationURI>
@@ -69,6 +74,11 @@
 			<name>atcmd_netutil.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/atcmd_netutil.c</locationURI>
+		</link>
+		<link>
+			<name>atcmd_mqtt.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/atcmd_mqtt.c</locationURI>
 		</link>
 		<link>
 			<name>atcmd_socket.c</name>

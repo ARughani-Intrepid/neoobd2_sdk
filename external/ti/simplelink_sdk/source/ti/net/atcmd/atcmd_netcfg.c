@@ -259,6 +259,7 @@ int32_t ATCmdNetcfg_setParse(char *buff, ATCmdNetcfg_t *params)
                     params->len = sizeof(SlNetCfgIpV6Args_t);
                     break;
                 case SL_NETCFG_ADDR_STATEFUL:
+                case SL_NETCFG_ADDR_STATELESS:
                     params->len = 0;
                     break;
                 default:

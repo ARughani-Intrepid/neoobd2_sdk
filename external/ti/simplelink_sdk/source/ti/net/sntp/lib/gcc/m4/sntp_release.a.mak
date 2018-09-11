@@ -3,7 +3,7 @@
 #  package.bld.  Any modifications to this file will be 
 #  overwritten whenever makefiles are re-generated.
 #
-#  target compatibility key = gnu.targets.arm.M4{1,0,6.3,1
+#  target compatibility key = gnu.targets.arm.M4{1,0,7.2,1
 #
 ifeq (,$(MK_NOGENDEPS))
 -include package/lib/lib/gcc/m4/sntp_release/package/package_ti.net.sntp.om4g.dep
@@ -15,7 +15,7 @@ package/lib/lib/gcc/m4/sntp_release/package/package_ti.net.sntp.om4g: package/pa
 	@$(RM) $@.dep
 	$(RM) $@
 	@$(MSG) clm4g $< ...
-	$(gnu.targets.arm.M4.rootDir)/bin/arm-none-eabi-gcc -c -MD -MF $@.dep -x c  -Wunused -Wunknown-pragmas -ffunction-sections -fdata-sections  -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mabi=aapcs -g -Dfar= -D__DYNAMIC_REENT__  -D_POSIX_SOURCE   -I/vagrant/Q4_04/sdk_root/source/ti/posix/gcc -Dxdc_target_name__=M4 -Dxdc_target_types__=gnu/targets/arm/std.h -Dxdc_bld__profile_release -Dxdc_bld__vers_1_0_6_3_1  -O2  -I ../bsd $(XDCINCS) -I/vagrant/Q4_04/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include/newlib-nano -I/vagrant/Q4_04/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include -o $@ $<
+	$(gnu.targets.arm.M4.rootDir)/bin/arm-none-eabi-gcc -c -MD -MF $@.dep -x c  -Wunused -Wunknown-pragmas -ffunction-sections -fdata-sections  -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mabi=aapcs -g -Dfar= -D__DYNAMIC_REENT__  -std=c99   -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/gcc -Dxdc_target_name__=M4 -Dxdc_target_types__=gnu/targets/arm/std.h -Dxdc_bld__profile_release -Dxdc_bld__vers_1_0_7_2_1  -O2  -I ../bsd $(XDCINCS) -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include/newlib-nano -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include -o $@ $<
 	-@$(FIXDEP) $@.dep $@.dep
 	
 package/lib/lib/gcc/m4/sntp_release/package/package_ti.net.sntp.om4g: export LD_LIBRARY_PATH=
@@ -25,7 +25,7 @@ package/lib/lib/gcc/m4/sntp_release/package/package_ti.net.sntp.sm4g: package/pa
 	@$(RM) $@.dep
 	$(RM) $@
 	@$(MSG) clm4g -S $< ...
-	$(gnu.targets.arm.M4.rootDir)/bin/arm-none-eabi-gcc -c -MD -MF $@.dep -x c -S -Wunused -Wunknown-pragmas -ffunction-sections -fdata-sections  -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mabi=aapcs -g -Dfar= -D__DYNAMIC_REENT__  -D_POSIX_SOURCE   -I/vagrant/Q4_04/sdk_root/source/ti/posix/gcc -Dxdc_target_name__=M4 -Dxdc_target_types__=gnu/targets/arm/std.h -Dxdc_bld__profile_release -Dxdc_bld__vers_1_0_6_3_1  -O2  -I ../bsd $(XDCINCS) -I/vagrant/Q4_04/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include/newlib-nano -I/vagrant/Q4_04/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include -o $@ $<
+	$(gnu.targets.arm.M4.rootDir)/bin/arm-none-eabi-gcc -c -MD -MF $@.dep -x c -S -Wunused -Wunknown-pragmas -ffunction-sections -fdata-sections  -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mabi=aapcs -g -Dfar= -D__DYNAMIC_REENT__  -std=c99   -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/gcc -Dxdc_target_name__=M4 -Dxdc_target_types__=gnu/targets/arm/std.h -Dxdc_bld__profile_release -Dxdc_bld__vers_1_0_7_2_1  -O2  -I ../bsd $(XDCINCS) -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include/newlib-nano -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include -o $@ $<
 	-@$(FIXDEP) $@.dep $@.dep
 	
 package/lib/lib/gcc/m4/sntp_release/package/package_ti.net.sntp.sm4g: export LD_LIBRARY_PATH=
@@ -40,7 +40,7 @@ package/lib/lib/gcc/m4/sntp_release/sntp.om4g: sntp.c lib/gcc/m4/sntp_release.a.
 	@$(RM) $@.dep
 	$(RM) $@
 	@$(MSG) clm4g $< ...
-	$(gnu.targets.arm.M4.rootDir)/bin/arm-none-eabi-gcc -c -MD -MF $@.dep -x c  -Wunused -Wunknown-pragmas -ffunction-sections -fdata-sections  -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mabi=aapcs -g -Dfar= -D__DYNAMIC_REENT__  -D_POSIX_SOURCE   -I/vagrant/Q4_04/sdk_root/source/ti/posix/gcc -Dxdc_target_name__=M4 -Dxdc_target_types__=gnu/targets/arm/std.h -Dxdc_bld__profile_release -Dxdc_bld__vers_1_0_6_3_1  -O2  -I ../bsd $(XDCINCS) -I/vagrant/Q4_04/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include/newlib-nano -I/vagrant/Q4_04/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include -o $@ $<
+	$(gnu.targets.arm.M4.rootDir)/bin/arm-none-eabi-gcc -c -MD -MF $@.dep -x c  -Wunused -Wunknown-pragmas -ffunction-sections -fdata-sections  -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mabi=aapcs -g -Dfar= -D__DYNAMIC_REENT__  -std=c99   -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/gcc -Dxdc_target_name__=M4 -Dxdc_target_types__=gnu/targets/arm/std.h -Dxdc_bld__profile_release -Dxdc_bld__vers_1_0_7_2_1  -O2  -I ../bsd $(XDCINCS) -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include/newlib-nano -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include -o $@ $<
 	-@$(FIXDEP) $@.dep $@.dep
 	
 package/lib/lib/gcc/m4/sntp_release/sntp.om4g: export LD_LIBRARY_PATH=
@@ -50,7 +50,7 @@ package/lib/lib/gcc/m4/sntp_release/sntp.sm4g: sntp.c lib/gcc/m4/sntp_release.a.
 	@$(RM) $@.dep
 	$(RM) $@
 	@$(MSG) clm4g -S $< ...
-	$(gnu.targets.arm.M4.rootDir)/bin/arm-none-eabi-gcc -c -MD -MF $@.dep -x c -S -Wunused -Wunknown-pragmas -ffunction-sections -fdata-sections  -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mabi=aapcs -g -Dfar= -D__DYNAMIC_REENT__  -D_POSIX_SOURCE   -I/vagrant/Q4_04/sdk_root/source/ti/posix/gcc -Dxdc_target_name__=M4 -Dxdc_target_types__=gnu/targets/arm/std.h -Dxdc_bld__profile_release -Dxdc_bld__vers_1_0_6_3_1  -O2  -I ../bsd $(XDCINCS) -I/vagrant/Q4_04/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include/newlib-nano -I/vagrant/Q4_04/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include -o $@ $<
+	$(gnu.targets.arm.M4.rootDir)/bin/arm-none-eabi-gcc -c -MD -MF $@.dep -x c -S -Wunused -Wunknown-pragmas -ffunction-sections -fdata-sections  -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mabi=aapcs -g -Dfar= -D__DYNAMIC_REENT__  -std=c99   -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/source/ti/posix/gcc -Dxdc_target_name__=M4 -Dxdc_target_types__=gnu/targets/arm/std.h -Dxdc_bld__profile_release -Dxdc_bld__vers_1_0_7_2_1  -O2  -I ../bsd $(XDCINCS) -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include/newlib-nano -I/vagrant/SDK_Q2_GA_Gen2_Only/sdk_root/kernel/tirtos/packages/gnu/targets/arm//libs/install-native/arm-none-eabi/include -o $@ $<
 	-@$(FIXDEP) $@.dep $@.dep
 	
 package/lib/lib/gcc/m4/sntp_release/sntp.sm4g: export LD_LIBRARY_PATH=

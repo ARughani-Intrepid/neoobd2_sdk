@@ -52,6 +52,8 @@ extern "C" {
 /* BSD SOCKET ERRORS CODES */
 
 #define SL_ERROR_BSD_SOC_ERROR                                          (-1L)   /* Failure */
+#define SL_ERROR_BSD_EINTR                                              (-4L)   /* Interrupted system call */
+#define SL_ERROR_BSD_E2BIG                                              (-7L)   /* length too big */
 #define SL_ERROR_BSD_INEXE                                              (-8L)   /* socket command in execution  */
 #define SL_ERROR_BSD_EBADF                                              (-9L)   /* Bad file number */
 #define SL_ERROR_BSD_ENSOCK                                             (-10L)  /* The system limit on the total number of open socket, has been reached */
@@ -95,6 +97,10 @@ extern "C" {
 #define SL_ERROR_BSD_ESEC_NO_CERTIFICATE                                (-341L) /* ssl/tls alerts */
 #define SL_ERROR_BSD_ESEC_BAD_CERTIFICATE                               (-342L) /* ssl/tls alerts */
 #define SL_ERROR_BSD_ESEC_UNSUPPORTED_CERTIFICATE                       (-343L) /* ssl/tls alerts */
+#define SL_ERROR_BSD_ESEC_CERTIFICATE_REVOKED                           (-344L) /* ssl/tls alerts */
+#define SL_ERROR_BSD_ESEC_CERTIFICATE_EXPIRED                           (-345L) /* ssl/tls alerts */
+#define SL_ERROR_BSD_ESEC_CERTIFICATE_UNKNOWN                           (-346L) /* ssl/tls alerts */
+
 #define SL_ERROR_BSD_ESEC_ILLEGAL_PARAMETER                             (-347L) /* ssl/tls alerts */
 #define SL_ERROR_BSD_ESEC_ACCESS_DENIED                                 (-349L) /* ssl/tls alerts */
 #define SL_ERROR_BSD_ESEC_DECODE_ERROR                                  (-350L) /* ssl/tls alerts */
@@ -110,7 +116,7 @@ extern "C" {
 #define SL_ERROR_BSD_ESEC_UNRECOGNIZED_NAME                             (-412L) /* ssl/tls alerts */
 #define SL_ERROR_BSD_ESEC_BAD_CERTIFICATE_STATUS_RESPONSE               (-413L) /* ssl/tls alerts */
 #define SL_ERROR_BSD_ESEC_BAD_CERTIFICATE_HASH_VALUE                    (-414L) /* ssl/tls alerts */
-/* propierty secure */
+/* propriety secure */
 #define SL_ERROR_BSD_ESECGENERAL                                        (-450L) /* error secure level general error */
 #define SL_ERROR_BSD_ESECDECRYPT                                        (-451L) /* error secure level, decrypt recv packet fail */
 #define SL_ERROR_BSD_ESECCLOSED                                         (-452L) /* secure layrer is closed by other size , tcp is still connected  */
@@ -472,7 +478,7 @@ extern "C" {
 #define SL_ERROR_STATIC_ADDR_SUBNET_ERROR                               (-8193L)
 #define SL_ERROR_INCORRECT_IPV6_STATIC_LOCAL_ADDR                       (-8194L) /*  Ipv6 Local address perfix is wrong */
 #define SL_ERROR_INCORRECT_IPV6_STATIC_GLOBAL_ADDR                      (-8195L) /*  Ipv6 Global address perfix is wrong */
-#define SL_ERROR_IPV6_LOCAL_ADDR_SHOULD_BE_SET_FIRST                    (-8195L) /*  Attempt to set ipv6 global address before ipv6 local address is set */
+#define SL_ERROR_IPV6_LOCAL_ADDR_SHOULD_BE_SET_FIRST                    (-8196L) /* Attempt to set ipv6 global address before ipv6 local address is set */
 
 
 /* FS ERRORS CODES*/
@@ -563,7 +569,7 @@ extern "C" {
 #define SL_ERROR_FS_PROGRAM_FAILURE                                     (-10327L)
 #define SL_ERROR_FS_NO_ENTRIES_AVAILABLE                                (-10328L)
 #define SL_ERROR_FS_FILE_ACCESS_IS_DIFFERENT                            (-10329L)
-#define SL_ERROR_FS_UNVALID_FILE_MODE                                   (-10330L)
+#define SL_ERROR_FS_INVALID_FILE_MODE                                   (-10330L)
 #define SL_ERROR_FS_FAILED_READ_NVFILE                                  (-10331L)
 #define SL_ERROR_FS_FAILED_INIT_STORAGE                                 (-10332L)
 #define SL_ERROR_FS_FILE_HAS_NO_FAILSAFE                                (-10333L)
@@ -717,6 +723,11 @@ extern "C" {
 
 /* The event link was not found in the list */
 #define SL_RET_CODE_EVENT_LINK_NOT_FOUND                                (-2019L)
+
+/* In case there are no free buffers for async event which arrived
+   during command context. In this case user needs to increase
+   MAX_CONCURRENT_ACTIONS at user.h */
+#define SL_RET_CODE_NO_FREE_ASYNC_BUFFERS_ERROR                         (-2020L)
 
 #ifdef  __cplusplus
 }

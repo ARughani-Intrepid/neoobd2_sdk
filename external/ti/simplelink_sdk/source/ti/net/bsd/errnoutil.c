@@ -59,6 +59,11 @@ int ErrnoUtil_set(int32_t Errno)
         Errno = EBADF;
         break;
 #endif
+#if ENFILE != SLNETERR_BSD_ENSOCK
+    case SLNETERR_BSD_ENSOCK:
+        Errno = ENFILE;
+        break;
+#endif
 #if EAGAIN != SLNETERR_BSD_EAGAIN
     case SLNETERR_BSD_EAGAIN:
         Errno = EAGAIN;

@@ -86,13 +86,13 @@ extern "C" {
 #define SL_FS_INFO_OPEN_WRITE                    0x1000   /* File is opened for write */
 #define SL_FS_INFO_OPEN_READ                     0x800    /* File is opened for read */
 
-#define SL_FS_INFO_MUST_COMMIT                   0x1      /* File is currently open with SL_FS_FILE_OPEN_FLAG_COMMIT_MODE */
-#define SL_FS_INFO_BUNDLE_FILE                   0x2      /* File is currently open with SL_FS_FILE_OPEN_FLAG_BUNDLE_COMMIT_MODE */
+#define SL_FS_INFO_MUST_COMMIT                   0x1      /* File is currently open with SL_FS_WRITE_MUST_COMMIT */
+#define SL_FS_INFO_BUNDLE_FILE                   0x2      /* File is currently open with SL_FS_WRITE_BUNDLE_FILE */
 
-#define SL_FS_INFO_PENDING_COMMIT                0x4      /* File is currently closed with SL_FS_FILE_OPEN_FLAG_COMMIT_MODE */
-#define SL_FS_INFO_PENDING_BUNDLE_COMMIT         0x8      /* File is currently closed with SL_FS_FILE_OPEN_FLAG_BUNDLE_COMMIT_MODE */
+#define SL_FS_INFO_PENDING_COMMIT                0x4      /* File that was open with SL_FS_WRITE_MUST_COMMIT is closed */
+#define SL_FS_INFO_PENDING_BUNDLE_COMMIT         0x8      /* File that was open with SL_FS_WRITE_BUNDLE_FILE is closed */
 
-#define SL_FS_INFO_NOT_FAILSAFE                  0x20     /* File was created with SL_FS_FILE_OPEN_FLAG_FAILSAFE */
+#define SL_FS_INFO_NOT_FAILSAFE                  0x20     /* File was not created with SL_FS_CREATE_FAILSAFE */
 #define SL_FS_INFO_NOT_VALID                     0x100    /* No valid image exists for the file */
 #define SL_FS_INFO_SYS_FILE                      0x40     /* File is system file */
 #define SL_FS_INFO_SECURE                        0x10     /* File is secured */
@@ -122,7 +122,7 @@ extern "C" {
 
 #define     SL_FS_CREATE_MAX_SIZE( MaxFileSize ) ((((_u32)MaxFileSize + 255) / 256 ) & SL_FS_OPEN_MAXSIZE_BIT_MASK )
 
-/* write flags */
+/* open for write flags */
 #define    SL_FS_WRITE_MUST_COMMIT               ((_u32)0x80<<SL_NUM_OF_MAXSIZE_BIT)        /* The file is locked for changes */
 #define    SL_FS_WRITE_BUNDLE_FILE               ((_u32)0x100<<SL_NUM_OF_MAXSIZE_BIT)       /* The file is locked for changes as part of Bundle */
 #define    SL_FS_WRITE_ENCRYPTED                 ((_u32)0x200<<SL_NUM_OF_MAXSIZE_BIT)       /* This indicates the start of a secured content write session */

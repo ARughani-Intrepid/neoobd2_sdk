@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,7 @@
  *    uartParams.readDataMode = UART_DATA_BINARY;
  *    uartParams.readReturnMode = UART_RETURN_FULL;
  *    uartParams.readEcho = UART_ECHO_OFF;
- *    uartParams.baudRate = 9600;
+ *    uartParams.baudRate = 115200;
  *
  *    // Open an instance of the UART drivers
  *    uart = UART_open(Board_UART0, &uartParams);
@@ -197,7 +197,7 @@
  *  - #UART_RETURN_FULL:  The read action unblocks or returns when the buffer
  *    is full.
  *  - #UART_RETURN_NEWLINE:  The read action unblocks or returns when a
- *    newline character if read, before the buffer is full.
+ *    newline character is read, before the buffer is full.
  *
  *  Options for the readEcho parameter are #UART_ECHO_OFF and #UART_ECHO_ON.
  *  This parameter determines whether the driver echoes data back to the
@@ -250,16 +250,7 @@
  *    #include <ti/drivers/uart/UARTMSP432.h>
  *    @endcode
  *
- *  ### Stack Requirements #
- *  It is STRONGLY discouraged to perform UART_read() or UART_write()
- *  calls within the driver's own callback function when in
- *  #UART_MODE_CALLBACK mode. Doing so will incur additional task or system
- *  stack size requirements. See the peripheral implementations'
- *  documentation for stack size estimations.  It is expected that the
- *  user perform their own stack and usage analysis when choosing to
- *  nest these calls.
- *
- *******************************************************************************
+ *  ============================================================================
  */
 
 #ifndef ti_drivers_UART__include
@@ -422,12 +413,6 @@ typedef struct UART_Config_    *UART_Handle;
  *  @brief      The definition of a callback function used by the UART driver
  *              when used in #UART_MODE_CALLBACK
  *              The callback can occur in task or HWI context.
- *
- *  @warning    Making UART_read() or UART_write() calls within its own callback
- *              routines are STRONGLY discouraged as it will impact Task and
- *              System stack size requirements! See the documentation for the
- *              specific driver implementations for additional estimated stack
- *              requirements.
  *
  *  @param      UART_Handle             UART_Handle
  *

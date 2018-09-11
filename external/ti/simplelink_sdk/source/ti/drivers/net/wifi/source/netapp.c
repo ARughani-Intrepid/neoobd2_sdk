@@ -142,6 +142,41 @@ _i16 sl_NetAppStop(const _u32 AppBitMap)
 }
 #endif
 
+
+/*****************************************************************************
+ sl_NetAppArpFlush
+*****************************************************************************/
+
+#if _SL_INCLUDE_FUNC(sl_NetAppArpFlush)
+
+
+_i16 sl_NetAppArpFlush(void)
+{
+    /* verify that this api is allowed. if not allowed then
+    ignore the API execution and return immediately with an error */
+    VERIFY_API_ALLOWED(SL_OPCODE_SILO_NETAPP);
+
+    return _SlDrvBasicCmd(SL_OPCODE_NETAPP_ARPFLUSH);
+}
+#endif
+
+/*****************************************************************************
+ sl_NetAppNdFlush
+*****************************************************************************/
+
+#if _SL_INCLUDE_FUNC(sl_NetAppNdFlush)
+
+
+_i16 sl_NetAppNdFlush(void)
+{
+    /* verify that this api is allowed. if not allowed then
+    ignore the API execution and return immediately with an error */
+    VERIFY_API_ALLOWED(SL_OPCODE_SILO_NETAPP);
+
+    return _SlDrvBasicCmd(SL_OPCODE_NETAPP_NDFLUSH_V6);
+}
+#endif
+
 /******************************************************************************/
 /* sl_NetAppGetServiceList */
 /******************************************************************************/
@@ -589,7 +624,7 @@ _i16 sl_NetAppDnsGetHostByService(_i8        *pServiceName,    /* string contain
     _SlGetHostByServiceMsg_u         Msg;
     _SlCmdExt_t                      CmdExt ;
     _GetHostByServiceAsyncResponse_t AsyncRsp;
-    _u8                              ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16                              ObjIdx = MAX_CONCURRENT_ACTIONS;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -651,7 +686,7 @@ _i16 sl_NetAppDnsGetHostByService(_i8        *pServiceName,    /* string contain
     /* If the immediate reponse is O.K. than  wait for aSYNC event response. */
     if(SL_RET_CODE_OK == Msg.Rsp.status)
     {        
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+        VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx,0,0));
 
         /* If we are - it means that Async event was sent.
            The results are copied in the Async handle return functions */
@@ -812,7 +847,7 @@ _i16 sl_NetAppDnsGetHostByName(_i8 * pHostName,const  _u16 NameLen, _u32*  OutIp
     _SlGetHostByNameMsg_u           Msg;
     _SlCmdExt_t                     ExtCtrl;
     _GetHostByNameAsyncResponse_u   AsyncRsp;
-    _u8                             ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16                            ObjIdx = MAX_CONCURRENT_ACTIONS;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -826,10 +861,14 @@ _i16 sl_NetAppDnsGetHostByName(_i8 * pHostName,const  _u16 NameLen, _u32*  OutIp
     Msg.Cmd.Family = Family;
 
     /*Use Obj to issue the command, if not available try later */
-    ObjIdx = (_u8)_SlDrvWaitForPoolObj(GETHOSYBYNAME_ID,SL_MAX_SOCKETS);
+    ObjIdx = _SlDrvWaitForPoolObj(GETHOSYBYNAME_ID,SL_MAX_SOCKETS);
     if (MAX_CONCURRENT_ACTIONS == ObjIdx)
     {
         return SL_POOL_IS_EMPTY;
+    }
+    if (SL_RET_CODE_STOP_IN_PROGRESS == ObjIdx)
+    {
+        return SL_RET_CODE_STOP_IN_PROGRESS;
     }
 
     SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
@@ -847,7 +886,7 @@ _i16 sl_NetAppDnsGetHostByName(_i8 * pHostName,const  _u16 NameLen, _u32*  OutIp
 
     if(SL_RET_CODE_OK == Msg.Rsp.status)
     {
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+	VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx,0,0));
 
         Msg.Rsp.status = (_i16)AsyncRsp.IpV4.Status;
 
@@ -954,7 +993,7 @@ _i16 sl_NetAppPing(const SlNetAppPingCommand_t* pPingParams, const _u8 Family, S
     _SlCmdCtrl_t                CmdCtrl = {0, (_SlArgSize_t)sizeof(SlNetAppPingCommand_t), (_SlArgSize_t)sizeof(_BasicResponse_t)};
     _SlPingStartMsg_u           Msg;
     SlPingReportResponse_t      PingRsp;
-    _u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16 ObjIdx = MAX_CONCURRENT_ACTIONS;
     _u32 PingTimeout = 0;
 
     /* verify that this api is allowed. if not allowed then
@@ -1003,10 +1042,14 @@ _i16 sl_NetAppPing(const SlNetAppPingCommand_t* pPingParams, const _u8 Family, S
             else
             {
                 /* Use Obj to issue the command, if not available try later */
-                ObjIdx = (_u8)_SlDrvWaitForPoolObj(PING_ID,SL_MAX_SOCKETS);
+                ObjIdx = _SlDrvWaitForPoolObj(PING_ID,SL_MAX_SOCKETS);
                 if (MAX_CONCURRENT_ACTIONS == ObjIdx)
                 {
                     return SL_POOL_IS_EMPTY;
+                }
+                if (SL_RET_CODE_STOP_IN_PROGRESS == ObjIdx)
+                {
+                     return SL_RET_CODE_STOP_IN_PROGRESS;
                 }
                 OSI_RET_OK_CHECK(sl_LockObjLock(&g_pCB->ProtectionLockObj, SL_OS_WAIT_FOREVER));
                 /* async response handler for non callback mode */
@@ -1034,10 +1077,7 @@ _i16 sl_NetAppPing(const SlNetAppPingCommand_t* pPingParams, const _u8 Family, S
 #ifdef SL_TINY        
                 _SlDrvSyncObjWaitForever(&g_pCB->ObjPool[ObjIdx].SyncObj);
 #else       
-                SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                                        PingTimeout,
-                                        SL_OPCODE_NETAPP_PINGREPORTREQUESTRESPONSE
-                                        );
+                 VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, PingTimeout, SL_OPCODE_NETAPP_PINGREPORTREQUESTRESPONSE));
 #endif
 
                 if( SL_OS_RET_CODE_OK == (_i16)PingRsp.Status )
@@ -1225,7 +1265,7 @@ _SlReturnVal_t sl_NetAppRecv( _u16 Handle, _u16 *DataLen, _u8 *pData, _u32 *Flag
     SlProtocolNetAppReceive_t AsyncRsp; /* Will be filled when SL_OPCODE_NETAPP_RECEIVE async event is arrived */
 
     _SlReturnVal_t            RetVal;
-    _u8                       ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16                      ObjIdx = MAX_CONCURRENT_ACTIONS;
     _SlArgsData_t             pArgsData;
 
     /* Validate input arguments */
@@ -1245,11 +1285,15 @@ _SlReturnVal_t sl_NetAppRecv( _u16 Handle, _u16 *DataLen, _u8 *pData, _u32 *Flag
     Msg.Cmd.Flags = *Flags;
 
     /* Use Obj to issue the command, if not available try later */
-    ObjIdx = (_u8)_SlDrvWaitForPoolObj(NETAPP_RECEIVE_ID, SL_MAX_SOCKETS);
+    ObjIdx = _SlDrvWaitForPoolObj(NETAPP_RECEIVE_ID, SL_MAX_SOCKETS);
 
     if (MAX_CONCURRENT_ACTIONS == ObjIdx)
     {
         return SL_POOL_IS_EMPTY;
+    }
+    if (SL_RET_CODE_STOP_IN_PROGRESS == ObjIdx)
+    {
+        return SL_RET_CODE_STOP_IN_PROGRESS;
     }
 
     /* Save the AsyncRsp and cmdExt information for the SL_OPCODE_NETAPP_RECEIVE async event */
@@ -1272,7 +1316,7 @@ _SlReturnVal_t sl_NetAppRecv( _u16 Handle, _u16 *DataLen, _u8 *pData, _u32 *Flag
     if(SL_OS_RET_CODE_OK == RetVal)
     {
         /* Wait for SL_OPCODE_NETAPP_RECEIVE async event. Will be signaled by _SlNetAppHandleAsync_NetAppReceive. */
-        _SlDrvSyncObjWaitForever(&g_pCB->ObjPool[ObjIdx].SyncObj);
+        VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, 0, 0));
 
         /* Update information for the user */
         *DataLen = AsyncRsp.PayloadLen;
@@ -1565,7 +1609,7 @@ _SlReturnVal_t _SlNetAppEventHandler(void* pArgs)
             /* Handle the response */
             status = _SlNetAppSendResponse(protocol_NetAppRequest->Handle, &NetAppResponse);
 
-#if defined(SL_RUNTIME_EVENT_REGISTERATION)
+#if (defined(SL_RUNTIME_EVENT_REGISTERATION) || defined(slcb_NetAppRequestMemFree))
             if(1 == _SlIsEventRegistered(SL_EVENT_HDL_MEM_FREE))
             {
                 if ((NetAppResponse.ResponseData.MetadataLen > 0) && (NetAppResponse.ResponseData.pMetadata != NULL))
